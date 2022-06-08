@@ -12,34 +12,35 @@
 - Tested on VOS 20.2.4 & 21.2.2
 
 ## file structure (tree)
+'''
 .
-	- ├── device_list.py
-	- ├── roles
-	- │   └── oss_update
-	- │       ├── defaults
-	- │       │   └── main.yml
-	- │       ├── files
-	- │       │   ├── batch_1-test.csv    #<not included in folder, example for batch file location>#
-	- │       │   ├── batch_all-test.csv  #<not included in folder, example for batch file location>#
-	- │       │   └── batch-test.csv      #<not included in folder, example for batch file location>#
-	- │       ├── handlers
-	- │       │   └── main.yml
-	- │       ├── meta
-	- │       │   └── main.yml
-	- │       ├── README.md
-	- │       ├── tasks
-	- │       │   └── main.yml
-	- │       ├── templates
-	- │       │   ├── oss_pack_update_2_batch.j2
-	- │       │   └── oss_pack_update_2.j2
-	- │       ├── tests
-	- │       │   ├── inventory
-	- │       │   └── test.yml
-	- │       ├── .travis.yml
-	- │       └── vars
-	- │           └── main.yml
-	- └── site.yml
-
+├── device_list.py
+├── roles
+│   └── oss_update
+│       ├── defaults
+│       │   └── main.yml
+│       ├── files
+│       │   ├── batch_1-test.csv    #<not included in folder, example for batch file location>#
+│       │   ├── batch_all-test.csv  #<not included in folder, example for batch file location>#
+│       │   └── batch-test.csv      #<not included in folder, example for batch file location>#
+│       ├── handlers
+│       │   └── main.yml
+│       ├── meta
+│       │   └── main.yml
+│       ├── README.md
+│       ├── tasks
+│       │   └── main.yml
+│       ├── templates
+│       │   ├── oss_pack_update_2_batch.j2
+│       │   └── oss_pack_update_2.j2
+│       ├── tests
+│       │   ├── inventory
+│       │   └── test.yml
+│       ├── .travis.yml
+│       └── vars
+│           └── main.yml
+└── site.yml
+'''
 
 ## site.yml
 	- Playbook for user generated vars with the oss_update role.  This is the file to run (ansible-playbook site.yml).
