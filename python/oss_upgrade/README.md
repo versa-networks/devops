@@ -1,7 +1,7 @@
 ### Readme for oss_upgrade
-Tested in Python 3.10.4
-Tested on Director 21.2.2
-Tested on VOS 20.2.4 & 21.2.2
+    - Tested in Python 3.10.4
+    - Tested on Director 21.2.2
+    - Tested on VOS 20.2.4 & 21.2.2
 
 ## Scripts for all Devices (up to 2000 total overall deployment size)
 	- oss_pack_update.py: Updates 1 device at a time and awaits completion prior to moving to next device
