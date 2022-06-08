@@ -12,7 +12,7 @@
 - Tested on VOS 20.2.4 & 21.2.2
 
 ## file structure (tree)
-'''
+```
 .
 ├── device_list.py
 ├── roles
@@ -40,7 +40,7 @@
 │       └── vars
 │           └── main.yml
 └── site.yml
-'''
+```
 
 ## site.yml
 	- Playbook for user generated vars with the oss_update role.  This is the file to run (ansible-playbook site.yml).
