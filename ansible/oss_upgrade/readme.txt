@@ -1,7 +1,7 @@
 #####Readme ansible folder
 
 !!!!!!!!!!!!!!!!!!!!!!!!!
-!!!   /oss_upgrade   !!!!
+!!!   /oss_update   !!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!
 
 ### Tested in Ansible: 
