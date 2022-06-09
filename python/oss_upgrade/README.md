@@ -8,6 +8,8 @@
 	- oss_pack_update_2.py: Initiates all device updates and runs checks after all devices updates have been initiated.
 
 ## Scripts for Batch of Devices (up to 2000 total overall deployment size)
+    - device_list.py: An overall list of devices can be generated using the device_list.py script located in this folder.  
+      This overall list can then be brokeninto batches.
     - batch-test.csv: example .csv file for list of devices included in the batch. Should be in same folder you are running python.  
     - oss_pack_update_batch.py: Updates 1 device in the batch at a time and awaits completion prior to moving to next device
     - oss_pack_update_2 _batch.py: Initiates batch device updates and runs checks after all batch device updates have been initiated.
