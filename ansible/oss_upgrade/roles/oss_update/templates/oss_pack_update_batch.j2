@@ -4,6 +4,7 @@ import csv
 import urllib3
 import getpass
 import time
+import os
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -107,12 +108,12 @@ def response_id():
 def oss_pack_check_status():
     oss_pack_check_json = oss_pack_check.json()
     oss_pack_check_status = oss_pack_check_json["versa-tasks.task"]["versa-tasks.task-status"]
-    return oss_pack_check_status
+    return oss_pack_check_status     
 
 #Output log and file definitions###
 def output_log_create():
     with open(output_log, "w") as output_log_file:
-        output_log_file.write("###" + "{{ todays_date }}" + "_OSS_version_" + "{{ oss_pack_version }}" + "###\n")
+        output_log_file.write("###" + "{{ csv_batch_file }}" + "_OSS_version_" + "{{ oss_pack_version }}" + "###\n")
         output_log_file.close
 
 def init_log_data():
@@ -148,6 +149,10 @@ def prog_csv_data():
     prog_csv_data = appliance_name() + ";" + appliance_ping() + ";" + appliance_sync() + ";" + oss_pack_check_status() + ";" + "{{ oss_pack_version }}" + "\n"
     return prog_csv_data
 
+#cleanup unecessary post script files###
+def file_cleanup():
+    os.remove("{{ csv_batch_file }}" + ".json")
+
 
 #Upgrade OSS pack on all devices and check for status######################
 print('##### GET all device status and upgrade#####')
@@ -177,6 +182,13 @@ if appliance_detail_response().status_code == 200:
                                         print(prog_log_data())
                                         output_log_file.write(prog_log_data())
                                         output_csv_file.write(prog_csv_data())
+                                    if oss_pack_check.status_code == 200 and oss_pack_check_status() == in_progress:
+                                        oss_pack_check = requests.get((https + "{{ director_ip }}" + fw_slash + response_id()), headers=headers, verify=False, auth=auth)
+                                        oss_pack_check.close
+                                        if oss_pack_check.status_code == 200 and oss_pack_check_status() == completed:
+                                            print(prog_log_data())
+                                            output_log_file.write(prog_log_data())
+                                            output_csv_file.write(prog_csv_data())
                         else:
                             print(init_log_data())
                             output_log_file.write(init_log_data())
@@ -191,3 +203,5 @@ if appliance_detail_response().status_code == 200:
                         output_csv_file.write(reach_csv_data())
 else:
     print(upass_message)
+
+file_cleanup()

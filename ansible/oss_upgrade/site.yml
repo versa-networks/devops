@@ -8,7 +8,7 @@
       ########################################
       Select update method from the options below:
       ########################################
-      Update all devices concurrently, enter 1
+      Update batch devices 1 at a time, enter 1
       Update batch devices concurrently, enter 2
       ########################################      
       Enter update method(1-2)
@@ -27,9 +27,6 @@
     private: no
   - name: oss_pack_version
     prompt: What is the OSS pack version(YYYYMMDD)?
-    private: no
-  - name: todays_date
-    prompt: What is today's date(YYYYMMDD)?
     private: no
 
   roles:

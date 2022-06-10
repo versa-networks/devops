@@ -3,11 +3,11 @@
 - name: create option 1 update python script
   template:
     src: oss_pack_update_batch.j2
-    dest: roles/oss_update/files/.{{ todays_date }}_{{ oss_pack_version }}_oss_pack_update_batch.py
+    dest: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch.py
   when: update_method == '1'
 
 - name: run option 1 update python script
-  command: python3 .{{ todays_date }}_{{ oss_pack_version }}_oss_pack_update_batch.py
+  command: python3 .{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch.py
   args:
     chdir: roles/oss_update/files
   with_first_found: site.yml
@@ -15,6 +15,12 @@
   when: update_method == '1'
   run_once: true
   register: python_result_1
+
+- name: remove batch specific python file after running
+  file:
+    path: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch.py
+    state: absent
+  when: update_method == '1'
 
 - debug:
     var: python_result_1
@@ -35,6 +41,12 @@
   when: update_method == '2'
   run_once: true
   register: python_result_2
+
+- name: remove batch specific python file after running
+  file:
+    path: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_2_batch.py
+    state: absent
+  when: update_method == '2'
 
 - debug:
     var: python_result_2

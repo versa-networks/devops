@@ -4,6 +4,7 @@ import csv
 import urllib3
 import getpass
 import time
+import os
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -22,7 +23,7 @@ headers = {
 
 ##URL Variables###########################################################
 https = "https://"
-appliance_detail_url = ':9182/vnms/appliance/appliance?offset=0&limit=1000'
+appliance_detail_url = ':9182/vnms/appliance/appliance?offset=0&limit=2000'
 oss_pack_url = ':9182/vnms/osspack/device/install-osspack'
 deep = '?deep=true'
 fw_slash =':9182/'
@@ -110,7 +111,7 @@ def response_id():
 #Output log and file definitions###
 def output_log_create():
     with open(output_log, "w") as output_log_file:
-        output_log_file.write("###" + "{{ todays_date }}" + "_OSS_version_" + "{{ oss_pack_version }}" + "###\n")
+        output_log_file.write("###" + "{{ csv_batch_file }}" + "_OSS_version_" + "{{ oss_pack_version }}" + "###\n")
         output_log_file.close
 
 def init_log_data():
@@ -146,6 +147,9 @@ def prog_csv_data():
     prog_csv_data = appliance_name() + ";" + appliance_ping() + ";" + appliance_sync() + ";COMPLETED;" + "{{ oss_pack_version }}" + "\n"
     return prog_csv_data
 
+#cleanup unecessary post script files###
+def file_cleanup():
+    os.remove("{{ csv_batch_file }}" + ".json")
 
 #Upgrade OSS pack on all devices ######################
 print('##### GET all device status and upgrade#####')
@@ -202,24 +206,4 @@ if appliance_detail_response().status_code == 200:
                             print(issue_log_data())
                             output_log_file.write(issue_log_data())
             
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
+file_cleanup()
