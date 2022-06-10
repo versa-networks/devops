@@ -1,0 +1,56 @@
+{
+  "versanms.sdwan-device-workflow": {
+{% if location is defined %}
+    "locationInfo": {
+{% if location.longitude is defined and location.latitude is defined %}
+      "latitude": "{{ location.latitude }}",
+      "longitude": "{{ location.longitude }}",
+{% elif location.country is defined %}
+      "address1": "{{ location.address1 if location.address1 is defined else '' }}",
+      "address2": "{{ location.address2 if location.address2 is defined else '' }}",
+      "city": "{{ location.city if location.city is defined else '' }}",
+      "state": "{{ location.state if location.state is defined else '' }}",
+      "zip": "{{ location.zip if location.zip is defined else '' }}",
+      "country": "{{ location.country }}"
+{% else %}
+{# Applying a Default country if not defined #}
+      "country": "US"
+{% endif %}
+    },
+{% endif %}
+    "siteId": "{{ availableSiteId }}",
+    "deviceName": "{{ inventory_hostname }}",
+    "orgName": "{{ org_name }}",
+    "serialNumber": "SN-BR-{{ inventory_hostname[-2:]}}",
+    "deviceGroup": "{{ group_names[0] }}",
+    "bandwidth": "{{ bandwidth }}" ,
+    "deploymentType": "physical",
+    "postStagingTemplateInfo": {
+      "templateName": "{{ template }}",
+      "templateData": {
+        "device-template-variable": {
+          "template": "{{ template }}",
+          "variable-binding": {
+            "attrs": [
+              {
+                "name": "{$v_MPLS_IPv4__staticaddress}",
+                "value": "{{ mpls_ipv4_static }}",
+                "isAutogeneratable": false
+              },
+              {
+                "name": "{$v_MPLS-Transport-VR_IPv4__vrHopAddress}",
+                "value": "{{ mpls_ipv4_gw }}",
+                "isAutogeneratable": false
+              },
+              {
+                "name": "{$v_LAN_IPv4__staticaddress}",
+                "value": "{{ lan_ipv4_static }}",
+                "isAutogeneratable": false
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

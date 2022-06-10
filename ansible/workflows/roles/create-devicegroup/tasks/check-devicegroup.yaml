@@ -1,0 +1,29 @@
+---
+- name: Check Device Group
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Test
+      uri:
+        url: "{{ url_resource_paths[vd_version]['vd_get_devicegroups'] }}"
+        method: GET
+        user: "{{ rest_api_username }}"
+        password: "{{ rest_api_password }}"
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+        return_content: yes
+        force_basic_auth: yes
+        validate_certs: no
+        follow_redirects: all
+        timeout: 60
+      ignore_errors: yes
+      register: preDeviceGroups
+      delegate_to: localhost
+
+    - name: "[DEBUG]: Result of existing DeviceGroups on Versa Director for organisation {{ org_name }}"
+      debug:
+        var: preDeviceGroups.json['device-group']
+   

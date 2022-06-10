@@ -1,0 +1,16 @@
+---
+url_resource_paths:
+  '20.2': &default              # Enable inheritance
+    vd_get_available_OrgId: "{{ base_url }}vnms/sdwan/global/Org/availableId"
+    vd_get_available_VrfId: "{{ base_url }}vnms/sdwan/global/availableIds/VRF"
+    vd_get_available_SiteId: "{{ base_url }}vnms/sdwan/global/Branch/availableId/withSerialNumber"
+    vd_get_orgs_root: "{{ base_url }}nextgen/organization/roots"
+    vd_get_devicegroups: "{{ base_url}}nextgen/deviceGroup/deviceGroupNames?organization={{ org_name }}"
+    vd_create_parent_org: "{{ base_url }}nextgen/organization"
+    vd_create_devicegroup: "{{ base_url }}nextgen/deviceGroup"
+    vd_get_devices: "{{ base_url }}vnms/sdwan/workflow/devices"
+    vd_create_device: "{{ base_url }}vnms/sdwan/workflow/devices/device"
+    vd_deploy_device: "{{ base_url }}vnms/sdwan/workflow/devices/device/deploy/{{ inventory_hostname }}"
+  default:
+    <<: *default               # Inherit all values from 20.2 (set as default)
+    vd_get_version: "{{ base_url }}api/operational/system/package-info"

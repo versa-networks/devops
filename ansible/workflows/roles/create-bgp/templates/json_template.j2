@@ -1,0 +1,98 @@
+{
+"rti-bgp": {
+    "instance-id": {{ bgp.instance_id }},
+    "description": "{{ bgp.description }}",
+    "password": "{{ bgp.password }}",
+    "hold-time": {{ bgp.holdtime }},
+    "enable-alarms": [
+        null
+    ],
+    "local-address": "{{ bgp.local_address }}",
+    "ttl": {{ bgp.ttl }},
+    "peer-as": {{ bgp.peer_asn }},
+    "remove-private": [
+        null
+    ],
+    "route-flap": {
+        "free-max-time": 180,
+        "reuse-max-time": 60,
+        "reuse-size": 256,
+        "reuse-array-size": 1024
+    },
+    "graceful-restart": {
+        "helper": "enable"
+    },
+    "prefix-limit": {
+        "maximum": {{ bgp.prefix_limit.max }},
+        "threshold": {{ bgp.prefix_limit.threshold }},
+        "restart-interval": {{ bgp.prefix_limit.restart_interval }},
+        "action": "{{ bgp.prefix_limit.action }}"
+    },
+    "soo": "auto",
+    "prefix-list": [
+        {
+            "prefix-list-name": "test",
+            "seq": [
+                {
+                    "number": 1,
+                    "permit-or-deny": "permit",
+                    "address-family": {
+                        "ipv4": {
+                            "unicast": {
+                                "address-mask": "8.8.8.0/21",
+                                "ge_le": {
+                                    "ge": 21,
+                                    "le": 24
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "routing-peer-policy": [
+        {
+            "name": "test",
+            "term": [
+                {
+                    "term-name": "test1",
+                    "match": {
+                        "family": "inet",
+                        "as-path": "64513",
+                        "metric": 10
+                    },
+                    "action": {
+                        "filter": "accept",
+                        "rib-bgp-ecmp": false
+                    }
+                }
+            ]
+        }
+    ],
+    "router-id": "{{ bgp.router_id }}",
+    "local-as": {
+        "as-number": {{ bgp.local_asn }}
+    },
+    "group": [
+        {
+            "name": "peer-group-test",
+            "type": "external",
+            "description": "peer-group-test-desc",
+            "local-as-mode": "mode-1",
+            "prefix-limit": {},
+            "neighbor": [
+{% for i in range(0, bgp.neighbors|length) %}
+                {
+                    "bgp-neighbor-ip": "{{ bgp.neighbors[i].neighbor.neighbor_ip }}",
+                    "local-address": "{{ bgp.neighbors[i].neighbor.local_address }}",
+                    "prefix-limit": {},
+                    "ttl": {{ bgp.neighbors[i].neighbor.ttl }},
+                    "peer-as": {{ bgp.neighbors[i].neighbor.peer_asn }}
+                }{{ ',' if i+1 <  bgp.neighbors|length else '' }}
+{% endfor %}
+            ]
+        }
+    ]
+}
+}

@@ -1,0 +1,58 @@
+---
+- block:
+
+  - import_role:
+      name: get-vd-version
+        #  - import_playbook:
+        #      name: ../../check-devicegroup.pb
+
+  - name: Check if DeviceGroup exists on Versa Director for organisation {{ org_name }}
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_get_devicegroups'] }}"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      timeout: 60
+    ignore_errors: yes
+    register: preDeviceGroups
+    delegate_to: localhost
+
+#  - name: "[DEBUG]: Result of existing DeviceGroups on Versa Director for organisation {{ org_name }}"
+#    debug:
+#      var: preDeviceGroups.json['device-group']
+
+  - name: "[DEBUG] Generate temporary JSON config & store in /tmp/{{ inventory_hostname }}_devicegroup.json"
+    template: src="json_template.j2" dest="/tmp/{{ inventory_hostname }}_devicegroup.json"
+    when: group_names[0] not in preDeviceGroups.json['device-group']
+
+  - name: Create DeviceGroup on Versa Director for organisation {{ org_name }}
+    uri:
+      url: "https://{{ rest_api }}/nextgen/deviceGroup"
+      method: POST
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      #      status_code: 200, 201, 202,409,204,200,201,400,500
+      timeout: 60
+      body_format: json
+      body: "{{ lookup('template', '../templates/json_template.j2') }}"
+    register: results
+    changed_when: results.status == 201
+    failed_when: results.status == 400
+    when: group_names[0] not in preDeviceGroups.json['device-group']
+
+
+    #  - debug: var=results
