@@ -23,7 +23,7 @@
     prompt: What is your password?
     private: yes
   - name: director_ip
-    prompt: What is the primary Director IP?
+    prompt: What is the primary Director IP or Hostname?
     private: no
   - name: oss_pack_version
     prompt: What is the OSS pack version(YYYYMMDD)?

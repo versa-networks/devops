@@ -2,12 +2,12 @@
 # tasks file for oss_update
 - name: create option 1 update python script
   template:
-    src: oss_pack_update_2.j2
-    dest: roles/oss_update/files/.{{ todays_date }}_{{ oss_pack_version }}_oss_pack_update_2.py
+    src: oss_pack_update_batch.j2
+    dest: roles/oss_update/files/.{{ todays_date }}_{{ oss_pack_version }}_oss_pack_update_batch.py
   when: update_method == '1'
 
 - name: run option 1 update python script
-  command: python3 .{{ todays_date }}_{{ oss_pack_version }}_oss_pack_update_2.py
+  command: python3 .{{ todays_date }}_{{ oss_pack_version }}_oss_pack_update_batch.py
   args:
     chdir: roles/oss_update/files
   with_first_found: site.yml
