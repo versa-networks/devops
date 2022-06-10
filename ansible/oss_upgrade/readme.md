@@ -44,9 +44,11 @@
 
 ## site.yml
 	- Playbook for user generated vars with the oss_update role.  This is the file to run (ansible-playbook site.yml).
+	- Option 1: Upgrade devices in batch 1 at a time.
+	- Option 2: Upgrade devices in batch concurrently.
 ## roles/oss_update/tasks/main.yml
 	- Playbook for oss_update role.
-## roles/oss_update/templates/oss_pack_update_2_batch.j2 & oss_pack_update_2.j2
+## roles/oss_update/templates/oss_pack_update_2_batch.j2 & oss_pack_update_batch.j2
 	- jinja 2 templates to generate executable .py files run by site.yml->main.yml
 ## roles/oss_update/files/
 	- location to save user created batch files in .csv format.  An overall list of devices can be generated

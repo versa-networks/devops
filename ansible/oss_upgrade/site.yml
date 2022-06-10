@@ -14,7 +14,7 @@
       Enter update method(1-2)
     private: no
   - name: csv_batch_file
-    prompt: What is the name of your batch file(enter NA if running Option 1)?
+    prompt: What is the name of your batch file?
     private: no  
   - name: username
     prompt: What is your username?
