@@ -1,0 +1,22 @@
+[all:children]
+branches
+
+[branches:children]
+BR01
+BR03
+
+[BR01]
+branch07
+branch08
+
+[BR03]
+branch03
+
+[BGP]
+branch01
+
+[director]
+director01 ansible_host=10.48.58.51
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

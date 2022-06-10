@@ -1,0 +1,4 @@
+ansible>=2.9
+ipaddress>=1.0.1
+Jinja2>=2.10
+netaddr>=0.7.1

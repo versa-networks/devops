@@ -1,0 +1,26 @@
+---
+  - name: "[DEBUG] Generate temporary JSON config & store in /tmp/{{ inventory_hostname }}_bgp.json"
+    template: src="json_template.j2" dest="/tmp/{{ inventory_hostname }}_bgp.json"
+
+  - name: Deploy BGP Configuration to Device 
+    uri:
+      url: "{{ base_url }}api/config/devices/device/{{ inventory_hostname }}/config/routing-instances/routing-instance/{{ org_name }}-LAN-VR/protocols/bgp"
+      method: POST
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      body_format: json
+      body: "{{ lookup('template', '../templates/json_template.j2') }}"
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400
+      timeout: 60
+    register: results1
+    changed_when: results1.status == 201
+    #failed_when: results1.status != 202
+    #
+  - debug: var=results1

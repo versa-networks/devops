@@ -1,0 +1,30 @@
+{
+    "device-group": {
+{% if dg_ca_config is defined %}
+        "dg:ca-config-on-branch-notification": "{{ dg_ca_config }}",
+{% endif %}
+{% if dg_description is defined %}
+        "dg:description": "{{ dg_description }}",
+{% endif %}
+{% if contact_info is defined %}
+        "dg:e-mail": "{{ contact_info.email if contact_info.email is defined else '' }}",
+        "dg:phone": "{{ contact_info.phone if contact_info.phone is defined else '' }}",
+{% endif %}
+{% if dg_staging is defined %}
+        "dg:enable-2factor-auth": true,
+        "dg:enable-one-time-password": true,
+        "dg:enable-staging-url": true,
+        "dg:staging-controller": "controller01",
+        "dg:staging-type": "staging",
+        "dg:vpn-profile-name": "MPLS-controller01-StagingIpsec",
+{% endif %}
+{% if dg_tags is defined %}
+        "dg:tags": [
+            "test"
+        ],
+{% endif %}
+        "dg:poststaging-template": "branch01",
+        "dg:organization": "{{ org_name }}",
+        "name": "{{ group_names[0] }}"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "authType": "{{ parent_org.authType if parent_org.authType is defined else 'psk' }}",
+    "cpeDeploymentType": "{{ parent_org.cpe_deployment_type }}",
+    "description": "{{ parent_org.description }}",
+    "id": {{ availableOrgId }},
+    "name": "{{ parent_org.org_name }}",
+    "sharedControlPlane": {{ parent_org.shared_control_plane }},
+    "subscriptionPlan": "{{ parent_org.subscriptionPlan }}",
+    "vrfsGroups": [
+        {
+            "enable_vpn": "true",
+            "name": "{{ parent_org.org_name }}-LAN-VR",
+            "vrfId": {{ availableVrfId }}
+        }
+    ]
+}

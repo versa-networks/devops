@@ -1,0 +1,33 @@
+---
+- block:
+
+  - name: Get version of Versa Director
+    uri:
+      url: "{{ url_resource_paths.default.vd_get_version }}"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      timeout: 60
+    ignore_errors: yes
+    register: vd_version_json
+    failed_when: vd_version_json.status != 200
+
+  - name: Register vd_version
+    set_fact:
+      vd_version_long: "{{ (vd_version_json.json['package-info'][0]['major-version'],vd_version_json.json['package-info'][0]['minor-version'], vd_version_json.json['package-info'][0]['service-version'])|join('.') }}"
+      vd_version_short: "{{ (vd_version_json.json['package-info'][0]['major-version'],vd_version_json.json['package-info'][0]['minor-version'])|join('.') }}"
+
+  - name: Check if URL resources are defined for version of VD
+    set_fact:
+      vd_version: "{{ vd_version_short if vd_version_short|float in url_resource_paths else 'default' }}"
+
+ #  - name: "[DEBUG]: Result of existing DeviceGroups on Versa Director for organisation {{ org_name }}"
+ #   debug:
+ #     var: vd_version
