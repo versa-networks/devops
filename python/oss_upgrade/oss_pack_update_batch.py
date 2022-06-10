@@ -4,6 +4,7 @@ import csv
 import urllib3
 import getpass
 import time
+import os
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -16,7 +17,6 @@ upass_message = " Please check connectivity to director and  username/password a
 director_ip = input("What is the primary Director IP?")
 csv_batch_file = input("What is the full name of the .csv Batch File?")
 oss_pack_version = input("What is the OSS pack version(YYYYMMDD)?")
-todays_date = input("What is today's date(YYYYMMDD) ")
 
 ##Set the standard API request headers###################################
 
@@ -117,7 +117,7 @@ def oss_pack_check_status():
 #Output log and file definitions###
 def output_log_create():
     with open(output_log, "w") as output_log_file:
-        output_log_file.write("###" + todays_date + "_OSS_version_" + oss_pack_version + "###\n")
+        output_log_file.write("###" + csv_batch_file + "_OSS_version_" + oss_pack_version + "###\n")
         output_log_file.close
 
 def init_log_data():
@@ -153,6 +153,9 @@ def prog_csv_data():
     prog_csv_data = appliance_name() + ";" + appliance_ping() + ";" + appliance_sync() + ";" + oss_pack_check_status() + ";" + oss_pack_version + "\n"
     return prog_csv_data
 
+#cleanup unecessary post script files###
+def file_cleanup():
+    os.remove( csv_batch_file  + ".json")
 
 #Upgrade OSS pack on all devices and check for status######################
 print('##### GET all device status and upgrade#####')
@@ -197,19 +200,4 @@ if appliance_detail_response().status_code == 200:
 else:
     print(upass_message)
 
-                        
- 
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
+file_cleanup()
