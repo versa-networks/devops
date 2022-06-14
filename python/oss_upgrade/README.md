@@ -19,14 +19,14 @@
 
 ## Output Files
   - Output files will be saved in the same location the python script is executed.  The following is the nameing convention.
-    - <batch file name>_OSS_version_<OSS Version>.csv 
-    - <batch file name>_OSS_version_<OSS Version>.log
+    - batch file name_OSS_version_OSS Version Number.csv 
+    - batch file name_OSS_version_OSS Version Number.log
 
 ## Python Scripts in This Directory
   - device_list.py: An overall list of devices can be generated using the device_list.py script located in this folder.  
       This overall list can then be brokeninto batches (e.g., Batches of 25 devices, new files = batch1.csv, batch2.csv., etc).
   - oss_pack_update_batch_option1.py: Option 1 script will update all devices in a batch, 1 device at a time.
-  - oss_pack_update_batch_option2.py: Option 2 script will update all devices in a batch, in groups of 10.
+  - oss_pack_update_batch_option2.py: Option 2 script will update all devices in a batch, in groups of 5.
 
 
 ## Author Information
