@@ -153,7 +153,7 @@ def reach_csv_data():
     return reach_csv_data
 
 def prog_csv_data():
-    prog_csv_data = appliance_name() + ";" + appliance_ping() + ";" + appliance_sync() + ";" + oss_pack_check_status() + ";" + "{{ oss_pack_version }}" + response_id() + "\n"
+    prog_csv_data = appliance_name() + ";" + appliance_ping() + ";" + appliance_sync() + ";" + oss_pack_check_status() + ";" + "{{ oss_pack_version }}" + ";" + response_id() + "\n"
     return prog_csv_data
 
 #cleanup unecessary post script files###

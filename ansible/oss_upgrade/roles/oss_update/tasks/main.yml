@@ -39,7 +39,7 @@
   when: update_method == '1'
 
 - debug:
-    var: stdout_lines
+    var: python_result_1
   when: update_method == '1'
 
 - name: create option 2 update python script
