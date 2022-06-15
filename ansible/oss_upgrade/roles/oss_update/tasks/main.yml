@@ -1,13 +1,29 @@
 ---
 # tasks file for oss_update
+- name: Validate Credentials
+  uri:
+    url: https://{{ director_ip }}:9182/vnms/appliance/appliance?offset=0&limit=2
+    method: GET
+    validate_certs: no
+    force_basic_auth: yes
+    user: "{{ username }}"
+    url_password: "{{ passwrd }}"
+    headers: 
+      Accept: application/json
+      Content-Type: application/json
+  register: results
+
+- debug:
+    var: results.status
+
 - name: create option 1 update python script
   template:
-    src: oss_pack_update_batch.j2
-    dest: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch.py
+    src: oss_pack_update_batch_option1.j2
+    dest: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch_option1.py
   when: update_method == '1'
 
 - name: run option 1 update python script
-  command: python3 .{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch.py
+  command: python3 .{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch_option1.py
   args:
     chdir: roles/oss_update/files
   with_first_found: site.yml
@@ -18,22 +34,22 @@
 
 - name: remove batch specific python file after running
   file:
-    path: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch.py
+    path: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch_option1.py
     state: absent
   when: update_method == '1'
 
 - debug:
-    var: python_result_1
+    var: stdout_lines
   when: update_method == '1'
 
 - name: create option 2 update python script
   template:
-    src: oss_pack_update_2_batch.j2
-    dest: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_2_batch.py
+    src: oss_pack_update_batch_option2.j2
+    dest: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch_option2.py
   when: update_method == '2'
 
 - name: run option 2 update python script
-  command: python3 .{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_2_batch.py
+  command: python3 .{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch_option2.py
   args:
     chdir: roles/oss_update/files
   with_first_found: site.yml
@@ -44,7 +60,7 @@
 
 - name: remove batch specific python file after running
   file:
-    path: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_2_batch.py
+    path: roles/oss_update/files/.{{ csv_batch_file }}_{{ oss_pack_version }}_oss_pack_update_batch_option2.py
     state: absent
   when: update_method == '2'
 

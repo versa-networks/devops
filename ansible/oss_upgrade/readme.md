@@ -1,15 +1,35 @@
 ##### Readme ansible folder
 
-
-## /oss_update
-
-
-- Tested in Ansible: 
+## Readme for oss_upgrade
+    - Tested in Python 3.10.4
+    - Tested on Director 21.2.2
+    - Tested on VOS 20.2.4 & 21.2.2
+	- Ansible:
 		- ansible [core 2.11.12]
 		- python version = 3.6.9 
-		- jinja version = 2.10  
--  Tested on Director 21.2.2
-- Tested on VOS 20.2.4 & 21.2.2
+		- jinja version = 2.10
+
+## Prerequisites 
+  - OSS pack must be downloaded to Director (UI: Administration->Inventory->OS Security Pack->Appliance)
+  - Batch file should be in role files directory.
+  - Reachability to Director is required.
+  - Devices should be in_sync with Director (UI: Administration->Appliances). Devices not in_sync will be skipped and 
+    identified in output files.
+
+
+## Executing the Python Scripts
+  - Run the ansible-playbook site.yml
+  - Select from the following options.
+	-	Option 1: Option 1 will update all devices listed in the batch file 1 at a time.  A device will be completed prior to 
+		moving onto the next device in the batch.
+	-	Option 2: Option 2 will update all devices listed in the batch file 5 at a time.  5 devices will be completed prior to 
+		moving onto the next group of 5 devices in the batch.
+
+## Output Files
+  - Output files will be saved in the role files directory.  The following is the nameing convention.
+    - batch file name_OSS_version_OSS Version Number.csv 
+    - batch file name_OSS_version_OSS Version Number.log
+
 
 ## file structure (tree)
 ```
@@ -20,9 +40,8 @@
 │       ├── defaults
 │       │   └── main.yml
 │       ├── files
-│       │   ├── batch_1-test.csv    #<not included in folder, example for batch file location>#
-│       │   ├── batch_all-test.csv  #<not included in folder, example for batch file location>#
-│       │   └── batch-test.csv      #<not included in folder, example for batch file location>#
+│       │   ├── batch-1-test.csv #<not included in folder, example for batch file location>#
+│       │   └── batch-2-test.csv #<not included in folder, example for batch file location>#
 │       ├── handlers
 │       │   └── main.yml
 │       ├── meta
@@ -31,8 +50,8 @@
 │       ├── tasks
 │       │   └── main.yml
 │       ├── templates
-│       │   ├── oss_pack_update_2_batch.j2
-│       │   └── oss_pack_update_2.j2
+│       │   ├── oss_pack_update_batch_option1.j2
+│       │   └── oss_pack_update_batch_option2.j2
 │       ├── tests
 │       │   ├── inventory
 │       │   └── test.yml
@@ -42,19 +61,18 @@
 └── site.yml
 ```
 
-## site.yml
-	- Playbook for user generated vars with the oss_update role.  This is the file to run (ansible-playbook site.yml).
-	- Option 1: Upgrade devices in batch 1 at a time.
-	- Option 2: Upgrade devices in batch concurrently.
-## roles/oss_update/tasks/main.yml
-	- Playbook for oss_update role.
-## roles/oss_update/templates/oss_pack_update_2_batch.j2 & oss_pack_update_batch.j2
-	- jinja 2 templates to generate executable .py files run by site.yml->main.yml
-## roles/oss_update/files/
-	- location to save user created batch files in .csv format.  An overall list of devices can be generated
-	  using the device_list.py script located in this folder.  This overall list can then be broken
-	  into batches.
-	- Playbook generated output files will be saved in this directory (.csv and .log)
 
+## Files in This Directory
+	- 	device_list.py: An overall list of devices can be generated using the device_list.py script located in this folder.  
+      	This overall list can then be brokeninto batches (e.g., Batches of 25 devices, new files = batch1.csv, batch2.csv., etc).
+	-	site.yml: Playbook for user generated vars with the oss_update role.  This is the file to run (ansible-playbook site.yml).
+	-	tasks/main.yml: Playbook for oss_update role.
+	-	templates/oss_pack_update_batch_option1.j2 & oss_pack_update_batch_option2.j2: jinja 2 templates to generate executable .py
+
+
+## Author Information
+------------------
+
+Kyle Murray - Versa Networks
 
 
