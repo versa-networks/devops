@@ -1,7 +1,6 @@
 ##### Readme ansible folder
 
 ## Readme for oss_upgrade
-    - Tested in Python 3.10.4
     - Tested on Director 21.2.2
     - Tested on VOS 20.2.4 & 21.2.2
 	- Ansible:
