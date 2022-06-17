@@ -6,3 +6,5 @@ Automation-Script-Fire Bulk APIs to Director Templates-Or-Devices
 TBD
 ## Security Automation Script to Generate Zone-DoS Traffic Validation
 TBD
+## Security Posture Evaluation Automation Script
+quickly assess the security posture of any end-user device
