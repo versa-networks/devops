@@ -1,0 +1,6 @@
+{
+    "method": "GET", 
+    "response": "200", 
+    "path": "/nextgen/deviceGroup?organization={{custName}}",
+    "payload": {}
+}

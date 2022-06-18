@@ -1,0 +1,5 @@
+{ "method" : "GET",
+   "response": "200",
+   "path"   : "/api/config/system/ntp/server?deep=true&offset=0&limit=25",
+   "payload" : { } 
+}

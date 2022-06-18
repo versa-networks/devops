@@ -1,0 +1,7 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/api/config/system/_operations/recovery/backup",
+   "payload" : {
+    "backup": { "include-package-dir": "false" }
+    }
+} 

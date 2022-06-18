@@ -1,0 +1,6 @@
+{ "method" : "GET",
+  "response": "200",
+  "path"   : "/api/config/devices/device/{{controllerName}}/config/oam:alarms?deep=true",
+  "response": "204",
+  "payload" : {}
+}

@@ -1,0 +1,5 @@
+{ "method" : "GET",
+   "response": "200",
+   "path"   : "/api/config/system/dns?deep=true",
+   "payload" : { } 
+}
