@@ -10,3 +10,7 @@ TBD
 quickly assess the security posture of any end-user device
 ## VMMigrate
 TBD
+## localDB_addUsers
+Automated script to add users to Configuration->Objects and 
+Connectors->Connectors->Users/Groups->Local Database.  Service Template,
+Device Template, and Device options.
