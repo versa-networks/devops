@@ -20,7 +20,7 @@
         "old_cntlr": [
             {
                 "name": "Controller-1", 
-                "orgName": "Verizon", 
+                "orgName": "Versa", 
                 "ip-address": "192.168.187.3", 
                 "org": "67989a25-cbca-4663-b43b-5e2d068708ac", 
                 "type": "controller", 
@@ -28,7 +28,7 @@
             }, 
             {
                 "name": "Controller-2", 
-                "orgName": "Verizon", 
+                "orgName": "Versa", 
                 "peerControllers": [
                     "Controller-1"
                 ], 
@@ -80,7 +80,7 @@
                 "director_southIP": "172.16.10.162"
             }
         ], 
-        "parentOrgName": "Verizon", 
+        "parentOrgName": "Versa", 
         "num_dir": 2, 
         "users": {
             "admin": "versa123", 
