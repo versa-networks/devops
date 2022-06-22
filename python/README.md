@@ -14,3 +14,7 @@ TBD
 Automated script to add users to Configuration->Objects and 
 Connectors->Connectors->Users/Groups->Local Database.  Service Template,
 Device Template, and Device options.
+## Bulk CPE Password Change
+Script for changing cli (admin) password of all the VOS cpes in an Organization
+## Clean Analytics Logs
+Script for deleting archive logs on an Analytics node for a given Organization
