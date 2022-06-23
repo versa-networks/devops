@@ -1,6 +1,6 @@
 # GENERAL
 
-The automation scripts are written in python and are meant to be executed on a Director.
+The automation scripts are written in python and are meant to be executed on a Director. The scripts allow you to provision the Director and the Controller.
 
 
 # PRE-REQUISITE
