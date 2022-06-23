@@ -1,0 +1,288 @@
+{ "method" : "PATCH",
+  "response": "200",
+   "path"   : "/vnms/template/serviceTemplate",
+   "payload" : {
+  "config": {
+    "interfaces:interfaces": {
+      "tvi": [
+        {
+          "name": "tvi-0/9999",
+          "description": "VZ Management Loopback",
+          "enable": "true",
+          "mtu": "1400",
+          "mode": "ipsec",
+          "type": "ipsec",
+          "unit": [
+            {
+              "name": "0",
+              "enable": "true",
+              "family": {
+                "inet": {
+                  "address": [
+                    {
+                      "addr": "{$v_VZ-MGMT_Loopback_Address-Prefix__vrAddress}"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "tvi-0/2626",
+          "description": "VZ-MGMT VRF {{custName}}-MGMT-Routing-Instance paired tunnel for hostbound traffic",
+          "enable": "true",
+          "mode": "ipsec",
+          "type": "paired",
+          "paired-interface": "tvi-0/2627",
+          "unit": [
+            {
+              "name": "0",
+              "enable": "true",
+              "family": {
+                "inet": {
+                  "address": [
+                    {
+                      "addr": "169.254.7.234/31"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "tvi-0/2627",
+          "description": "GRT VRF {{custName}}-MGMT-Routing-Instance paired tunnel for hostbound traffic",
+          "enable": "true",
+          "type": "paired",
+          "paired-interface": "tvi-0/2626",
+          "unit": [
+            {
+              "name": "0",
+              "enable": "true",
+              "family": {
+                "inet": {
+                  "address": [
+                    {
+                      "addr": "169.254.7.235/31"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "ntp:ntp": {
+      "server": [
+        {
+          "name": "{{pipNtp}}",
+          "source-interface": "tvi-0/9999.0",
+          "routing-instance": "{{custName}}-MGMT-Routing-Instance",
+          "enable": "true",
+          "version": "4"
+        },
+        {
+          "name": "{{pipNtp1}}",
+          "source-interface": "tvi-0/9999.0",
+          "routing-instance": "{{custName}}-MGMT-Routing-Instance",
+          "enable": "true",
+          "version": "4"
+        }
+      ]
+    },
+    "oam:alarms": {
+      "alarm": [
+        {
+          "name": "sdwan-datapath-down",
+          "destinations": [
+            "none"
+          ]
+        },
+        {
+          "name": "sdwan-datapath-sla-not-met",
+          "destinations": [
+            "none"
+          ]
+        },
+        {
+          "name": "vrrp-v3-proto-error",
+          "destinations": [
+            "none"
+          ]
+        },
+        {
+          "name": "config-change",
+          "destinations": [
+            "none"
+          ]
+        },
+        {
+          "name": "all",
+          "destinations": [
+            "analytics"
+          ]
+        }
+      ]
+    },
+    "org:orgs": {
+      "org": [
+        {
+          "name": "{{custName}}",
+          "services": [
+            "cgnat",
+            "sdwan"
+          ],
+          "available-routing-instances": [
+            "{{custName}}-MGMT-Routing-Instance"
+          ],
+          "owned-routing-instances": [
+            "{{custName}}-MGMT-Routing-Instance"
+          ],
+          "traffic-identification": {
+            "using": [
+              "tvi-0/9999.0",
+              "tvi-0/2626.0",
+              "tvi-0/2627.0"
+            ]
+          }
+        }
+      ]
+    },
+    "routing-module:routing-options": {
+      "static": {
+        "route": {
+          "static-route-list": [
+             {% for item in mlist %}
+              {
+                            "ip-prefix": "{{item['serverip']}}/32",
+                            "next-hop": "169.254.7.234",
+                            "interface": "none"
+              }{{"," if not loop.last else ""}}
+             {% endfor %}
+          ]
+        }
+      }
+    },
+    "routing-module:routing-instances": {
+      "routing-instance": [
+        {
+          "name": "{{custName}}-MGMT-Routing-Instance",
+          "instance-type": "vrf",
+          "global-vrf-id": "{{custOrgMGMTVrfId}}",
+          "interfaces": [
+            "tvi-0/9999.0",
+            "tvi-0/2626.0"
+          ],
+          "route-distinguisher": "{{custOrgMGMTVrfId}}L:{{custOrgMGMTVrfId}}",
+          "vrf-both-target": "target:{{custOrgMGMTVrfId}}L:{{custOrgMGMTVrfId}}",
+          "mpls-vpn-core-instance": "{{custName}}-Control-VR",
+          "policy-options": {
+            "redistribution-policy": [
+              {
+                "name": "Default-Policy-To-BGP",
+                "term": [
+                  {
+                    "term-name": "T1-Paired-TVI-Direct",
+                    "match": {
+                      "protocol": "direct",
+                      "address": "169.254.0.0/16"
+                    },
+                    "action": {
+                      "filter": "reject"
+                    }
+                  },
+                  {
+                    "term-name": "T2-DIRECT-VZ-MGMT",
+                    "match": {
+                      "protocol": "direct",
+                      "address": "{$v_VZ-MGMT_Loopback_Address-Prefix__vrAddress}"
+                    },
+                    "action": {
+                      "filter": "accept",
+                      "set-community": "64512:{{custOrgId}}",
+                      "set-origin": "igp",
+                      "set-local-preference": "110"
+                    }
+                  }
+                ]
+              }
+            ],
+            "redistribute-to-bgp": "Default-Policy-To-BGP"
+          }
+        }
+      ]
+    },
+    "sfc:service-node-groups": {
+      "service-node-group": [
+        {
+          "name": "default-sng",
+          "id": "0",
+          "type": "internal",
+          "services": [
+            "cgnat",
+            "sdwan"
+          ]
+        }
+      ]
+    },
+    "system:system": {
+      "banner-text": {
+        "ssh": "Verizon Managed Services\n\n This system is to be used by authorized Engineering personnel\n only. Individuals using this computer system without authority,\n or in excess of their authority, are subject to having all activities\n monitored and recorded by system personnel.\n\n\n Anyone using this system expressly consents to such monitoring and is\n advised that if such monitoring reveals possible evidence of criminal\n activity, system personnel may provide the evidence of such monitoring\n to law enforcement officials.\n"
+      },
+      "vnf-manager": {
+        "ip-addresses": [
+          "{$v_VZ-MGMT-Domain_Address-Prefix-0__vnfIpaddress}",
+          "{$v_VZ-MGMT-Domain_Address-Prefix-1__vnfIpaddress}"
+        ],
+        "vnf-mgmt-interfaces": [
+          "tvi-0/9999.0"
+        ]
+      },
+      "time-zone": "{$v_Timesettings_config__timezone}",
+      "users": [
+        {
+          "name": "vzuser",
+          "password": "{$v_Device_System_User_vzuser__systemUserPassword}",
+          "login": "shell",
+          "role": "admin"
+        },
+        {
+          "name": "admin",
+          "password": "{$v_Device_System_User_admin__systemUserPassword}",
+          "login": "shell",
+          "role": "admin"
+        },
+        {
+          "name": "versa",
+          "password": "{$v_Device_System_User_versa__systemUserPassword}",
+          "login": "shell",
+          "role": "admin"
+        }
+      ],
+      "service-options": {
+        "rx-descriptors-count": "2048",
+        "tx-descriptors-count": "2048"
+      },
+      "external-aaa": {
+        "auth-order": "remote-then-local",
+        "tacacs-plus": {
+          "server": [
+             {% for item in mlist %}
+               {
+                 "host": "{{item['serverip']}}",
+                 "key": "{{item['secret']}}"
+               }{{"," if not loop.last else ""}}
+             {% endfor %}
+          ],
+          "action": [
+            "authentication"
+          ]
+        }
+      }
+    }
+  }
+}
+}

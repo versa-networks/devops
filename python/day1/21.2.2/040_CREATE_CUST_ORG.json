@@ -1,0 +1,40 @@
+{ "method" : "POST",
+  "response": "200",
+   "path"   : "/vnms/sdwan/workflow/orgs/org",
+   "payload" : {
+  "versanms.sdwan-org-workflow": {
+    "cpeDeploymentType": "SDWAN",
+    "orgName": "{{custName}}",
+    "globalId": "{{custOrgId}}",
+    "parentOrg": "{{parentOrgName}}",
+    "ikeAuthType": "psk",
+    "sharedControlPlane": false,
+    "controllers": [
+          {% for name in controllerName %} 
+          "{{name}}" {{", " if not loop.last else ""}}
+          {% endfor %}
+    ],
+    "vrfs": [
+      {
+        "name": "{{custName}}-LAN-VR",
+        "description": "",
+        "mode": "create",
+        "id": {{custOrgVrfId}},
+        "enableVPN": "true"
+      },
+      {
+        "name": "{{custName}}-VZ-MGMT",
+        "description": "",
+        "mode": "create",
+        "id": {{custOrgMGMTVrfId}},
+        "enableVPN": "true"
+      }
+    ],
+    "analyticsClusters": [ 
+          {% for name in defaultAnalyticsClusterName %} 
+          "{{name}}" {{", " if not loop.last else ""}}
+          {% endfor %}
+     ]
+  }
+}
+}

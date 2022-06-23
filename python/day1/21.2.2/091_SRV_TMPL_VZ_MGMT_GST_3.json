@@ -1,0 +1,139 @@
+{ "method" : "PATCH",
+  "response": "200",
+   "path"   : "/vnms/template/serviceTemplate",
+   "payload" : {
+  "org-services": [
+    {
+      "name": "{{custName}}",
+      "cgnat:cgnat": {
+        "pools": {
+          "pool": [
+            {
+              "name": "Pool-Versa-Director",
+              "routing-instance": "{{custName}}-MGMT-Routing-Instance",
+              "egress-interface": [
+                "tvi-0/9999.0"
+              ],
+              "source-port": {
+                "allocation-scheme": "automatic"
+              }
+            },
+            {
+              "name": "Pool-VZ-MGMT",
+              "routing-instance": "{{custName}}-MGMT-Routing-Instance",
+              "egress-interface": [
+                "tvi-0/9999.0"
+              ],
+              "source-port": {
+                "allocation-scheme": "automatic"
+              }
+            }
+          ]
+        },
+        "rules": {
+          "rule": [
+            {
+              "name": "HostRule-Versa-Director",
+              "precedence": "110",
+              "paired-site": "false",
+              "from": {
+                "routing-instance": "{{custName}}-LAN-Routing-Instance",
+                "destination-address": [
+                  {% for item in dirlist %}
+                        "{{item}}/32" {{"," if not loop.last else ""}
+                   {% endfor %}
+                ],
+                "destination-port-range": {
+                  "low": "443",
+                  "high": "443"
+                }
+              },
+              "then": {
+                "translated": {
+                  "translation-type": "napt-44",
+                  "source-pool": "Pool-Versa-Director",
+                  "filtering-type": "none",
+                  "mapping-type": "none"
+                }
+              }
+            },
+            {
+              "name": "HostRule-VZ-MGMT",
+              "paired-site": "false",
+              "from": {
+                "source-zone": [
+                  "HOST-{{custName}}-MGMT-Routing-Instance-Zone"
+                ],
+                "destination-zone": [
+                  "INSIDE",
+                  "ptvi"
+                ]
+              },
+              "then": {
+                "translated": {
+                  "translation-type": "napt-44",
+                  "source-pool": "Pool-VZ-MGMT",
+                  "filtering-type": "none",
+                  "mapping-type": "none"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "lef:lef": {
+        "collector-groups": {
+          "collector-group": [
+            {
+              "collector-group-name": "Default-Collector-Group",
+              "suspend-backup-collectors": [
+                null
+              ]
+            }
+          ]
+        }
+      },
+      "security:objects": {
+        "addresses": {
+          "address": [
+            {% for item in dirlist %}
+             {
+              "name": "Director-{{loop.index}}-IP",
+              "ipv4-prefix": "{{item}}/32"
+             } {{"," if not loop.last else ""}}
+             {% endfor %}
+
+          ]
+        },
+        "address-groups": {
+          "group": [
+            {
+              "name": "Versa-Director-Portal",
+              "address-list": [
+                "Director-1-IP",
+                "Director-2-IP"
+              ]
+            }
+          ]
+        },
+        "zones": {
+          "zone": [
+            {
+              "name": "HOST-{{custName}}-MGMT-Routing-Instance-Zone",
+              "interface-list": [
+                "tvi-0/2626.0"
+              ]
+            },
+            {
+              "name": "INSIDE"
+            },
+            {
+              "name": "ptvi"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+}

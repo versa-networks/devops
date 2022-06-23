@@ -1,0 +1,41 @@
+{ "method" : "PATCH",
+  "response": "204",
+   "path"   : "/api/config/system",
+   "payload" : {
+    "system": {
+        "time-zone": "UTC",
+        "dns": {
+            "name-server": [
+                {
+                    "ip": "{{inetDns1}}"
+                },
+                {
+                    "ip": "{{inetDns2}}"
+                }
+            ],
+            "dns-search": [
+                {
+                    "domain": "{{dnsSearchDomain1}}"
+                }
+            ]
+        },
+        "ntp": {
+            "server": [
+                {
+                    "name": "{{pipNtp}}",
+                    "version": {{ntpServerVersion}}
+                },
+                {
+                    "name": "{{pipNtp1}}",
+                    "version": {{ntpServerVersion}}
+                }
+            ]
+        },
+        "settings": {
+            "purge-settings": {
+                "alarm-status-retain-days" : 1
+            }
+        }
+    }
+}
+}

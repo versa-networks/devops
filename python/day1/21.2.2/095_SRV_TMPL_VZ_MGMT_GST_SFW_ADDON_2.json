@@ -1,0 +1,48 @@
+{ "method" : "PATCH",
+  "response": "200",
+   "path"   : "/vnms/template/serviceTemplate",
+   "payload" : {
+  "org-services": [
+    {
+      "name": "{{custName}}",
+      "security:security": {
+        "access-policies": {
+          "access-policy-group": [
+            {
+              "name": "Default-Policy",
+              "rules": {
+                "access-policy": [
+                  {
+                    "name": "Allow_From_Hostbound_On_VZ-MGMT",
+                    "match": {
+                      "source": {
+                        "zone": {
+                          "zone-list": [
+                            "HOST-{{custName}}-MGMT-Routing-Instance-Zone"
+                          ]
+                        }
+                      }
+                    },
+                    "set": {
+                      "action": "allow"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "security:objects": {
+        "zones": {
+          "zone": [
+            {
+              "name": "HOST-{{custName}}-MGMT-Routing-Instance-Zone"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+}

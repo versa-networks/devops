@@ -1,0 +1,5 @@
+{ "method" : "GET",
+  "response": "200",
+   "path"   : "/vnms/sdwan/global/availableIds/VRF?count=1",
+   "payload" : {} 
+} 

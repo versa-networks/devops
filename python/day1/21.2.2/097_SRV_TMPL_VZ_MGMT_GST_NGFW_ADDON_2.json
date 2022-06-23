@@ -1,0 +1,28 @@
+{ "method" : "PATCH",
+  "response": "200",
+   "path"   : "/vnms/template/serviceTemplate",
+   "payload" : {
+  "config": {
+    "org:orgs": {
+      "org": [
+        {
+          "name": "{{custName}}",
+          "services": [
+            "nextgen-firewall"
+          ]
+        }
+      ]
+    },
+    "sfc:service-node-groups": {
+      "service-node-group": [
+        {
+          "name": "default-sng",
+          "services": [
+            "nextgen-firewall"
+          ]
+        }
+      ]
+    }
+  }
+}
+}

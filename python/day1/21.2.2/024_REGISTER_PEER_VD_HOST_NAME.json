@@ -1,0 +1,5 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/versa/analytics/auth/vdirectors",
+   "payload" : {"hostname":"{{directorHostName}}.sdsb.vzbi.com","registrationToken":null}
+} 

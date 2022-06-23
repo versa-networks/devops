@@ -1,0 +1,237 @@
+{ "method" : "PATCH",
+  "response": "200",
+   "path"   : "/vnms/template/serviceTemplate",
+   "payload" : {
+  "config": {
+    "org:orgs": {
+      "org-services": [
+        {
+          "name": "{{custName}}",
+          "sdwan:sd-wan": {
+            "policies": {
+              "sdwan-policy-group": [
+                {
+                  "name": "Default-Policy",
+                  "rules": {
+                    "rule": [
+                      {
+                        "name": "LAN_To_VZ-MGMT",
+                        "match": {
+                          "source": {
+                            "zoAne": {
+                              "zone-list": [
+                                "INSIDE"
+                              ]
+                            }
+                          },
+                          "destination": {
+                            "address": {
+                              "address-group-list": [
+                                "VZ-MGMT-Domain"
+                              ]
+                            }
+                          }
+                        },
+                        "set": {
+                          "action": "allow",
+                          "enforce-symmetric-forwarding": [
+                            null
+                          ],
+                          "routing-instance": "{{custName}}-MGMT-Routing-Instance"
+                        }
+                      },
+                      {
+                        "name": "VZ-MGMT_To_LAN",
+                        "match": {
+                          "source": {
+                            "address": {
+                              "address-group-list": [
+                                "VZ-MGMT-Domain"
+                              ]
+                            }
+                          },
+                          "destination": {
+                            "zone": {
+                              "zone-list": [
+                                "INSIDE"
+                              ]
+                            }
+                          }
+                        },
+                        "set": {
+                          "action": "allow",
+                          "enforce-symmetric-forwarding": [
+                            null
+                          ],
+                          "routing-instance": "{{custName}}-LAN-Routing-Instance"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "security:objects": {
+            "addresses": {
+              "address": [
+                {
+                  "name": "VZ-MGMT-Domain_Address-1",
+                  "ipv4-prefix": "{$v_VZ-MGMT-Domain_Destination_address-0__vrDestAddress}"
+                },
+                {
+                  "name": "VZ-MGMT-Domain_Address-2",
+                  "ipv4-prefix": "{$v_VZ-MGMT-Domain_Destination_address-1__vrDestAddress}"
+                }
+              ]
+            },
+            "address-groups": {
+              "group": [
+                {
+                  "name": "VZ-MGMT-Domain",
+                  "address-list": [
+                    "VZ-MGMT-Domain_Address-1",
+                    "VZ-MGMT-Domain_Address-2"
+                  ]
+                }
+              ]
+            },
+            "zones": {
+              "zone": [
+                {
+                  "name": "INSIDE"
+                },
+                {
+                  "name": "ptvi"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "routing-module:routing-instances": {
+      "routing-instance": [
+        {
+          "name": "{{custName}}-MGMT-Routing-Instance",
+          "instance-type": "vrf",
+          "policy-options": {
+            "redistribution-policy": [
+              {
+                "name": "Default-Policy-To-BGP",
+                "term": [
+                  {
+                    "term-name": "VZ-LAN-MGMT",
+                    "match": {
+                      "prefix-filter": "VZ-LAN-MGMT-Block"
+                    },
+                    "action": {
+                      "filter": "accept",
+                      "set-community": "64512:{{custOrgId}}",
+                      "set-origin": "igp",
+                      "set-local-preference": "110"
+                    }
+                  }
+                ]
+              }
+            ],
+            "instance-import": {
+              "from-instance": [
+                {
+                  "instance": "{{custName}}-LAN-Routing-Instance",
+                  "family": "inet",
+                  "policy": "VZ-LAN-MGMT-Instance-Import"
+                }
+              ]
+            },
+            "global-prefix-list": [
+              {
+                "prefix-list-name": "VZ-LAN-MGMT-Block",
+                "global-prefix-list-seq": [
+                  {
+                    "number": "1",
+                    "address-family": {
+                      "ipv4": {
+                        "address-mask": "{$v_VZ-LAN-MGMT-IP-Block-Prefix-0__vrAddress}",
+                        "ge_le": {
+                          "ge": "{$v_VZ-LAN-MGMT-IP-Block__Min_PrefixLength}",
+                          "le": "32"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "{{custName}}-LAN-Routing-Instance",
+          "instance-type": "vrf",
+          "routing-options": {
+            "static": {
+              "route": {
+                "rti-static-route-list": [
+                  {
+                    "ip-prefix": "{$v_VZ-MGMT-Domain_Destination_address-0__vrDestAddress}",
+                    "next-hop": "{{custName}}-MGMT-Routing-Instance",
+                    "interface": "none",
+                    "preference": "1",
+                    "tag": "{{custOrgId}}"
+                  },
+                  {
+                    "ip-prefix": "{$v_VZ-MGMT-Domain_Destination_address-1__vrDestAddress}",
+                    "next-hop": "{{custName}}-MGMT-Routing-Instance",
+                    "interface": "none",
+                    "preference": "1",
+                    "tag": "{{custOrgId}}"
+                  }
+                ]
+              }
+            }
+          },
+          "policy-options": {
+            "redistribution-policy": [
+              {
+                "name": "VZ-LAN-MGMT-Instance-Import",
+                "term": [
+                  {
+                    "term-name": "VZ-LAN-MGMT",
+                    "match": {
+                      "prefix-filter": "VZ-LAN-MGMT-Block"
+                    },
+                    "action": {
+                      "filter": "accept",
+                      "set-origin": "igp"
+                    }
+                  }
+                ]
+              }
+            ],
+            "global-prefix-list": [
+              {
+                "prefix-list-name": "VZ-LAN-MGMT-Block",
+                "global-prefix-list-seq": [
+                  {
+                    "number": "1",
+                    "permit-or-deny": "permit",
+                    "address-family": {
+                      "ipv4": {
+                        "address-mask": "{$v_VZ-LAN-MGMT-IP-Block-Prefix-0__vrAddress}",
+                        "ge_le": {
+                          "ge": "{$v_VZ-LAN-MGMT-IP-Block__Min_PrefixLength}",
+                          "le": "32"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
+}

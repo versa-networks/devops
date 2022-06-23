@@ -1,0 +1,69 @@
+{ "method" : "PATCH",
+  "response": "204",
+  "path" : "/api/config/devices/device/{{controllerName}}/config/orgs/org-services",
+  "payload" : {
+    "org-services": [
+        {
+            "name": "{{parentOrgName}}",
+            "adc:adc": {
+                "monitors": {
+                    "tcp": {
+                        "monitor": {
+                            "name": "monitorTcp",
+                            "interval": "5",
+                            "max-retries": "5",
+                            "timeout": "3",
+                            "downtime": "30",
+                            "alias-service-port": "1234",
+                            "reverse": "no"
+                        }
+                    }
+                },
+                "lb": {
+                    "servers": {
+                        {% for index, value in southip.items() %}
+                        "server": {
+                            "name": "LEF-Collector-Analytics-Cluster-2-{{index}}",
+                            "state": "enabled",
+                            "ip-address": "{{value}}",
+                            "port": "1234",
+                            "routing-instance": "{{parentOrgName}}-Control-VR",
+                            "http-monitors": [],
+                            "icmp-monitors": [],
+                            "tcp-monitors": [
+                                "monitorTcp"
+                            ],
+                            "type": "any"
+                        }{{"," if not loop.last else ""}}
+                        {% endfor %}
+                    },
+                    "server-pools": {
+                        "server-pool": {
+                            "name": "VAN-Pool",
+                            "type": "any",
+                            "load-balancing-algorithm": "round-robin"
+                        }
+                    },
+                    "virtual-services": {
+                        "virtual-service": [
+                            {
+                                "name": "VAN-VIP",
+                                "type": "any",
+                                "address": "{{tvi_esp}}",
+                                "port": 1234,
+                                "state": "enabled",
+                                "default-pool": "VAN-Pool",
+                                "mac-track": "disabled",
+                                "routing-instance": "{{parentOrgName}}-Control-VR",
+                                "lef-profile-default": false,
+                                "fallback-to-active": "enabled"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+} 
+       
+}

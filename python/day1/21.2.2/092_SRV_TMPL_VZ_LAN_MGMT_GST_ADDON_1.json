@@ -1,0 +1,12 @@
+{ "method" : "POST",
+  "response": "200",
+   "path"   : "/vnms/template/serviceTemplate",
+   "payload" : {
+  "versanms.templateData": {
+    "category": "general",
+    "composite_or_partial": "partial",
+    "name": "{{custName}}-VZ-LAN-MGMT-GST-ADDON",
+    "providerTenant": "{{custName}}"
+  }
+}
+}

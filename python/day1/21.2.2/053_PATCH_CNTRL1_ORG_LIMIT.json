@@ -1,0 +1,82 @@
+{ "method" : "PATCH",
+  "response": "204",
+  "path" : "/api/config/devices/device/{{controllerName}}/config/orgs/org",
+  "response": "204",
+  "payload" : {
+    "org": {
+        "name": "{{custName}}",
+        "services": ["sdwan"],
+        "available-routing-instances": [
+                "{{custName}}-VZ-MGMT"
+        ],
+        "owned-routing-instances": [
+             "{{custName}}-VZ-MGMT"
+        ],
+        "available-provider-orgs": "{{parentOrgName}}",
+        "traffic-identification": {
+            "using": [
+                "vni-0/3.0"
+            ]
+        },
+        "sdwan:sd-wan": {
+            "site": {
+                "global-tenant-id": "{{custOrgId}}",
+                "site-name": "{{controllerName}}",
+                "management-routing-instance": "{{custName}}-Control-VR",
+                "wan-interfaces": {
+                    "vni": [
+                        {
+                            "name": "vni-0/0.0",
+                            "sla-monitoring-policy": "SLAM_Policy_vni-0/0.0"
+                        },
+                        {
+                            "name": "vni-0/1.0",
+                            "sla-monitoring-policy": "SLAM_Policy_vni-0/1.0"
+                        }
+                    ]
+                },
+                "path-policy": [
+                    {
+                        "policy-name": "SLAM_Policy_vni-0/0.0",
+                        "terms": {
+                            "term": [
+                                {
+                                    "term-name": "To_All",
+                                    "action": {
+                                        "specific-config": {
+                                            "forwarding-class": [
+                                                {
+                                                    "fc": "fc_nc"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "policy-name": "SLAM_Policy_vni-0/1.0",
+                        "terms": {
+                            "term": [
+                                {
+                                    "term-name": "To_All",
+                                    "action": {
+                                        "specific-config": {
+                                            "forwarding-class": [
+                                                {
+                                                    "fc": "fc_nc"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+} 
+}

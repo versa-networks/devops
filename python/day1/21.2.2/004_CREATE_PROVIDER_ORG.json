@@ -1,0 +1,20 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/nextgen/organization",
+   "payload" : {
+  "uuid": "{{parentOrgUuid}}",
+  "id": {{parentOrgId}},
+  "name": "{{parentOrgName}}",
+  "authType": "psk",
+  "subscriptionPlan": "{{parentOrgSubPlan}}",
+  "vrfsGroups": [
+    {
+      "name": "{{parentOrgName}}-LAN-VR",
+      "vrfId": "{{parentVrfId}}",
+      "enable_vpn": "true"
+    }
+  ],
+  "sharedControlPlane": false,
+  "cpeDeploymentType": "SDWAN"
+} 
+} 

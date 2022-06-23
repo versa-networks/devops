@@ -1,0 +1,5 @@
+{ "method" : "PUT",
+  "response": "204",
+  "path"   : "/api/config/devices/device/{{controllerName}}/state/admin-state",
+  "payload" : {"admin-state":"southbound-locked"}
+} 

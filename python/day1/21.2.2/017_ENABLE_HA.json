@@ -1,0 +1,12 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/api/config/vnmsha/actions/_operations/enable-ha",
+   "payload" : {
+   "enable-ha": {
+      "mgmt-ip-address": "{{mgmntIpAddress}}",
+      "peer-mgmt-ip-address": "{{peerMgmntIpAddress}}",
+      "designated-master-mgmt-ip-address": "{{mgmntIpAddress}}",
+      "enable-auto-switchover": "false"
+   }
+ }
+}

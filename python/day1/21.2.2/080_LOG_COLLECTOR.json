@@ -1,0 +1,16 @@
+{ "method" : "POST",
+  "response": "200",
+   "path"   : "/versa/analytics/v1.0.0/lced/hosts/{{south_ip}}/log-collector-exporter/local/collectors",
+   "payload" : {
+        "collector": {
+           "collector-name" : "LC-{{num}}",
+           "address" : "{{south_ip}}",
+           "port" : "1234",
+           "storage" : {
+              "directory" : "/var/tmp/log",
+              "format" : "syslog",
+              "file-generation-interval" : "10"
+           }
+         }
+    }
+} 

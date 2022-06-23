@@ -1,0 +1,209 @@
+{
+    "Vnms": {
+        "parentOrgName": "Versa",
+        "parentOrgSubPlan": "Default-All-Services-Plan",
+        "parentOrgId": "junk",
+        "dns": {
+            "inetDns1": "192.6.1.1",
+            "inetDns2": "192.6.1.2",
+            "dnsSearchDomain1": "vpn.dev.ops.us.uu.net"
+        },
+        "ntp": {
+            "pipNtp": "166.34.79.1",
+            "pipNtp1": "166.34.79.2",
+            "ntpServerVersion": 4
+        },
+        "authConnector": {
+            "name": "External-Auth-TACAS",
+            "type": "tacacs",
+            "server-detail": [
+                {
+                    "serverip": "192.168.10.10",
+                    "port": 49,
+                    "secret": "$8$lN7LU4PVPgFUpafvbStZLhM4rmIBmOT5vkPN0ZHQtwc="
+                },
+                {
+                    "serverip": "192.168.10.11",
+                    "port": 49,
+                    "secret": "$8$BzRnj1ULX8CoNijM0VEnGzI1fJRnGAZthHMwCMcJ2Nk="
+                }
+            ]
+        },
+        "rel": "21.2.2",
+        "lo_addr": "10.10.10.11",
+        "directorHostName": "wbuatcc-ppdca1-2988005e002",
+        "directorIP": "192.168.236.2",
+        "users": {
+            "admin": "versa123",
+            "VZuser": "versa123"
+        },
+        "num_dir": 2,
+        "director": [
+            {
+                "directorHostName": "wbuatcc-ppdca1-2988005e002",
+                "directorIP": "192.168.236.2",
+                "lo_addr": "10.10.10.11"
+            },
+            {
+                "directorHostName": "wbuatcc-pldca2-2988007e002",
+                "directorIP": "192.168.236.66",
+                "lo_addr": "10.10.10.12"
+            }
+        ],
+        "num_cntlr": 2
+    },
+    "Analytics": [
+        {
+            "defaultAnalyticsClusterName1": "Analytics-Cluster-1",
+            "analyticsDefaultPortConnector": "8443",
+            "analyticsDefaultPort": "1234",
+            "num_analy": "5",
+            "Nodes": [
+                {
+                    "name": "wbuatcc-ppdca1-2988005e004",
+                    "type": "analytics",
+                    "northip": "192.168.236.4",
+                    "southip": "192.168.236.20"
+                },
+                {
+                    "name": "wbuatcc-ppdca1-2988005e005",
+                    "type": "analytics",
+                    "northip": "192.168.236.5",
+                    "southip": "192.168.236.21"
+                },
+                {
+                    "name": "wbuatcc-ppdca1-2988005e006",
+                    "type": "search",
+                    "northip": "192.168.236.6",
+                    "southip": "192.168.236.22"
+                },
+                {
+                    "name": "wbuatcc-ppdca1-2988005e007",
+                    "type": "search",
+                    "northip": "192.168.236.7",
+                    "southip": "192.168.236.23"
+                },
+                {
+                    "name": "wbuatcc-ppdca1-2988005e008",
+                    "type": "lf",
+                    "northip": "192.168.236.8",
+                    "southip": "192.168.236.24"
+                }
+            ]
+        },
+        {
+            "defaultAnalyticsClusterName1": "Analytics-Cluster-2",
+            "analyticsDefaultPortConnector": "8443",
+            "analyticsDefaultPort": "1234",
+            "num_analy": "5",
+            "Nodes": [
+                {
+                    "name": "wbuatcc-pldca2-2988007e004",
+                    "type": "analytics",
+                    "northip": "192.168.236.68",
+                    "southip": "192.168.236.84"
+                },
+                {
+                    "name": "wbuatcc-pldca2-2988007e005",
+                    "type": "analytics",
+                    "northip": "192.168.236.69",
+                    "southip": "192.168.236.85"
+                },
+                {
+                    "name": "wbuatcc-pldca2-2988007e006",
+                    "type": "search",
+                    "northip": "192.168.236.70",
+                    "southip": "192.168.236.86"
+                },
+                {
+                    "name": "wbuatcc-pldca2-2988007e007",
+                    "type": "search",
+                    "northip": "192.168.236.71",
+                    "southip": "192.168.236.87"
+                },
+                {
+                    "name": "wbuatcc-pldca2-2988007e008",
+                    "type": "lf",
+                    "northip": "192.168.236.72",
+                    "southip": "192.168.236.88"
+                }
+            ]
+        }
+    ],
+    "Controller": [
+        {
+            "controllerName": "wbuatc-Controller-1",
+            "siteId": "junk",
+            "stagingController": "true",
+            "postStagingController": "true",
+            "resourceType": "Baremetal",
+            "ipv4dhcp": "false",
+            "zipcode": "75025",
+            "state": "TX",
+            "country": "USA",
+            "longitude": "-99.901813",
+            "latitude": "31.968599",
+            "mgmt_ntwk_ipv4_addr": "192.168.236.3",
+            "cntrl_ntwk_ipv4_addr": "192.168.236.19",
+            "cntrl_ntwk_ipv4_mask": "28",
+            "cntrl_ntwk_ipv4_gtwy": "192.168.236.17",
+            "inet_ntwk_ipv4_addr": "192.168.236.34",
+            "inet_ntwk_ipv4_mask": "30",
+            "inet_ntwk_ipv4_gtwy": "192.168.236.33",
+            "inet_ntwk_public_ip": "152.182.72.10",
+            "pip_ntwk_ipv4_addr": "192.168.236.38",
+            "pip_ntwk_ipv4_mask": "30",
+            "pip_ntwk_ipv4_gtwy": "192.168.236.37",
+            "cntrl_gtwy_mnso_ipv4_addr": "192.168.236.42",
+            "cntrl_gtwy_mnso_ipv4_mask": "30",
+            "cntrl_gtwy_mnso_ipv4_gtwy": "192.168.236.41",
+            "cntlr_mnso_peer_as": "6078"
+        },
+        {
+            "controllerName": "wbuatc-Controller-2",
+            "siteId": "junk",
+            "stagingController": "true",
+            "postStagingController": "true",
+            "resourceType": "Baremetal",
+            "ipv4dhcp": "false",
+            "zipcode": "75025",
+            "state": "TX",
+            "country": "USA",
+            "longitude": "-99.901813",
+            "latitude": "31.968599",
+            "mgmt_ntwk_ipv4_addr": "192.168.236.67",
+            "cntrl_ntwk_ipv4_addr": "192.168.236.83",
+            "cntrl_ntwk_ipv4_mask": "28",
+            "cntrl_ntwk_ipv4_gtwy": "192.168.236.81",
+            "inet_ntwk_ipv4_addr": "192.168.236.98",
+            "inet_ntwk_ipv4_mask": "30",
+            "inet_ntwk_ipv4_gtwy": "192.168.236.97",
+            "inet_ntwk_public_ip": "152.182.72.175",
+            "pip_ntwk_ipv4_addr": "192.168.236.102",
+            "pip_ntwk_ipv4_mask": "30",
+            "pip_ntwk_ipv4_gtwy": "192.168.236.101",
+            "cntrl_gtwy_mnso_ipv4_addr": "192.168.236.106",
+            "cntrl_gtwy_mnso_ipv4_mask": "30",
+            "cntrl_gtwy_mnso_ipv4_gtwy": "192.168.236.105",
+            "cntlr_mnso_peer_as": "6077"
+        }
+    ],
+    "Customer": {
+        "custName": "Customer1",
+        "custOrgId": "junk",
+        "defaultIkeAuthType": "psk",
+        "custOrgVrfId": "junk",
+        "custOrgMGMTVrfId": "junk"
+    },
+    "Admin": {
+        "user": "Administrator",
+        "password": "versa123",
+        "vd_ip": "192.168.236.2",
+        "vd_rest_port": 9182,
+        "analy_ip": "192.168.236.4",
+        "analy_user": "admin",
+        "analy_password": "versa123",
+        "analy_rest_port1": "8443",
+        "analy_ip1": "192.168.236.68"
+    }
+}
