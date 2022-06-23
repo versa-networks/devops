@@ -9,7 +9,7 @@ TBD
 ## Security Posture Evaluation Automation Script
 quickly assess the security posture of any end-user device
 ## VMMigrate
-TBD
+Script to migrate all devices from Controller Complex 1 to Controller Complex 2
 ## localDB_addUsers
 Automated script to add users to Configuration->Objects and 
 Connectors->Connectors->Users/Groups->Local Database.  Service Template,
@@ -18,7 +18,5 @@ Device Template, and Device options.
 Script for changing cli (admin) password of all the VOS cpes in an Organization
 ## Clean Analytics Logs
 Script for deleting archive logs on an Analytics node for a given Organization
-## VMMigration
-Script to migrate all devices from Controller Complex 1 to Controller Complex 2
-## 
+## Day1
 Day1 scripts to provision the Director and the Controller
