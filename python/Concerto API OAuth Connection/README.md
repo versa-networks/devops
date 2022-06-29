@@ -12,13 +12,12 @@ Requisites:
 
 The following requisites should be met:
 
-1. curl installed
+1. Python Installed
 2. Concerto reachable over port 443
-3. Ubuntu Machine/Windows
 
 Tested on
-Ubuntu 20.04 LTS
-Curl 7.68.0
+Windows 11
+Python 3.10.5
 Concerto 11.2.1
 
 Working:
@@ -35,14 +34,11 @@ password="<<password>>"
 client_id="<<client_id>>" # For concerto-demo.versa-networks.com is "concerto"
 client_secret="<<client_secret>>" # For concerto-demo.versa-networks.com is "Concerto123@"
 concerto_url="<<https://concerto-fqdn>>" # For concerto-demo.versa-networks.com is "https://concerto-demo.versa-networks.com"
-file_dir="<<directory>>" #format "/tmp/"
-cookies_file="cookies.txt"
-access_token_file="access_token"
-cookies=${file_dir}${cookies_file} #No need to edit
-access_token=${file_dir}${access_token_file} #No need to edit
 
 Use of Access Token
 The access token needs to be passed to the server as a header. Key:Authorization Value: Bearer<<contents of access_token file>>. Cookies from the the script allso need to be passed to the server.
 
-Example
-curl -k -b "/tmp/cookies.txt" -H "Authorization: Bearer $(grep -w ".\*" /tmp/access_token)" -X GET "https://concerto-demo.versa-networks.com/portalapi/v1/inventory/view"
+Example get command using the access_token
+
+response = session.get(concerto_url+"/portalapi/v1/inventory/view", verify=False, cookies=session.cookies, headers=headers)
+print(json.dumps(response.json(), sort_keys=False, indent=4))
