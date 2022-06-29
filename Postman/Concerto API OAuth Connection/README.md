@@ -48,13 +48,13 @@ You will edit these variable in Postman under environments
 },
 {
 "key": "client_id",
-"value": "<<client_id>>", # For concerto-demo.versa-networks.com is "concerto"
+"value": "<<client_id>>", # For concerto-demo.versa-networks.com is ""
 "type": "default",
 "enabled": true
 },
 {
 "key": "client_secret",
-"value": "<<client_secret>>", # For concerto-demo.versa-networks.com is "Concerto123@"
+"value": "<<client_secret>>", # For concerto-demo.versa-networks.com is ""
 "type": "secret",
 "enabled": true
 },

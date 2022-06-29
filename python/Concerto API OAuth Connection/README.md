@@ -31,8 +31,8 @@ Vairables
 Replace everything inside of <<>>, with the correct information
 username="<<username>>"
 password="<<password>>"
-client_id="<<client_id>>" # For concerto-demo.versa-networks.com is "concerto"
-client_secret="<<client_secret>>" # For concerto-demo.versa-networks.com is "Concerto123@"
+client_id="<<client_id>>" # For concerto-demo.versa-networks.com is ""
+client_secret="<<client_secret>>" # For concerto-demo.versa-networks.com is ""
 concerto_url="<<https://concerto-fqdn>>" # For concerto-demo.versa-networks.com is "https://concerto-demo.versa-networks.com"
 
 Use of Access Token

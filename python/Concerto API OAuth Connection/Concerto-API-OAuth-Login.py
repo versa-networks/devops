@@ -12,9 +12,8 @@ PYTHONWARNINGS = "ignore:InsecureRequestWarning"
 # Replace everything inside of <<>>, with the correct information
 username = "<<username>>"
 password = "<<password>>"
-client_id = "<<client_id>>"  # For concerto-demo.versa-networks.com is "concerto"
-# For concerto-demo.versa-networks.com is "Concerto123@"
-client_secret = "<<client_secret>>"
+client_id = "<<client_id>>"  # For concerto-demo.versa-networks.com is ""
+client_secret = "<<client_secret>>"  # For concerto-demo.versa-networks.com is ""
 # For concerto-demo.versa-networks.com is "https://concerto-demo.versa-networks.com"
 concerto_url = "<<https://concerto-fqdn>>"
 
