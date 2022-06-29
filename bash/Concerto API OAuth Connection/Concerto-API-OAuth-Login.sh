@@ -1,10 +1,10 @@
 #!/bin/bash
 username="<<username>>"
 password="<<password>>"
-client_id="<<client_id>>"            # For concerto-demo.versa-networks.com is ""
-client_secret="<<client_secret"      # For concerto-demo.versa-networks.com is ""
-concerto_url="https://concerto-fqdn" # For concerto-demo.versa-networks.com is "https://concerto-demo.versa-networks.com"
-file_dir="/tmp/"                     # format "/tmp/"
+client_id="<<client_id>>"              # For concerto-demo.versa-networks.com is ""
+client_secret="<<client_secret"        # For concerto-demo.versa-networks.com is ""
+concerto_url="https://concerto-fqdn>>" # For concerto-demo.versa-networks.com is "https://concerto-demo.versa-networks.com"
+file_dir="/tmp/"                       # format "/tmp/"
 cookies_file="cookies.txt"
 access_token_file="access_token"
 
