@@ -27,6 +27,7 @@ Before you get started make sure you have the following information:
 3) The Director Administrator password ( Default is versa123 )
 4) The name of the CPE where the change ( or rule review ) is required.
 5) The name of the organization where the CPE is managed
+6) The name of the Access Policy group where the rules are located ( Default is Default-Policy )
 
 Worse case execute the script with the --help flag to remind you how it works.
 ```
