@@ -59,14 +59,20 @@ sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --p
 --> allow-dns has NO log profile
 --> allow-ssh has NO log enable
 --> allow-ssh has NO log profile
+```
 
+At this stage, you can confirm that you want to set the log knob on each rule where it's missing.
+```
 sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.100 --device BRANCH-11 --org Versa --group Default-Policy --action set-log
 --> setting log on rule allow-web
 --> setting log on rule deny-facebook
 --> setting log on rule deny-youtube
 --> setting log on rule allow-dns
 --> setting log on rule allow-ssh
+```
 
+And also set a the default log profile so logs get sent to Director for monitoring..
+```
 sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.100 --device BRANCH-11 --org Versa --group Default-Policy --action set-log-profile
 --> setting log profile on allow-web
 --> setting log profile on deny-facebook
