@@ -29,6 +29,8 @@ Before you get started make sure you have the following information:
 5) The name of the organization where the CPE is managed
 6) The name of the Access Policy group where the rules are located ( Default is Default-Policy )
 
+![Screenshot](demo-access-rules-before.jpg)
+
 Worse case execute the script with the --help flag to remind you how it works.
 ```
 % python3 access-rules-edit.py --help
