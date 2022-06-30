@@ -87,4 +87,4 @@ sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --p
 At the end you should get the following result in the Director WebUI. 
 ![Screenshot](demo-access-rules-after.jpg)
 
-Congrat you just saved yourself 5 min of your precious time with :)
+Congrat you just saved yourself 5 min of your precious time :)
