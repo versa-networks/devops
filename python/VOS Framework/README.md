@@ -82,7 +82,9 @@ sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --p
 --> setting log profile on deny-youtube
 --> setting log profile on allow-dns
 --> setting log profile on allow-ssh
-
 ```
 
+At the end you should get the following result in the Director WebUI. 
+![Screenshot](demo-access-rules-after.jpg)
 
+Congrat you just saved yourself 5 min of your precious time with :)
