@@ -1,11 +1,7 @@
-## VOS Configuration Framework  ?
-This repository will list various python scripts to help the field with tedious tasks in VOS such as changing the log settings on hundreds of access rules. 
-
 ## Explanation & Motivation
 The script was created during my ramp-up to better understand the Director API and get quicker to execute some changes on my CPEs during Labs & Demo.
 
 ## Purpose of the script
-So far only one script exist ( I might add more in the future ). 
 - access-rules-edit.py : The script will inspect every access rules on a CPE and check if logs & logs profiles are enable. If not it can proceed with 3 differents actions:
 1) Diplay the rule in the terminal.
 2) Enable log in the rule.
