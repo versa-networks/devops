@@ -20,3 +20,5 @@ Script for changing cli (admin) password of all the VOS cpes in an Organization
 Script for deleting archive logs on an Analytics node for a given Organization
 ## Day1
 Day1 scripts to provision the Director and the Controller
+## VOS Framework
+A script to automate NG Firewall rule changes on VOS.
