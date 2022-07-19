@@ -1,8 +1,21 @@
 ## Purpose of the script
-- access-rules-edit.py : The script will inspect every access rules on a CPE and check if logs & logs profiles are enable. If not it can proceed with 3 differents actions:
-1) Diplay the rule in the terminal.
-2) Enable log in the rule.
-3) Enable the Default-Logging-Profile in the rule.
+- access-rules-edit.py : The script will inspect every access rules on a CPE and execute one of the actions below :
+
+1) display           : Display the rule name
+2) set.log           : Set logging on the rule 
+3) set.log.profile   : Set a log profile on the rule
+4) set.rule.disable  : Disable the rule
+5) set.rule.enable   : Enable the rule
+
+In addition the script can execute those action for a subset of the existing rules based on a filter such as:
+
+1) has.no.log           : Match rules with no log settings
+2) has.log              : Match rules with log settings
+3) has.no.log.profile   : Match rules with no log-profile settings
+4) has.log.profile      : Match rules if a log-profile exist
+5) is.enable            : Match enabled rules
+6) is.disable           : Match disabled rules
+7) none                 : Match any rules
 
 ## Installation and Dependencies
 You will need python3 as well as differents python package. They can be installed locally with pip3
@@ -29,7 +42,7 @@ Worse case execute the script with the --help flag to remind you how it works.
 % python3 access-rules-edit.py --help
 usage: access-rules-edit.py [-h] [--ip IP] [--device DEVICE] [--org ORG] [--group GROUP] [--user USER] [--password PASSWORD] [--action ACTION]
 
-Script to change the log settings of a VOS CPEs accross ALL its access policies
+Script to change the settings of a VOS CPEs accross ALL its access policies
 
 optional arguments:
   -h, --help           show this help message and exit
@@ -39,12 +52,13 @@ optional arguments:
   --group GROUP        Policy Group Name
   --user USER          GUI username of Director
   --password PASSWORD  GUI password of Director
-  --action ACTION      Action to be taken on the offending rules (display / set-log / set-log-profile)
+  --action ACTION      Action to be taken on the offending rules. Use --action help for details
+  --filter FILTER      Filter to be applied to limit the scope of the action. Use --filter help for details
 ```
    
-Once you have the information, you can decide to display the rules where log settings( and log-profile ) are missing
+The example below will display every rules from the CPE BRANCH-11 where log-profile are missing.
 ```
-sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.100 --device BRANCH-11 --org Versa --group Default-Policy --action display
+sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.254 --device BRANCH-11 --org Versa --group Default-Policy --action display --filter has.no.log.profile
 --> allow-web has NO log enable
 --> allow-web has NO log profile
 --> deny-facebook has NO log enable
@@ -59,7 +73,7 @@ sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --p
 
 At this stage, you can confirm that you want to set the log knob on each rule where it's missing.
 ```
-sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.100 --device BRANCH-11 --org Versa --group Default-Policy --action set-log
+sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.254 --device BRANCH-11 --org Versa --group Default-Policy --action set.log --filter has.no.log.profile
 --> setting log on rule allow-web
 --> setting log on rule deny-facebook
 --> setting log on rule deny-youtube
@@ -69,7 +83,7 @@ sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --p
 
 And also set a the default log profile so logs get sent to Director for monitoring..
 ```
-sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.100 --device BRANCH-11 --org Versa --group Default-Policy --action set-log-profile
+sly@MacBook versa-policy % python3 access-rules-edit.py --user Administrator --password versa123 --ip 10.43.43.254 --device BRANCH-11 --org Versa --group Default-Policy --action set.log.profile --filter has.no.log.profile
 --> setting log profile on allow-web
 --> setting log profile on deny-facebook
 --> setting log profile on deny-youtube
