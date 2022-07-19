@@ -132,6 +132,3 @@ if __name__ == '__main__':
 
     for rule in json_output['access-policy']:
         exec_action(rule,filter)
-        #Multi Thread : Does not work very well
-        #new_thread = Thread(target=exec_action, args=(rule,filter))
-        #new_thread.start()
