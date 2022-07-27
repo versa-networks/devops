@@ -1,0 +1,101 @@
+{
+    "method": "POST",
+    "response": "200",
+    "path": "/vnms/sdwan/workflow/templates/template",
+    "payload": {
+  "versanms.sdwan-template-workflow": {
+    "analyticsCluster": "Analytics-Cluster-1",
+    "bandwidth": "5",
+    "licensePeriod": "1",
+    "controllers": [
+      {% for name in controllerName %}
+          "{{name}}" {{", " if not loop.last else ""}}
+          {% endfor %}
+    ],
+    "deviceFirmfactor": 6,
+    "deviceType": "full-mesh",
+    "diaConfig": {
+      "loadBalance": false
+    },
+    "isStaging": false,
+    "lanInterfaces": [
+      {
+        "interfaceName": "vni-0/2",
+        "interfaceName": "vni-0/{{lan_intfnum}}",
+        "unitInfo": [
+          {
+            "vlanId": "0",
+            "subOrganization": "{{custName}}",
+            "vrfName": "{{custName}}-LAN-VR",
+            "networkName": "LAN",
+            "subUnit": "0",
+            "ipv4Static": true,
+            "ipv4Dhcp": false,
+            "ip6Static": false,
+            "ipv6Dhcp": false,
+            "ipv4DhcpServer": false,
+            "dhcpv4Profile": null,
+            "dhcpV4Relay": false,
+            "dhcpV4RelayAddress": null
+          }
+        ]
+      }
+    ],
+    "providerOrg": {
+      "name": "{{custName}}",
+      "nextGenFW": true,
+      "statefulFW": false
+    },
+    "redundantPair": {
+      "enable": false
+    },
+    "routingInstances": [
+      
+    ],
+    "siteToSiteTunnels": [
+      
+    ],
+    "snmp": {
+      
+    },
+    "solutionTier": "Premier-Elite-SDWAN",
+    "splitTunnels": [
+      
+    ],
+    "subOrgs": [
+      
+    ],
+    "templateName": "{{templateName}}",
+    "templateType": "sdwan-post-staging",
+    "wanInterfaces": [
+	{% for dict_item in wan_list %}
+      {
+        "pppoe": false,
+        "interfaceName": "vni-0/{{dict_item['intfnum']}}",
+        "unitInfo": [
+          {
+            "vlanId": "0",
+            "networkName": "{{dict_item['ntwkName']}}",
+            "routing": {
+              
+            },
+            "subUnit": "0",
+            "ipv4Static": false,
+            "ipv4Dhcp": true,
+            "ip6Static": false,
+            "ipv6Dhcp": false,
+            "transportDomains": [
+              "{{dict_item['trnsptDomain']}}"
+            ]
+          }
+        ]
+      } {{"," if not loop.last else ""}}
+            {% endfor %}
+    ],
+    "l2Interfaces": [
+      
+    ],
+    "stp": "RSTP"
+  }
+}
+}
