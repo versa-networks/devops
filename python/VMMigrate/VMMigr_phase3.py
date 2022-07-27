@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+#si sw=2 sts=2 et
 import os, sys, signal, argparse
 import jinja2
 from jinja2.utils import concat
@@ -37,6 +37,7 @@ mlog = None
 mdict = None
 MYLINES = 0
 MYCOL = 0
+args = None
 
 class bcolors:
   """ the background colors
@@ -60,6 +61,7 @@ def argcheck():
   parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),description='%(prog)s Help:',usage='%(prog)s -f filename [options]', add_help=False)
   parser.add_argument('-f','--file',required=True, help='input file [required ]' )
   parser.add_argument('-d','--debug',default=0, help='set/unset debug flag')
+  parser.add_argument('-t','--test',action='store_true', help='set/unset test flag')
 
   try:
     args = vars(parser.parse_args())
@@ -1159,12 +1161,12 @@ def device_connect(vd_data,device=None,_cntlr=2):
         if len(resp_str) > 3:
           jstr = json_loads(resp_str)
           if "output" in jstr and "result" in  jstr["output"] and jstr["output"]["result"] == 1: 
-            mlog.warn("Director with IP {0} is able to connect to device {1} for Controlller {2}".format(vd_data['vd_ip'],device["name"],str(_cntlr)))
+            mlog.warn("Director with IP {0} is able to connect to device {1} for Controller {2}".format(vd_data['vd_ip'],device["name"],str(_cntlr)))
             found = 1
             break
 
     if found == 0:
-      mlog.error("Director with IP {0} is NOT able to connect to device {1} for Controlller {2}".format(vd_data['vd_ip'],device["name"],str(_cntlr)))
+      mlog.error("Director with IP {0} is NOT able to connect to device {1} for Controller {2}".format(vd_data['vd_ip'],device["name"],str(_cntlr)))
       return
 
     if _cntlr == 2:
@@ -1216,7 +1218,7 @@ def get_n_process_appliance_list( vd_data):
     resp2 = '202'
     _uri = "/vnms/appliance/appliance"
     _payload = {}
-    vdict = {}
+    ret = 1
 
     count = 0
     totalcnt = -1
@@ -1298,6 +1300,165 @@ def my_split_string(_str, n):
     my_list = [_str[index : index + n] for index in range(0, len(_str), n)]
     return my_list
 
+def read_input_from_user(_option, _comb_dict):
+
+    if _option == 2:
+      _str = (bcolors.OKWARN + "Choose a number or multiple numbers separated by spaces" 
+                  " to continue moving Controller-2 or enter 0 to start moving Controller-1  or enter -1 to view the table: " + bcolors.ENDC)
+    else: 
+      _str = (bcolors.OKWARN + "Choose a number or multiple numbers separated by spaces"
+                  " to continue moving Controller-1 or enter 0 to quit the program or  enter -1 to view the table: " + bcolors.ENDC)
+      
+    while 1:
+      output_list = []
+      err = 0
+      try:
+        if pyVer.major== 3:
+          inp=input(_str)
+        else:
+          inp=raw_input(_str)
+        inp_list = inp.split()
+        # first check if all the numbers are integers
+        for elem in inp_list:
+          num = int(elem) # if the user enters a bad number there will be an exception
+          if num == 0: return [num], 1
+          elif num == -1: 
+            print_device_table(_comb_dict)
+            err = 1
+            break
+          elif num in _comb_dict:
+            if (_option == 2 and "status" in _comb_dict[num] and  
+                  (_comb_dict[num]["status"] == "C2-Complete" or _comb_dict[num]["status"] == "C12-Complete")):
+              print("Controller 2 Migration is complete. Re-enter a different the number to continue")
+              err = 1
+              break
+            elif _option == 1 and "status" in _comb_dict[num] and _comb_dict[num]["status"] == "C12-Complete":
+              print("Controller 1 and 2 Migration is complete. Re-enter a different the number to continue")
+              err = 1
+              break
+            elif _option == 1 and "status" not in _comb_dict[num]:
+              print("Can not migrate Controller 1 before Controller 2 Migration is complete. Re-enter a different the number to continue")
+              err = 1
+              break
+            else:  
+              # Capture the number
+              output_list.append(num)
+          else:
+            print("Re-enter the number to continue")
+            err = 1
+            break
+      except Exception as ex:
+        print("I did not understand your input. Please re-enter the numbers to continue")
+        continue
+
+      if err == 0 and len(output_list) > 0:
+        return output_list, len(output_list)
+
+def print_device_table(comb_dict ):
+    global vnms, analy, cntlr, cust, admin, auth, debug, mlog, MYLINES, MYCOL
+
+    pcol0=6  # the Id
+    pcol1=15 # the Status
+    pcol2=int(MYCOL/4) # the Name
+    pcol3=int(MYCOL/4) # the Post Staging Template
+    pcol4=int(MYCOL/4) # the Device Group
+    pcol5=14 # the Dir Status
+
+
+    # The 7 is the 7 "|"
+    print("-" * int(pcol0+pcol1+pcol2+pcol3+pcol4+pcol5+7))
+    #print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".format("BIdx","Name","P-STemplate","DG-Group","Status","NewDir Status",
+    #                                          col0=6,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
+    print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".format("BIdx","Status","Name","P-STemplate","DG-Group","NewDir Status",
+                                              col0=pcol0,col1=pcol1,col2=pcol2,col3=pcol3,col4=pcol4,col5=pcol5))
+    print("-" * int(pcol0+pcol1+pcol2+pcol3+pcol4+pcol5+7))
+    cnt = 0
+    out_line = MYLINES
+    new_out_line = out_line
+
+    for _key,v in comb_dict.items():
+      cnt = cnt + 1
+      namelist = []
+      post_staginglist = []
+      dg_grouplist = []
+      #if len(v['name']) > pcol1:
+      namelist = my_split_string(v['name'], pcol2)
+      #if len(v['poststaging-template']) > pcol2: 
+      post_staginglist = my_split_string(v['poststaging-template'], pcol3)
+      #if len(v['dg-group']) > pcol3:
+      dg_grouplist = my_split_string(v["dg-group"], pcol4)
+      # find the max of 3 values to determine how many lines we need to add. If the max is 1 we do not need to add any lines
+      mymax = max( len(namelist), len(post_staginglist), len(dg_grouplist))
+      #cnt = cnt + mymax
+      if mymax != 1 :
+        new_out_line = new_out_line - mymax + 1
+
+      new_dirstatus = "OK" if v['deployed'] == "1" else "N_OK"
+      if "status" in v:
+        if mymax == 1:
+          #print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{green}{4:<{col4}}{endc}|{5:<{col5}}|".
+          #        format(_key,v['name'],v['poststaging-template'],
+          #        v['dg-group'],v['status'],new_dirstatus, green=bcolors.OKGREEN,endc=bcolors.ENDC,
+          #        col0=6,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
+          print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{green}{4:<{col4}}{endc}|{5:<{col5}}|".
+                  format(_key,v['status'],v['name'],v['poststaging-template'],
+                  v['dg-group'],new_dirstatus, green=bcolors.OKGREEN,endc=bcolors.ENDC,
+                  col0=pcol0,col1=pcol1,col2=pcol2,col3=pcol3,col4=pcol4,col5=pcol5))
+        else:
+          for i in range(mymax):
+            _namelist = "" if i >= len(namelist) else namelist[i]
+            _post_staginglist = "" if i >= len(post_staginglist) else post_staginglist[i]
+            _dg_grouplist = "" if i >= len(dg_grouplist) else dg_grouplist[i]
+            _nd_status = new_dirstatus  if i == 0 else ""
+            _keyl = "" if i > 0 else _key
+            _statusl = "" if i > 0 else v['status']
+            #print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{green}{4:<{col4}}{endc}|{5:<{col5}}|".
+            #      format(_keyl,_namelist,_post_staginglist,
+            #      _dg_grouplist,_statusl, _nd_status,
+            #      green=bcolors.OKGREEN,endc=bcolors.ENDC,
+            #      col0=6,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
+            print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{green}{4:<{col4}}{endc}|{5:<{col5}}|".
+                  format(_keyl,_statusl,_namelist,_post_staginglist,
+                  _dg_grouplist, _nd_status, green=bcolors.OKGREEN,endc=bcolors.ENDC,
+                  col0=pcol0,col1=pcol1,col2=pcol2,col3=pcol3,col4=pcol4,col5=pcol5))
+
+
+      else : 
+        if mymax == 1:
+          print("|{0:<{col0}}|{warn}{1:<{col1}}{endc}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".
+                  format(_key,"NotComplete",v['name'],v['poststaging-template'],
+                  v['dg-group'],new_dirstatus, warn=bcolors.OKWARN,endc=bcolors.ENDC,
+                  col0=pcol0,col1=pcol1,col2=pcol2,col3=pcol3,col4=pcol4,col5=pcol5))
+        else:
+          for i in range(mymax):
+            _namelist = "" if i >= len(namelist) else namelist[i]
+            _post_staginglist = "" if i >= len(post_staginglist) else post_staginglist[i]
+            _dg_grouplist = "" if i >= len(dg_grouplist) else dg_grouplist[i]
+            _nd_status = new_dirstatus  if i == 0 else ""
+            _keyl = "" if i > 0 else _key
+            _statusl = "" if i > 0 else "NotComplete"
+            print("|{0:<{col0}}|{warn}{1:<{col1}}{endc}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".
+                  format(_keyl,_statusl,_namelist,_post_staginglist,
+                  _dg_grouplist, _nd_status,
+                  warn=bcolors.OKWARN,endc=bcolors.ENDC,
+                  col0=pcol0,col1=pcol1,col2=pcol2,col3=pcol3,col4=pcol4,col5=pcol5))
+
+      if  cnt%new_out_line == 0 and _key !=  len(comb_dict) :
+        #print(new_out_line)
+        print("-" * int(pcol0+pcol1+pcol2+pcol3+pcol4+pcol5+7))
+        yes_or_no3("Press y or n to continue" )
+        print("-" * int(pcol0+pcol1+pcol2+pcol3+pcol4+pcol5+7))
+        print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".
+                          format("Idx","Status","Name","P-STemplate","DG-Group","NewDir Status",
+                          col0=pcol0,col1=pcol1,col2=pcol2,col3=pcol3,col4=pcol4,col5=pcol5))
+        print("-" * int(pcol0+pcol1+pcol2+pcol3+pcol4+pcol5+7))
+        #Now reset things back
+        new_out_line = out_line 
+        cnt = 0
+
+    print("-" * int(pcol0+pcol1+pcol2+pcol3+pcol4+pcol5+7))
+
+
 def get_devices_list( _all_device, _batch_device, _batch_device_num, option=2):
     global vnms, analy, cntlr, cust, admin, auth, debug, mlog, MYLINES, MYCOL
 
@@ -1312,126 +1473,19 @@ def get_devices_list( _all_device, _batch_device, _batch_device_num, option=2):
 
     mlog.warn(bcolors.OKWARN + "==============Moving Controller-{0} ==========".format(str(option)) + bcolors.ENDC)
     cnt_list = list(range(1,len(glbl.vnms.data['newdevicelist'])+1))
-    comb_dict=dict(zip(cnt_list,glbl.vnms.data['newdevicelist']))
-    pcol1=int(MYCOL/4)
-    pcol2=int(MYCOL/4)
-    pcol3=int(MYCOL/4)
-
-
-    print("-" * int(4+pcol1+pcol2+pcol3+15+6+15))
-    print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".format("Idx","Name","P-STemplate","DG-Group","Status","NewDir Status",
-                                              col0=4,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
-    print("-" * int(4+pcol1+pcol2+pcol3+15+6+15))
-    cnt = 0
-    out_line = MYLINES
-    new_out_line = out_line
-
-    for _key,v in comb_dict.items():
-      cnt = cnt + 1
-      namelist = []
-      post_staginglist = []
-      dg_grouplist = []
-      #if len(v['name']) > pcol1:
-      namelist = my_split_string(v['name'], pcol1)
-      #if len(v['poststaging-template']) > pcol2: 
-      post_staginglist = my_split_string(v['poststaging-template'], pcol2)
-      #if len(v['dg-group']) > pcol3:
-      dg_grouplist = my_split_string(v['poststaging-template'], pcol3)
-      # find the max of 3 values to determine how many lines we need to add. If the max is 1 we do not need to add any lines
-      mymax = max( len(namelist), len(post_staginglist), len(dg_grouplist))
-      #cnt = cnt + mymax
-      if mymax != 1 :
-        new_out_line = new_out_line - mymax + 1
-
-      new_dirstatus = "OK" if v['deployed'] == "1" else "N_OK"
-      if "status" in v:
-        if mymax == 1:
-          print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{green}{4:<{col4}}{endc}|{5:<{col5}}|".
-                  format(_key,v['name'],v['poststaging-template'],
-                  v['dg-group'],v['status'],new_dirstatus, green=bcolors.OKGREEN,endc=bcolors.ENDC,
-                  col0=4,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
-        else:
-          for i in range(mymax):
-            _namelist = "" if i >= len(namelist) else namelist[i]
-            _post_staginglist = "" if i >= len(post_staginglist) else post_staginglist[i]
-            _dg_grouplist = "" if i >= len(dg_grouplist) else dg_grouplist[i]
-            _nd_status = new_dirstatus  if i == 0 else ""
-            _keyl = "" if i > 0 else _key
-            _statusl = "" if i > 0 else v['status']
-            print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{green}{4:<{col4}}{endc}|{5:<{col5}}|".
-                  format(_keyl,_namelist,_post_staginglist,
-                  _dg_grouplist,_statusl, _nd_status,
-                  green=bcolors.OKGREEN,endc=bcolors.ENDC,
-                  col0=4,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
-
-
-      else : 
-        if mymax == 1:
-          print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{warn}{4:<{col4}}{endc}|{5:<{col5}}|".
-                  format(_key,v['name'],v['poststaging-template'],
-                  v['dg-group'],"NotComplete",new_dirstatus, warn=bcolors.OKWARN,endc=bcolors.ENDC,
-                  col0=4,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
-        else:
-          for i in range(mymax):
-            _namelist = "" if i >= len(namelist) else namelist[i]
-            _post_staginglist = "" if i >= len(post_staginglist) else post_staginglist[i]
-            _dg_grouplist = "" if i >= len(dg_grouplist) else dg_grouplist[i]
-            _nd_status = new_dirstatus  if i == 0 else ""
-            _keyl = "" if i > 0 else _key
-            _statusl = "" if i > 0 else "NotComplete"
-            print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{warn}{4:<{col4}}{endc}|{5:<{col5}}|".
-                  format(_keyl,_namelist,_post_staginglist,
-                  _dg_grouplist,_statusl, _nd_status,
-                  warn=bcolors.OKWARN,endc=bcolors.ENDC,
-                  col0=4,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
-
-      if  cnt%new_out_line == 0 and _key !=  len(comb_dict) :
-        #print(new_out_line)
-        print("-" * int(4+pcol1+pcol2+pcol3+15+6+15))
-        yes_or_no3("Press y or n to continue" )
-        print("-" * int(4+pcol1+pcol2+pcol3+15+6+15))
-        print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".
-                          format("Idx","Name","P-STemplate","DG-Group","Status","NewDir Status",
-                          col0=4,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
-        print("-" * int(4+pcol1+pcol2+pcol3+15+6+15))
-        #Now reset things back
-        new_out_line = out_line 
-        cnt = 0
-
-    print("-" * int(4+pcol1+pcol2+pcol3+15+6+15))
+    bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['devices']))
+    comb_dict=dict(zip(bId_list,glbl.vnms.data['newdevicelist']))
+    #print_device_table(comb_dict)
 
     if _all_device == 1:
-      return [range(1,count), count, comb_dict ]
+      return bId_list, len(bId_list), comb_dict 
     elif _batch_device == 1 and _batch_device_num > 0 : 
-      return [range(1,count), _batch_device_num, comb_dict ]
+      return bId_list, _batch_device_num, comb_dict
     else:
       pass
-
-    while 1:
-      if option == 2:
-        _str = bcolors.OKWARN + "Choose a number to continue moving Controller-2 or enter 0 to start moving Controller-1 : " + bcolors.ENDC
-      else : 
-        _str = bcolors.OKWARN + "Choose a number to continue moving Controller-1 or enter 0 to quit the program : " + bcolors.ENDC
-      try:
-        if pyVer.major== 3:
-          num=int(input(_str))
-        else:
-          num=int(raw_input(_str))
-        if num == 0: return [[num], 0, None]
-        elif num in comb_dict:
-          if (option == 2 and "status" in comb_dict[num] and  
-                (comb_dict[num]["status"] == "C2-Complete" or comb_dict[num]["status"] == "C12-Complete")):
-            print("Controller 2 Migration is complete. Re-enter a different the number to continue")
-          elif option == 1 and "status" in comb_dict[num] and comb_dict[num]["status"] == "C12-Complete":
-            print("Controller 1 and 2 Migration is complete. Re-enter a different the number to continue")
-          elif option == 1 and "status" not in comb_dict[num]:
-            print("Can not migrate Controller 1 before Controller 2 Migration is complete. Re-enter a different the number to continue")
-          else:  
-            return [[num], 1, comb_dict]
-        else:
-          print("Re-enter the number to continue")
-      except:
-          print("I did not understand your input. Please re-enter the number to continue")
+    
+    output_list, num_devices = read_input_from_user(option, comb_dict)
+    return output_list, num_devices, comb_dict
 
 
 def yes_or_no(question, option=0):
@@ -1508,14 +1562,23 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
     #mlog.warn(bcolors.OKWARN + "==============Moving Controller-{0} ==========".format(str(_cntlr)) + bcolors.ENDC)
     newvdict = {}
     dir_items = sorted(os.listdir(template_path))
+    # manipulate the dir_items list depending on whether we choose template of device. Default is device
+    new_dir_items = None
+    if tmpl_device == 1:
+       new_dir_items = list(filter(lambda x: re.match(r'^\d2\d_.+\.json$', x), dir_items))
+    else:
+       new_dir_items = list(filter(lambda x: re.match(r'^\d1\d_.+\.json$', x), dir_items))
+
     if _cntlr == 2:
       dirdata = olddir
     else:
       dirdata = newdir
 
+    # The while loop is needed so that we do the get device list
     while 1:
-      [num_list, batch_num, comb_list ]=get_devices_list( all_device, batch_device, batch_device_num, option=_cntlr)
+      num_list, batch_num, comb_list=get_devices_list( all_device, batch_device, batch_device_num, option=_cntlr)
       if len(num_list) == 0 or (len(num_list) == 1 and num_list[0] == 0): break
+
       cnt = 0
       for item in num_list :
         #print("I=%d"%(item)) 
@@ -1540,13 +1603,9 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
 
         if skip == 0:
           # We start processing each device in the list
-          for i in dir_items:
+          for i in new_dir_items:
              # check the format of the files
              if not re.match(r'^\d{3}_.+\.json$', i):
-                continue
-             elif tmpl_device == 0 and not re.match(r'^\d1\d_.+\.json$', i):
-                continue
-             elif tmpl_device == 1 and not re.match(r'^\d2\d_.+\.json$', i):
                 continue
              _key = i[4:]
              if _key in fil:
@@ -1561,6 +1620,7 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
              _newkey = _key.split(".")[0]
              #print("==============In %s==========" %(_newkey))
              mlog.info("==============In {0} for Device={1}==========".format(_newkey,dev["name"]))
+             if args['test'] : continue
              #ret = yes_or_no("Continue: " )
              #if ret == 0 : sys.exit("Exiting")
              #elif ret == 2: continue
@@ -1619,14 +1679,13 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
           # we are moving single devices
           break
         if cnt%batch_num == 0: 
-           ret = yes_or_no2("Choose y to continue or n to break from migrating Controller-1")
-           if ret == 0:
-             break
+          ret = yes_or_no2("Choose y to continue or n to break from migrating Controller-{0}".format(_cntlr))
+          if ret == 0:
+            break
 
       # We are still inside the while 1 loop 
       if all_device == 1 or batch_device == 1:
-        # we need to break out of the while 1 loop
-        break
+        break # we need to break out of the while 1 loop
 
 def get_terminal_size():
   global MYLINES, MYCOL
@@ -1637,10 +1696,61 @@ def get_terminal_size():
   else:
     MYLINES = 20
   if "COLUMNS" in os_env:
-    MYCOL = (int(os_env["COLUMNS"])/10 - 1)*10
+    MYCOL = (int(int(os_env["COLUMNS"])/10) - 1)*10
   else:
     MYCOL = 70
 
+
+def perform_initial_checks():
+    err = 0
+    mlog.warn("Performing Initial checks. Please be patient")
+
+    # Checks for hub_cntroller
+    if "hub_cntlr_present" not in glbl.vnms.data:
+      err = err + 1
+      mlog.error("Data shows hub_cntlr_present is not present")
+    elif glbl.vnms.data["hub_cntlr_present"] == 1 and "hub_cntlr_devices" not in glbl.vnms.data:
+      err = err + 1
+      mlog.error("Data shows hub_cntlr_present is 1 but hub_cntlr_devices is not present")
+
+    # Generic check on devices
+    devlist = glbl.vnms.data["devices"]
+    for elem in devlist:
+      if "branchId" not in elem:
+        err = err + 1
+        mlog.error("For device={0} branchId is not present".format(elem["name"]))
+      elif "onboard_to_hcn" not in elem:
+        err = err + 1
+        mlog.error("For device={0} remote_auth_identity is not present".format(elem["name"]))
+      elif "deployed" not in elem:
+        err = err + 1
+        mlog.error("For device={0} remote_auth_identity is not present".format(elem["name"]))
+      elif "template_deployed" not in elem:
+        err = err + 1
+        mlog.error("For device={0} remote_auth_identity is not present".format(elem["name"]))
+
+    # Check on identity data
+    devlist = list(filter(lambda x: x['onboard_to_hcn'] != 1, glbl.vnms.data["devices"]))
+    for elem in devlist:
+      if "remote1_auth_identity" not in elem:
+        err = err + 1
+        mlog.error("For device={0} remote1_auth_identity is not present".format(elem["name"]))
+      elif "remote_auth_identity" not in elem:
+        err = err + 1
+        mlog.error("For device={0} remote_auth_identity is not present".format(elem["name"]))
+      elif "local_auth_identity" not in elem:
+        err = err + 1
+        mlog.error("For device={0} local_auth_identity is not present".format(elem["name"]))
+      elif "local1_auth_identity" not in elem:
+        err = err + 1
+        mlog.error("For device={0} local1_auth_identity is not present".format(elem["name"]))
+    if err > 0: 
+      mlog.warn(bcolors.OKWARN+"We can not proceed with the above errors. Please fix then in the input file and then restart"+ 
+                "Typing a n (No)  will exit the program. Typing a y (Yes) will continue" + bcolors.ENDC)
+      ret = yes_or_no(bcolors.OKWARN+"To Continue press y and to Exit press n: "+ bcolors.ENDC,1)
+      if ret == 1: pass
+      else: sys.exit("Initial Checks failed")
+    else : mlog.warn("All Initial checks passed.")
 
 
 
@@ -1698,6 +1808,8 @@ def main():
     template_env.filters['jsonify'] = json.dumps
     dir_items = sorted(os.listdir(template_path))
 
+    perform_initial_checks()
+
     while 1:
       rc = get_n_process_appliance_list( olddir)
       if rc == 0: return
@@ -1708,6 +1820,12 @@ def main():
     all_device = 0
     batch_device = 0
     batch_device_num=0
+
+    view_inital_table = yes_or_no2(bcolors.OKWARN + "Do you want to view Initial table. Type y or n" + bcolors.ENDC)
+    if view_inital_table == 1 :
+      bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['devices']))
+      comb_dict=dict(zip(bId_list,glbl.vnms.data['devices']))
+      print_device_table(comb_dict)
 
     all_device = yes_or_no2(bcolors.OKWARN + "Do you want to migrate all devices. Type y or n " + bcolors.ENDC )
     if all_device  == 0 :

@@ -1,22 +1,22 @@
-#!/usr/bin/env python3
-
+#!/usr/bin/env python2
+#si sw=2 sts=2 et
 import os, sys, signal, argparse
 import jinja2
 from jinja2.utils import concat
 import re
-import requests
+#import requests
 import time
 import base64
-import xmltodict
+#import xmltodict
 #import subprocess
 import json
 from pprint import pprint
-from collections import OrderedDict
-from collections import Counter
+from collections import OrderedDict, Counter
 #import uuid
 from pprint import pprint
 import logging
 import logging.handlers
+import copy
 import glbl
 import common 
 
@@ -514,6 +514,59 @@ def get_dir_auth_connector_config ( _method, _uri, _payload,resp='200', _name=No
     fp.close()
     return ''
 
+def get_controller_config( _method, _uri, _payload,resp='200', vd_data=None,option=0,_name=None,_ofile=None):
+    global vnms, analy, cntlr, cust, mlog
+
+    resp2='202'
+
+    vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
+            'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
+            'auth': vd_data['auth'] }
+    #[out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+    [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+    if len(resp_str) > 3:
+      jstr = json_loads(resp_str)
+      scrub_list = [ "clear", "crypto", "diagnostics", "debug", "operations", "snmp", "redundancy", "networks",  "alarms", "ntp" , "predefined", "security", "elastic-policies", "service-node-groups", "system" "erase","guest-vnfs" ] 
+
+      for i in scrub_list:
+        common.scrub(jstr,i)
+      write_controller_config(glbl.cntlr,_name,option,jstr)
+      #glbl.cntlr.data[_name][option]["configuration"] = {}
+      #glbl.cntlr.data[_name][option]["configuration"] = jstr
+      #write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+
+def write_controller_config(_cntlr,name,cntlr_num,jstr):
+    global vnms, analy, cntlr, cust, admin, mlog
+    fname ="cntlr_config.json"
+    old_jstr = None
+    mlog.info("In function {0} : Output file:{1}".format(write_controller_config.__name__,fname))
+
+    if name == 'new_cntlr' and cntlr_num == 0: # this is controller 1. 
+      old_jstr= OrderedDict()
+      old_jstr["Controller"] = OrderedDict()
+      old_jstr["Controller"][name] = []
+      old_jstr["Controller"][name].append(copy.deepcopy(_cntlr.data[name][cntlr_num]))
+      old_jstr["Controller"][name][cntlr_num]["configuration"] = {}
+      old_jstr["Controller"][name][cntlr_num]["configuration"] = jstr
+    else:
+      fp = open(fname,"r")
+      old_config = fp.read()
+      fp.close()
+      old_jstr = json_loads(old_config,object_pairs_hook=OrderedDict)
+      if name in old_jstr["Controller"]:  # we have something already
+        old_jstr["Controller"][name].append(copy.deepcopy(_cntlr.data[name][cntlr_num]))
+      else: 
+        old_jstr["Controller"][name] =[]
+        old_jstr["Controller"][name].append(copy.deepcopy(_cntlr.data[name][cntlr_num]))
+      old_jstr["Controller"][name][cntlr_num]["configuration"] = {}
+      old_jstr["Controller"][name][cntlr_num]["configuration"] = jstr
+      
+    fin=open(fname, "w+")
+    mstr1 = json.dumps(old_jstr, indent=4)
+    fin.write(mstr1)
+    fin.close()
+    
+
 def get_controller_org( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_org.__name__,_ofile))
@@ -712,7 +765,50 @@ def get_controller_system ( _method, _uri, _payload,resp='200', _name=None,_ofil
       sys.exit("Did not find proper system data in function {0}".format(get_controller_system.__name__))
     return ''
 
-def get_controller_vni( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
+def manipulate_interfaces(jstr,_option):
+    global vnms, analy, cntlr, cust, mlog
+    if "configuration" not in glbl.cntlr.data['new_cntlr'][_option] or "configuration" not in glbl.cntlr.data['old_cntlr'][_option]:
+      return None
+
+    # Nothing to be done if tvi not present
+    if "tvi" not in  glbl.cntlr.data['new_cntlr'][_option]["configuration"]["config"]["interfaces"] : return jstr
+    tvi_data = copy.deepcopy(glbl.cntlr.data['new_cntlr'][_option]["configuration"]["config"]["interfaces"]["tvi"])
+    tvi_old_data = copy.deepcopy(glbl.cntlr.data['old_cntlr'][_option]["configuration"]["config"]["interfaces"]["tvi"])
+
+    for elem in tvi_data:
+      unit_name = elem["name"]
+      unit_ip = elem["unit"][0]["family"]["inet"]["address"][0]["addr"]
+      for o_elem in tvi_old_data:
+        if o_elem["name"] == unit_name:
+          o_unit_ip = o_elem["unit"][0]["family"]["inet"]["address"][0]["addr"]
+          if o_unit_ip != unit_ip:
+            mlog.warn("For Controller={0}: tvi={1} got Old Controller IP ={2} and New Controller IP={3}. Using Old IP".format(_option+1,unit_name,o_unit_ip, unit_ip))
+            #unit_ip = o_unit_ip 
+            elem["unit"][0]["family"]["inet"]["address"][0]["addr"] = o_unit_ip 
+
+    jstr["tvi"] = tvi_data
+    if "ptvi" not in  glbl.cntlr.data['new_cntlr'][_option]["configuration"]["config"]["interfaces"] : return jstr
+    ptvi_data = copy.deepcopy(glbl.cntlr.data['new_cntlr'][_option]["configuration"]["config"]["interfaces"]["ptvi"])
+    ptvi_old_data = copy.deepcopy(glbl.cntlr.data['old_cntlr'][_option]["configuration"]["config"]["interfaces"]["ptvi"])
+
+    for elem in ptvi_data:
+      unit_name = elem["name"]
+      unit_parent_interface = elem["parent-interface"]
+      unit_remote_address= elem["remote-address"]
+      for o_elem in ptvi_old_data:
+        if o_elem["name"] == unit_name:
+          o_unit_parent_interface = o_elem["parent-interface"]
+          o_unit_remote_address= o_elem["remote-address"]
+          if unit_parent_interface != o_unit_parent_interface or unit_remote_address != o_unit_remote_address:
+            mlog.warn("PTVIs do not match")
+            elem["parent-interface"] = o_unit_parent_interface
+            elem["remote-address"] = o_unit_remote_address
+    jstr["ptvi"] = ptvi_data
+
+
+
+
+def get_controller_vni( _method, _uri, _payload,resp='200', _name=None,_ofile=None,_option=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
     vdict = {}
@@ -721,6 +817,7 @@ def get_controller_vni( _method, _uri, _payload,resp='200', _name=None,_ofile=No
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
        jstr = json_loads(resp_str)
+       #njstr = manipulate_interfaces(jstr,_option)
        newjstr = { "config" : { "interfaces:interfaces": jstr } }
        #newjstr["config"]["interfaces:interfaces"] = jstr
        if _ofile is None or _name is None :
@@ -803,6 +900,32 @@ def get_controller_commit( _method, _uri, _payload,resp='200', _name=None,_ofile
     fp.write(out1)
     fp.close()
     return ''
+
+def build_deploy_tmplt ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
+    mlog.info("In function {0} with outfile={1}".format(build_deploy_tmplt.__name__,_ofile))
+    infile="in_phase1/" + _name
+    fp = open(infile,"r")
+    jstr = fp.read()
+    fp.close()
+    '''
+    out = common.create_out_data(_method,resp,_uri,_payload)
+    out1 = json.dumps(out, indent=4)
+    outnew = out1.split("\n")
+
+    outfinal = ""
+    for elem in outnew:
+      if elem.find("payload") == -1:  #payload not in this line
+        if outfinal == "" : outfinal = elem 
+        else: outfinal = outfinal + "\n" + elem
+      else:  # we got the payload section
+        outfinal = outfinal + "\n" +  jstr + '}'
+        break
+    '''
+    fp=open(_ofile,"w+")
+    fp.write(jstr)
+    fp.close()
+    return ''
+
 
 def get_device_group( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     # this does not call any rest api. it just writes things to a file
@@ -954,8 +1077,72 @@ def write_outfile(_vnms,_analy,_cntlr,_cust, _admin):
     fin.write(mstr1)
     fin.close()
 
+def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=None,_ofile=None):
+    global vnms, analy, cntlr, cust, mlog
+    resp2 = '202'
+    vdict = {}
+    vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
+              'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
+              'auth': vd_data['auth'] }
+    mlog.info("In function {0} with outfile={1}".format(deploy_org_workflow.__name__,_ofile))
+    [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+    if len(resp_str) > 3: 
+      jstr = json_loads(resp_str)
+      if "versanms.sdwan-controller-list" in jstr:
+        if len(jstr["versanms.sdwan-controller-list"]) == 0 or len(jstr["versanms.sdwan-controller-list"]) > 2 :
+          mlog.error("Bad len = {0} in return .. exiting".format(len(jstr["versanms.sdwan-controller-list"])))
+          sys.exit("did not get right number of controllers")
+        else:
+          cntlr_names = list(map(lambda x : x["controllerName"], jstr["versanms.sdwan-controller-list"]))
+          c_names = determine_active_peer_cntlr(cntlr_names,  _method, _uri, _payload,resp='200', vd_data=vd_data)
+          if None not in c_names:
+            glbl.cntlr.data['old_cntlr'] = []
+            if c_names[0]  == jstr["versanms.sdwan-controller-list"][0]["controllerName"]: 
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['old_cntlr'][0]["name"] = c_names[0]
+              glbl.cntlr.data['old_cntlr'][1]["name"] = c_names[1]
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[0])
+            else: 
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['old_cntlr'][0]["name"] = c_names[1]
+              glbl.cntlr.data['old_cntlr'][1]["name"] = c_names[0]
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[1])
+          else:  # we use siteID 
+            glbl.cntlr.data['old_cntlr'] = []
+            site1 = int(jstr["versanms.sdwan-controller-list"][0]["siteId"])
+            site2 = int(jstr["versanms.sdwan-controller-list"][1]["siteId"])
+            if site1 < site2:
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['old_cntlr'][0]["name"] = c_names[0]
+              glbl.cntlr.data['old_cntlr'][1]["name"] = c_names[1]
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[0])
+            else:
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['old_cntlr'][0]["name"] = c_names[1]
+              glbl.cntlr.data['old_cntlr'][1]["name"] = c_names[0]
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[1])
+            #glbl.cntlr.data[0] = jstr["versanms.sdwan-controller-list"][0]
+            #glbl.cntlr.data[1] = jstr["versanms.sdwan-controller-list"][1]
+            #if debug : pprint(glbl.cntlr.data)
+          write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+          
+          i=0
+          for _elem in glbl.cntlr.data['old_cntlr']:
+            uri="/api/config/devices/device/" + _elem["controllerName"] + "/config?deep"
+            get_controller_config( _method, uri, _payload,resp='200',vd_data=vd_data, option=i, _name="old_cntlr",_ofile=None)
+            i= i + 1
 
-def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None):
+     
+
+def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None, vd_data=None):
     global vnms, analy, cntlr, cust, admin, mlog
     resp2 = '202'
     vdict = {}
@@ -969,16 +1156,82 @@ def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None):
           mlog.error("Bad len = {0} in return .. exiting".format(len(jstr["versanms.sdwan-controller-list"])))
           sys.exit("did not get right number of controllers")
         else:
-          glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
-          glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
-          #glbl.cntlr.data[0] = jstr["versanms.sdwan-controller-list"][0]
-          #glbl.cntlr.data[1] = jstr["versanms.sdwan-controller-list"][1]
-          #if debug : pprint(glbl.cntlr.data)
+          cntlr_names = list(map(lambda x : x["controllerName"], jstr["versanms.sdwan-controller-list"]))
+          c_names = determine_active_peer_cntlr(cntlr_names,  _method, _uri, _payload,resp='200', vd_data=vd_data)
+          if None not in c_names:
+            if c_names[0]  == jstr["versanms.sdwan-controller-list"][0]["controllerName"]: 
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[0]
+              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[1]
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[0])
+            else: 
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[1]
+              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[0]
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[1])
+          else:  # we use siteID 
+            site1 = int(jstr["versanms.sdwan-controller-list"][0]["siteId"])
+            site2 = int(jstr["versanms.sdwan-controller-list"][1]["siteId"])
+            if site1 < site2:
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[0]
+              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[1]
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[0])
+            else:
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
+              glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
+              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[1]
+              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[0]
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"] = []
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[1])
+            #glbl.cntlr.data[0] = jstr["versanms.sdwan-controller-list"][0]
+            #glbl.cntlr.data[1] = jstr["versanms.sdwan-controller-list"][1]
+            #if debug : pprint(glbl.cntlr.data)
           write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+          
+          i=0
+          for _elem in glbl.cntlr.data['new_cntlr']:
+            uri="/api/config/devices/device/" + _elem["controllerName"] + "/config?deep"
+            get_controller_config( _method, uri, _payload,resp='200',vd_data=vd_data, option=i, _name="new_cntlr",_ofile=None)
+            i= i + 1
     else:
       mlog.error("Did not find proper sdwan workflow data in function {0}".format(get_sdwan_workflow_list.__name__))
-      sys.exit("did not get sdwan worflow data ")
+      sys.exit("Did not get proper sdwan worflow data ")
     return ''
+    
+def determine_active_peer_cntlr(_cnames, _method, _uri, _payload,resp='200', vd_data=None):
+    global vnms, analy, cntlr, cust, mlog
+    resp2 = '202'
+
+    _oname = [None] * 2
+    found = 0
+    for elem in _cnames:
+      uri = _uri.rsplit("?")[0] +  "/controller/" + elem
+      vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': uri,
+              'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
+              'auth': vd_data['auth'] }
+      mlog.info("In function {0} ".format(determine_active_peer_cntlr.__name__))
+      [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+      if len(resp_str) > 3: 
+        jstr = json_loads(resp_str)
+        if "versanms.sdwan-controller-workflow" in jstr:
+          if "peerControllers" in jstr["versanms.sdwan-controller-workflow"]:
+            _oname[1] = jstr["versanms.sdwan-controller-workflow"]["controllerName"] # this is the secondary controller
+            found =  found + 1
+          else:
+            _oname[0] = jstr["versanms.sdwan-controller-workflow"]["controllerName"] # this is the secondary controller
+            found =  found + 1
+      else:
+          mlog.error("Did not find proper data in function {0}".format(determine_active_peer_cntlr.__name__))
+    if found == 2: 
+      return _oname
+    else: return [ None, None ]
     
 def get_controller_workflow( _method, _uri, _payload,resp='200', _ofile=None):
     global vnms, analy, cntlr, cust, mlog
@@ -1048,7 +1301,7 @@ def deploy_org_workflow( _method, _uri, _payload,resp='200', _name=None,vd_data=
               if ( _elem["name"] in org_data[y] and _elem["id"] == org_data[y][_elem["name"]]):
                 mlog.info("VRF ID={0} with Name={1} Matched for Old Director and New Director".format(_elem["id"],_elem["name"]))
               else:
-                mlog.error("VRF ID={0} with Name={1} Matched for Old Director and New Director".format(_elem["id"],_elem["name"]))
+                mlog.error("VRF ID={0} with Name={1} Did not match for Old Director and New Director".format(_elem["id"],_elem["name"]))
             if cnt != cnt1:
                 mlog.error("No of VRF ID={0} on New Director and {1} on Old Director".format(cnt,cnt1))
     else:
@@ -1106,6 +1359,7 @@ def setup_files():
     "005_GET_NMS_PROVIDER.json" : _str + "005_SET_NMS_PROVIDER.json",
     "006_GET_ORG_LIST.json" : "",
     "009_GET_SDWAN_WORKFLOW_LIST.json" : "",
+    "010_GET_OLD_SDWAN_WORKFLOW_LIST.json" : "",
     "030_GET_CONTROLLER_WORKFLOW.json":  _str + '030_CREATE_CONTROLLER.json',
     "031_GET_PEER_CONTROLLER_WORKFLOW.json": _str + '035_CREATE_PEER_CONTROLLER.json',
     "032_GET_DEPLOY_CONTROLLER_WORKFLOW.json": _str + '031_DEPLOY_CONTROLLER_WORKFLOW.json',
@@ -1131,6 +1385,7 @@ def setup_files():
     "067_GET_PEER_CONTROLLER_SYSTEM.json":  _str + '067_SET_PEER_CONTROLLER_SYSTEM.json',
     "068_GET_PEER_CONTROLLER_COMMIT.json" : _str + '068_SET_PEER_CONTROLLER_COMMIT.json',
     "069_GET_PEER_CONTROLLER_SYNCH.json" :  _str + '069_SET_PEER_CONTROLLER_SYNCH.json',
+    "089_BUILD_DEPLOY_REF_TMPLT.json" :  _str + '089_BUILD_DEPLOY_REF_TMPLT.json',
     "090_GET_DEVICE_GROUP.json" :  _str + '090_GET_DEVICE_GROUP.json',
     "091_GET_RECOVERY_BACKUP.json" :  _str + "junk"
     }
@@ -1190,6 +1445,7 @@ def main():
     #fil['GET_AUTH_CONNECTOR_CONFIG.json'] = get_dir_auth_connector_config
 
     fil['GET_SDWAN_WORKFLOW_LIST.json'] = get_sdwan_workflow_list
+    fil['GET_OLD_SDWAN_WORKFLOW_LIST.json'] = get_old_sdwan_workflow_list
     fil['GET_CONTROLLER_WORKFLOW.json'] = get_controller_workflow
     fil['GET_PEER_CONTROLLER_WORKFLOW.json'] = get_controller_workflow
 
@@ -1225,6 +1481,7 @@ def main():
 
     fil['GET_CONTROLLER_SYNCH.json'] = get_controller_synch
     fil['GET_PEER_CONTROLLER_SYNCH.json'] = get_controller_synch
+    fil['BUILD_DEPLOY_REF_TMPLT.json'] = build_deploy_tmplt
     fil['GET_DEVICE_GROUP.json'] = get_device_group
     fil['GET_RECOVERY_BACKUP.json'] = get_backup
 
@@ -1308,7 +1565,11 @@ def main():
          elif _newkey == 'GET_SDWAN_WORKFLOW_LIST':
            x= my_template.render()
            y= json_loads(x)
-           _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),_ofile=None)
+           _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),_ofile=None, vd_data=newdir)
+         elif _newkey == 'GET_OLD_SDWAN_WORKFLOW_LIST':
+           x= my_template.render()
+           y= json_loads(x)
+           _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,_ofile=None)
          elif _newkey == 'GET_CONTROLLER_WORKFLOW' or  _newkey == 'GET_PEER_CONTROLLER_WORKFLOW':
            if _newkey == 'GET_CONTROLLER_WORKFLOW': 
                _name = glbl.cntlr.data['new_cntlr'][0]["controllerName"]
@@ -1340,11 +1601,13 @@ def main():
          elif _newkey == 'GET_CONTROLLER_VNI' or _newkey == 'GET_PEER_CONTROLLER_VNI':
            if _newkey == 'GET_CONTROLLER_VNI': 
                _name = glbl.cntlr.data['new_cntlr'][0]["controllerName"]
+               cntlr_num = 0
            else: 
                _name = glbl.cntlr.data['new_cntlr'][1]["controllerName"]
+               cntlr_num = 1
            x= my_template.render(controllerName=_name)
            y= json_loads(x)
-           _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),_name=_name,_ofile=_ofile)
+           _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),_name=_name,_ofile=_ofile,_option=cntlr_num)
          elif _newkey == 'GET_CONTROLLER_ROUTING' or _newkey == 'GET_PEER_CONTROLLER_ROUTING':
            if _newkey == 'GET_CONTROLLER_ROUTING': 
                _name = glbl.cntlr.data['new_cntlr'][0]["controllerName"]
@@ -1427,15 +1690,28 @@ def main():
              
            if _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,option=1):
               mlog.warn(bcolors.OKWARN + "Please use this backup to restore on the on New Director " + bcolors.ENDC)
+         elif _newkey == 'GET_CONTROLLER_CONFIG' or _newkey == 'GET_PEER_CONTROLLER_CONFIG':
+          if _newkey == 'GET_CONTROLLER_CONFIG': 
+            cname = glbl.cntlr.data['new_cntlr'][0]["controllerName"]
+          else: 
+            cname = glbl.cntlr.data['new_cntlr'][1]["controllerName"]
+          x= my_template.render(cntlrName = cname)
+          y= json_loads(x)
+          _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,option=2)
 
          else:
            x= my_template.render()
            y= json_loads(x)
            _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']))
+       # the big if for the GET ends here
+       elif _newkey == 'BUILD_DEPLOY_REF_TMPLT':
+         x= my_template.render()
+         y= json_loads(x)
+         _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),_name="RefTemplate.json",_ofile=_ofile)
 
     mlog.warn(bcolors.OKWARN + "==============Completed ==========" + bcolors.ENDC)
     mlog.warn(bcolors.OKWARN + "Once the restore from backup is completed run the vnms-startup script.\n" +
-              "Remember that the UI password will change to that of the Old Director" +
+              "Remember that the UI password will change to that of the Old Director\n" +
               "Disable the HA and re-enable HA with appropriate data.\n" + 
               "Proceed to run the next script.\n" + bcolors.ENDC)
 
