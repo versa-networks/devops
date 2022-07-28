@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#si sw=2 sts=2 et
 import os, sys, signal
 import json
 import base64
@@ -68,6 +69,11 @@ def init(infile, logfile,log_size,_name, _debug):
 def setup_logging(logfile,log_size,_name):
         ## Enable logging
         log = logging.getLogger(_name)
+        while len(log.handlers) > 0:
+          h = log.handlers[0]
+          log.removeHandler(h)
+          #print("Number of handlers={}".format(len(log.handlers)))
+
 
         # Set logging level
         log.setLevel(logging.DEBUG)

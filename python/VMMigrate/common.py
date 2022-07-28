@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#si sw=2 sts=2 et
 import glbl 
 import requests
 import xmltodict
@@ -356,7 +357,7 @@ def newcall(api_dict, auth_type='Basic', content_type="xml", ncs_cmd="yes", max_
               glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
                   % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
             else:
-              glbl.mlog.error("Did not recieve expected Response Code: Expected %s Got %s with Reason: %s"
+              glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
                   % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
             #print("-" * 10)
             return ret_false
