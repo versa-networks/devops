@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 #si sw=2 sts=2 et
 import glbl 
 import requests
@@ -29,108 +29,107 @@ def json_loads(_str,**kwargs):
        sys.exit('Json load failed: {}'.format(ex))
 
 # Function to call the RestAPIs
-def call(api_dict, auth_type='Basic', content_type="xml", ncs_cmd="yes", max_retry_for_task_completion=30, jsonflag=0):
+def call(api_dict, auth_type='Basic', content_type="xml", ncs_cmd="yes", max_retry_for_task_completion=30, jsonflag=0,initialwait=0):
     global debug, admin, mlog
     auth = glbl.admin.data['new_dir']['auth']
     ret_true = [1, ""]
     ret_false = [0, ""]
     #glbl.mlog.info("In function " + call.__name__)
     try:
-        resp_string = ""
-        if content_type == "json":
-            if ncs_cmd == "yes":
-                request_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Content-type": "application/vnd.yang.data+json"
-                }
-                rest_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Accept": "application/vnd.yang.data+json",
-                    "Content-type": "application/vnd.yang.data+json"
-                }
-            else:
-                request_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Content-type": "application/json"
-                }
-                rest_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Accept": "application/json",
-                    "Content-type": "application/json"
-                }
+      resp_string = ""
+      if content_type == "json":
+        if ncs_cmd == "yes":
+          request_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Content-type": "application/vnd.yang.data+json"
+          }
+          rest_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Accept": "application/vnd.yang.data+json",
+              "Content-type": "application/vnd.yang.data+json"
+          }
         else:
-            rest_headers = {
-                "Authorization": "Basic %s" % auth,
-                "Accept": "application/xml",
-                "Content-type": "application/xml"
-            }
-        empty_headers = {"Authorization": "Basic %s" % auth, "Accept": "*/*"}
-        if api_dict['method'] == "GET" and jsonflag == 0:
-            headers = empty_headers
-        else:
-            headers = rest_headers
-        if content_type == "xml2":
-            headers = {
-                "Authorization": "Basic %s" % auth,
-                "Accept": "application/xml",
-                "Content-type": "application/xml"
-            }
-        att = 0
-        while att  < 2: 
-         try:
+          request_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Content-type": "application/json"
+          }
+          rest_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Accept": "application/json",
+              "Content-type": "application/json"
+          }
+      else:
+        rest_headers = {
+            "Authorization": "Basic %s" % auth,
+            "Accept": "application/xml",
+            "Content-type": "application/xml"
+        }
+      empty_headers = {"Authorization": "Basic %s" % auth, "Accept": "*/*"}
+      if api_dict['method'] == "GET" and jsonflag == 0:
+          headers = empty_headers
+      else:
+          headers = rest_headers
+      if content_type == "xml2":
+          headers = {
+              "Authorization": "Basic %s" % auth,
+              "Accept": "application/xml",
+              "Content-type": "application/xml"
+          }
+      att = 0
+      while att  < 2: 
+        try:
           if pyVer.major == 3:
-           webservice = httplib.HTTPSConnection(glbl.admin.data['new_dir']['vd_ip'], int(glbl.admin.data['new_dir']['vd_rest_port']),context=ssl._create_unverified_context())
+            webservice = httplib.HTTPSConnection(glbl.admin.data['new_dir']['vd_ip'], int(glbl.admin.data['new_dir']['vd_rest_port']),context=ssl._create_unverified_context())
           else: 
-           webservice = httplib.HTTPSConnection(glbl.admin.data['new_dir']['vd_ip'], int(glbl.admin.data['new_dir']['vd_rest_port']))
+            webservice = httplib.HTTPSConnection(glbl.admin.data['new_dir']['vd_ip'], int(glbl.admin.data['new_dir']['vd_rest_port']))
           webservice.request(api_dict['method'], api_dict['uri'],
                            api_dict['body'], headers)
           break
-         except:
+        except:
           att = att + 1
           glbl.mlog.info("Attempt %s " % (str(att)))
 
-        resp_obj = webservice.getresponse()
-        if pyVer.major == 3:
-          resp_string = (resp_obj.read()).decode(encoding='utf-8',errors="ignore")
-        else: 
-          resp_string = (resp_obj.read()).decode('utf-8')
-          #resp_string = str(resp_obj.read())
-        resp_code = str(resp_obj.status)
-        response = resp_code
-        reason = str(resp_obj.reason)
-        webservice.close()
-        # We can not be so strict so we are just check 2 digits of the response code 
-        #if not (resp_code == api_dict['resp'] or
-        #        ('resp2' in api_dict and resp_code == api_dict['resp2'])):
-        if not (resp_code[0:2] == api_dict['resp'][0:2] or
+      resp_obj = webservice.getresponse()
+      if pyVer.major == 3:
+        resp_string = (resp_obj.read()).decode(encoding='utf-8',errors="ignore")
+      else: 
+        resp_string = (resp_obj.read()).decode('utf-8')
+        #resp_string = str(resp_obj.read())
+      resp_code = str(resp_obj.status)
+      response = resp_code
+      reason = str(resp_obj.reason)
+      webservice.close()
+      # We can not be so strict so we are just check 2 digits of the response code 
+      #if not (resp_code == api_dict['resp'] or
+      #        ('resp2' in api_dict and resp_code == api_dict['resp2'])):
+      if not (resp_code[0:2] == api_dict['resp'][0:2] or
                 ('resp2' in api_dict and resp_code[0:2] == api_dict['resp2'][0:2])):
-            if not api_dict['method'] == 'GET':
-              glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
+        if not api_dict['method'] == 'GET':
+          glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
                   % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
-            else:
-              glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
-                  % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
-            #print("-" * 10)
-            #return ret_false
-            return [0, resp_string]
         else:
-            if 'task-id' in resp_string:
-                # Task is created, we need to poll
-                task_id = _get_task_id(resp_string)
-                if not task_id:
-                    return ret_false
-                retval = _task_poll(task_id,
-                                  max_retry=max_retry_for_task_completion)
-                if retval == True: return ret_true
-                else: return ret_false 
-            if api_dict['method'] == 'GET':
-                return [1, resp_string]
+          glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
+                  % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
+          #print("-" * 10)
+          #return ret_false
+        return [0, resp_string]
+      else:
+        if 'task-id' in resp_string:
+          # Task is created, we need to poll
+          task_id = _get_task_id(resp_string)
+          if not task_id:
+            return ret_false
+          retval = _task_poll(task_id, max_retry=max_retry_for_task_completion,initialwait=initialwait)
+          if retval == True: return ret_true
+          else: return ret_false 
+          if api_dict['method'] == 'GET':
             return [1, resp_string]
+        return [1, resp_string]
     except Exception as ex:
-        #print("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))
-        glbl.mlog.error("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))
+      #print("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))
+      glbl.mlog.error("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))
 
-def _task_poll( task_id, max_retry=5, sleep_interval=5):
+def _task_poll( task_id, max_retry=5, sleep_interval=5,initialwait=0):
     global debug, mlog
     api_dict = {}
     api_dict['method'] = 'GET'
@@ -141,35 +140,36 @@ def _task_poll( task_id, max_retry=5, sleep_interval=5):
     timeout = 1
     count = 1
     jstr = {}
+    if initialwait > 0 : time.sleep(initialwait)
     while timeout and count <= max_retry :
-        [ret,task_progress] = call(api_dict,content_type="json",ncs_cmd="no")
-        if not task_progress:
-            glbl.mlog.info("Failed to GET Progress for Task: %s"%task_id)
-            return False
+      [ret,task_progress] = call(api_dict,content_type="json",ncs_cmd="no")
+      if not task_progress:
+        glbl.mlog.info("Failed to GET Progress for Task: %s"%task_id)
+        return False
         #completion = task_progress[1]
-        completion = task_progress
-        jstr = json_loads(completion)
-        #cdict = xmltodict.parse(completion)
-        #if int(cdict['task']['percentage-completion']) == 100:
-        #    timeout = 0
-        #print('Polling Status: %s:  Task %s : Completion: %s' \
-        #        %(count, task_id, cdict['task']['percentage-completion']))
-        if int(jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]) == 100:
-           timeout = 0
-        #print('Polling Status: %s:  Task %s : Completion: %s' \
-        #        %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
-        glbl.mlog.info('Polling Status: %s:  Task %s : Completion: %s' \
+      completion = task_progress
+      jstr = json_loads(completion)
+      #cdict = xmltodict.parse(completion)
+      #if int(cdict['task']['percentage-completion']) == 100:
+      #    timeout = 0
+      #print('Polling Status: %s:  Task %s : Completion: %s' \
+      #        %(count, task_id, cdict['task']['percentage-completion']))
+      if int(jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]) == 100:
+        timeout = 0
+      #print('Polling Status: %s:  Task %s : Completion: %s' \
+      #        %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
+      glbl.mlog.info('Polling Status: %s:  Task %s : Completion: %s' \
                 %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
 
-        time.sleep(sleep_interval)
-        count += 1
+      time.sleep(sleep_interval)
+      count += 1
     if not timeout and jstr["versa-tasks.task"]["versa-tasks.task-status"] != 'FAILED':
-        return True
+      return True
 
     glbl.mlog.error(' Task %s failed after Count : %s' %(task_id, count))
     return False
 
-def _task_poll_new( task_id, vdict, max_retry=5, sleep_interval=5):
+def _task_poll_new( task_id, vdict, max_retry=5, sleep_interval=5,initialwait=0):
     global debug, mlog
     api_dict = {}
     api_dict['method'] = 'GET'
@@ -183,30 +183,31 @@ def _task_poll_new( task_id, vdict, max_retry=5, sleep_interval=5):
     timeout = 1
     count = 1
     jstr = {}
+    if initialwait > 0 : time.sleep(initialwait)
     while timeout and count <= max_retry :
-        [ret,task_progress] = newcall(api_dict,content_type="json",ncs_cmd="no")
-        if not task_progress:
-            glbl.mlog.info("Failed to GET Progress for Task: %s"%task_id)
-            return False
-        #completion = task_progress[1]
-        completion = task_progress
-        jstr = json_loads(completion)
-        #cdict = xmltodict.parse(completion)
-        #if int(cdict['task']['percentage-completion']) == 100:
-        #    timeout = 0
-        #print('Polling Status: %s:  Task %s : Completion: %s' \
-        #        %(count, task_id, cdict['task']['percentage-completion']))
-        if int(jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]) == 100:
-           timeout = 0
-        #print('Polling Status: %s:  Task %s : Completion: %s' \
-        #        %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
-        glbl.mlog.info('Polling Status: %s:  Task %s : Completion: %s' \
-                %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
+      [ret,task_progress] = newcall(api_dict,content_type="json",ncs_cmd="no")
+      if not task_progress:
+        glbl.mlog.info("Failed to GET Progress for Task: %s"%task_id)
+        return False
+      #completion = task_progress[1]
+      completion = task_progress
+      jstr = json_loads(completion)
+      #cdict = xmltodict.parse(completion)
+      #if int(cdict['task']['percentage-completion']) == 100:
+      #    timeout = 0
+      #print('Polling Status: %s:  Task %s : Completion: %s' \
+      #        %(count, task_id, cdict['task']['percentage-completion']))
+      if int(jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]) == 100:
+        timeout = 0
+      #print('Polling Status: %s:  Task %s : Completion: %s' \
+      #        %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
+      glbl.mlog.info('Polling Status: %s:  Task %s : Completion: %s' \
+          %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
 
-        time.sleep(sleep_interval)
-        count += 1
+      time.sleep(sleep_interval)
+      count += 1
     if not timeout and jstr["versa-tasks.task"]["versa-tasks.task-status"] != 'FAILED':
-        return True
+      return True
 
     glbl.mlog.error(' Task %s failed after Count : %s' %(task_id, count))
     return False
@@ -277,102 +278,101 @@ def scrub(obj, bad_key="_this_is_bad"):
 # Function to call the RestAPIs
 # The ONLY difference between newcall and call is that it uses
 # api_dict for the IP address and port while call uses global data
-def newcall(api_dict, auth_type='Basic', content_type="xml", ncs_cmd="yes", max_retry_for_task_completion=30, jsonflag=0):
+def newcall(api_dict, auth_type='Basic', content_type="xml", ncs_cmd="yes", max_retry_for_task_completion=30, jsonflag=0,initialwait=0):
     global debug, admin, mlog
     auth = api_dict['auth']
     ret_true = [1, ""]
     ret_false = [0, ""]
     #glbl.mlog.info("In function " + call.__name__)
     try:
-        resp_string = ""
-        if content_type == "json":
-            if ncs_cmd == "yes":
-                request_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Content-type": "application/vnd.yang.data+json"
-                }
-                rest_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Accept": "application/vnd.yang.data+json",
-                    "Content-type": "application/vnd.yang.data+json"
-                }
-            else:
-                request_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Content-type": "application/json"
-                }
-                rest_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Accept": "application/json",
-                    "Content-type": "application/json"
-                }
+      resp_string = ""
+      if content_type == "json":
+        if ncs_cmd == "yes":
+          request_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Content-type": "application/vnd.yang.data+json"
+          }
+          rest_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Accept": "application/vnd.yang.data+json",
+              "Content-type": "application/vnd.yang.data+json"
+          }
         else:
-            rest_headers = {
-                "Authorization": "Basic %s" % auth,
-                "Accept": "application/xml",
-                "Content-type": "application/xml"
-            }
-        empty_headers = {"Authorization": "Basic %s" % auth, "Accept": "*/*"}
-        if api_dict['method'] == "GET" and jsonflag == 0:
-            headers = empty_headers
-        else:
-            headers = rest_headers
-        if content_type == "xml2":
-            headers = {
-                "Authorization": "Basic %s" % auth,
-                "Accept": "application/xml",
-                "Content-type": "application/xml"
-            }
+          request_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Content-type": "application/json"
+          }
+          rest_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Accept": "application/json",
+              "Content-type": "application/json"
+          }
+      else:
+        rest_headers = {
+            "Authorization": "Basic %s" % auth,
+            "Accept": "application/xml",
+            "Content-type": "application/xml"
+        }
+      empty_headers = {"Authorization": "Basic %s" % auth, "Accept": "*/*"}
+      if api_dict['method'] == "GET" and jsonflag == 0:
+        headers = empty_headers
+      else:
+        headers = rest_headers
+      if content_type == "xml2":
+        headers = {
+            "Authorization": "Basic %s" % auth,
+            "Accept": "application/xml",
+            "Content-type": "application/xml"
+        }
 
-        att = 0
-        while att  < 2: 
-         try:
+      att = 0
+      while att  < 2: 
+        try:
           if pyVer.major == 3:
-           webservice = httplib.HTTPSConnection(api_dict['vd_ip'], int(api_dict['vd_rest_port']),context=ssl._create_unverified_context())
+            webservice = httplib.HTTPSConnection(api_dict['vd_ip'], int(api_dict['vd_rest_port']),context=ssl._create_unverified_context())
           else: 
-           webservice = httplib.HTTPSConnection(api_dict['vd_ip'], int(api_dict['vd_rest_port']))
+            webservice = httplib.HTTPSConnection(api_dict['vd_ip'], int(api_dict['vd_rest_port']))
           webservice.request(api_dict['method'], api_dict['uri'],
                            api_dict['body'], headers)
           break
-         except:
+        except:
           att = att + 1
           glbl.mlog.info("Attempt %s " % (str(att)))
 
-        resp_obj = webservice.getresponse()
-        if pyVer.major == 3:
-          resp_string = (resp_obj.read()).decode(encoding='utf-8',errors="ignore")
-        else: 
-          resp_string = (resp_obj.read()).decode('utf-8')
-          #resp_string = str(resp_obj.read())
-        resp_code = str(resp_obj.status)
-        response = resp_code
-        reason = str(resp_obj.reason)
-        webservice.close()
-        # We can not be so strict so we are just check 2 digits of the response code 
-        #if not (resp_code == api_dict['resp'] or
-        #        ('resp2' in api_dict and resp_code == api_dict['resp2'])):
-        if not (resp_code[0:2] == api_dict['resp'][0:2] or
-                ('resp2' in api_dict and resp_code[0:2] == api_dict['resp2'][0:2])):
-            if not api_dict['method'] == 'GET':
-              glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
+      resp_obj = webservice.getresponse()
+      if pyVer.major == 3:
+        resp_string = (resp_obj.read()).decode(encoding='utf-8',errors="ignore")
+      else: 
+        resp_string = (resp_obj.read()).decode('utf-8')
+        #resp_string = str(resp_obj.read())
+      resp_code = str(resp_obj.status)
+      response = resp_code
+      reason = str(resp_obj.reason)
+      webservice.close()
+      # We can not be so strict so we are just check 2 digits of the response code 
+      #if not (resp_code == api_dict['resp'] or
+      #        ('resp2' in api_dict and resp_code == api_dict['resp2'])):
+      if not (resp_code[0:2] == api_dict['resp'][0:2] or
+            ('resp2' in api_dict and resp_code[0:2] == api_dict['resp2'][0:2])):
+        if not api_dict['method'] == 'GET':
+          glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
                   % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
-            else:
-              glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
-                  % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
-            #print("-" * 10)
-            return ret_false
         else:
-            if 'task-id' in resp_string:
-                # Task is created, we need to poll
-                task_id = _get_task_id(resp_string)
-                if not task_id:
-                    return ret_false
-                retval = _task_poll_new(task_id,api_dict,
-                                  max_retry=max_retry_for_task_completion)
-                if retval == True: return ret_true
-                else: return ret_false 
-            if api_dict['method'] == 'GET':
-                return [1, resp_string]
-            return [1, resp_string]
+          glbl.mlog.error("Did not receive expected Response Code: Expected %s Got %s with Reason: %s for Uri=%s"
+                  % (api_dict['resp'], resp_code,resp_string,api_dict['uri']))
+        #print("-" * 10)
+        return ret_false
+      else:
+        if 'task-id' in resp_string:
+          # Task is created, we need to poll
+          task_id = _get_task_id(resp_string)
+          if not task_id:
+            return ret_false
+          retval = _task_poll_new(task_id,api_dict, max_retry=max_retry_for_task_completion,initialwait=initialwait)
+          if retval == True: return ret_true
+          else: return ret_false 
+        if api_dict['method'] == 'GET':
+          return [1, resp_string]
+        return [1, resp_string]
     except Exception as ex:
-        glbl.mlog.error("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))
+      glbl.mlog.error("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))

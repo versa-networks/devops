@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 #si sw=2 sts=2 et
 import os, sys, signal
 import json
@@ -73,7 +73,6 @@ def setup_logging(logfile,log_size,_name):
           h = log.handlers[0]
           log.removeHandler(h)
           #print("Number of handlers={}".format(len(log.handlers)))
-
 
         # Set logging level
         log.setLevel(logging.DEBUG)
