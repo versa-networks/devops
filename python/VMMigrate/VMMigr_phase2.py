@@ -720,11 +720,13 @@ def is_template_for_hcn(dev):
     if out == 1 and len(resp_str) > 3:
       jstr = json_loads(resp_str)
       if "controller" in jstr:
-        cntlr_list = [glbl.cntlr.data['old_cntlr'][0]["controllerName"], glbl.cntlr.data['old_cntlr'][1]["controllerName"]]
+        cntlr_list_old = [glbl.cntlr.data['old_cntlr'][0]["controllerName"], glbl.cntlr.data['old_cntlr'][1]["controllerName"]]
+        cntlr_list_new = [glbl.cntlr.data['new_cntlr'][0]["controllerName"], glbl.cntlr.data['new_cntlr'][1]["controllerName"]]
         # Check if this is true or false
         found = 0
         for elem in jstr["controller"]: 
-          if elem["name"] != cntlr_list[0] and elem["name"] != cntlr_list[1]:
+          if (elem["name"] != cntlr_list_old[0] and elem["name"] != cntlr_list_old[1] and 
+                elem["name"] != cntlr_list_new[0] and elem["name"] != cntlr_list_new[1]):
             found = found + 1
 
         if found > 0:
@@ -1525,7 +1527,7 @@ def get_existing_controller():
     new_cntlr_list = []
     new_cntlr_names = []
     if out == 1 and len(resp_str) > 3:
-      jstr = json_loads(resp_str)
+      jstr = json_loads(resp_str,object_pairs_hook=OrderedDict)
       #mlog.info("Device list = {0}".format(json.dumps(jstr,indent=4)))
       old_cntlr_list = list(filter(lambda x: x['type'] == 'controller', jstr))
       old_cntlr_names = list(map(lambda x: x['name'], old_cntlr_list))
