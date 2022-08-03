@@ -1087,7 +1087,7 @@ def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=Non
     mlog.info("In function {0} with outfile={1}".format(deploy_org_workflow.__name__,_ofile))
     [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3: 
-      jstr = json_loads(resp_str)
+      jstr = json_loads(resp_str,object_pairs_hook=OrderedDict)
       if "versanms.sdwan-controller-list" in jstr:
         if len(jstr["versanms.sdwan-controller-list"]) == 0 or len(jstr["versanms.sdwan-controller-list"]) > 2 :
           mlog.error("Bad len = {0} in return .. exiting".format(len(jstr["versanms.sdwan-controller-list"])))
@@ -1110,7 +1110,7 @@ def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=Non
               glbl.cntlr.data['old_cntlr'][0]["name"] = c_names[1]
               glbl.cntlr.data['old_cntlr'][1]["name"] = c_names[0]
               glbl.cntlr.data['old_cntlr'][1]["peerControllers"] = []
-              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[1])
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[0])
           else:  # we use siteID 
             glbl.cntlr.data['old_cntlr'] = []
             site1 = int(jstr["versanms.sdwan-controller-list"][0]["siteId"])
@@ -1118,22 +1118,22 @@ def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=Non
             if site1 < site2:
               glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
               glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
-              glbl.cntlr.data['old_cntlr'][0]["name"] = c_names[0]
-              glbl.cntlr.data['old_cntlr'][1]["name"] = c_names[1]
+              glbl.cntlr.data['old_cntlr'][0]["name"] = jstr["versanms.sdwan-controller-list"][0]["controllerName"]
+              glbl.cntlr.data['old_cntlr'][1]["name"] = jstr["versanms.sdwan-controller-list"][1]["controllerName"]
               glbl.cntlr.data['old_cntlr'][1]["peerControllers"] = []
-              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[0])
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append( jstr["versanms.sdwan-controller-list"][0]["controllerName"])
             else:
               glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
               glbl.cntlr.data['old_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
-              glbl.cntlr.data['old_cntlr'][0]["name"] = c_names[1]
-              glbl.cntlr.data['old_cntlr'][1]["name"] = c_names[0]
+              glbl.cntlr.data['old_cntlr'][0]["name"] = jstr["versanms.sdwan-controller-list"][1]["controllerName"]
+              glbl.cntlr.data['old_cntlr'][1]["name"] = jstr["versanms.sdwan-controller-list"][0]["controllerName"]
               glbl.cntlr.data['old_cntlr'][1]["peerControllers"] = []
-              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append(c_names[1])
+              glbl.cntlr.data['old_cntlr'][1]["peerControllers"].append( jstr["versanms.sdwan-controller-list"][1]["controllerName"])
             #glbl.cntlr.data[0] = jstr["versanms.sdwan-controller-list"][0]
             #glbl.cntlr.data[1] = jstr["versanms.sdwan-controller-list"][1]
             #if debug : pprint(glbl.cntlr.data)
           write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-          
+
           i=0
           for _elem in glbl.cntlr.data['old_cntlr']:
             uri="/api/config/devices/device/" + _elem["controllerName"] + "/config?deep"
@@ -1150,7 +1150,7 @@ def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None, vd
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3: 
-      jstr = json_loads(resp_str)
+      jstr = json_loads(resp_str,object_pairs_hook=OrderedDict)
       if "versanms.sdwan-controller-list" in jstr:
         if len(jstr["versanms.sdwan-controller-list"]) == 0 or len(jstr["versanms.sdwan-controller-list"]) > 2 :
           mlog.error("Bad len = {0} in return .. exiting".format(len(jstr["versanms.sdwan-controller-list"])))
@@ -1169,27 +1169,27 @@ def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None, vd
             else: 
               glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
               glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
-              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[1]
-              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[0]
+              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[0]
+              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[1]
               glbl.cntlr.data['new_cntlr'][1]["peerControllers"] = []
-              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[1])
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[0])
           else:  # we use siteID 
             site1 = int(jstr["versanms.sdwan-controller-list"][0]["siteId"])
             site2 = int(jstr["versanms.sdwan-controller-list"][1]["siteId"])
             if site1 < site2:
               glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
               glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
-              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[0]
-              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[1]
+              glbl.cntlr.data['new_cntlr'][0]["name"] = jstr["versanms.sdwan-controller-list"][0]["controllerName"]
+              glbl.cntlr.data['new_cntlr'][1]["name"] = jstr["versanms.sdwan-controller-list"][1]["controllerName"]
               glbl.cntlr.data['new_cntlr'][1]["peerControllers"] = []
-              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[0])
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append( jstr["versanms.sdwan-controller-list"][0]["controllerName"])
             else:
               glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][1])
               glbl.cntlr.data['new_cntlr'].append(jstr["versanms.sdwan-controller-list"][0])
-              glbl.cntlr.data['new_cntlr'][0]["name"] = c_names[1]
-              glbl.cntlr.data['new_cntlr'][1]["name"] = c_names[0]
+              glbl.cntlr.data['new_cntlr'][0]["name"] = jstr["versanms.sdwan-controller-list"][1]["controllerName"]
+              glbl.cntlr.data['new_cntlr'][1]["name"] = jstr["versanms.sdwan-controller-list"][0]["controllerName"]
               glbl.cntlr.data['new_cntlr'][1]["peerControllers"] = []
-              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append(c_names[1])
+              glbl.cntlr.data['new_cntlr'][1]["peerControllers"].append( jstr["versanms.sdwan-controller-list"][1]["controllerName"])
             #glbl.cntlr.data[0] = jstr["versanms.sdwan-controller-list"][0]
             #glbl.cntlr.data[1] = jstr["versanms.sdwan-controller-list"][1]
             #if debug : pprint(glbl.cntlr.data)

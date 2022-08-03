@@ -320,73 +320,60 @@ def get_device_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=Non
       mlog.info("Sending DELETE from function {0}".format(get_device_ipsec_vpn_profile.__name__))
       [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
       # END OF DELETE    
-      found = 0
+
       if "vpn-profile" in jstr: 
-        for vpn in jstr["vpn-profile"] :
-          #if vpn["name"] == (old_p_cntlr["name"] + "-Profile"):
-          if vpn["name"].find(old_p_cntlr["name"]) != -1:
-            vpn['name'] = new_p_cntlr["controllerName"] + "-Profile"
-            if "local-auth-info" in vpn:
-              # Key
-              a = vpn["local-auth-info"]['key']
-              if a.find("$v_") != -1:
-                a=re.sub(old_p_cntlr["name"], new_p_cntlr["controllerName"], a, count=0,flags=0)
-                vpn["local-auth-info"]['key'] = a
-              else:
-                if _cntlr == 2: 
-                  vpn["local-auth-info"]['key'] = device["local_auth_key"]
-                else:
-                  vpn["local-auth-info"]['key'] = device["local1_auth_key"]
-              # Email identifier
-              b = vpn["local-auth-info"]['id-string']
-              if b.find("$v_") != -1:
-                b=re.sub(old_p_cntlr["name"], new_p_cntlr["controllerName"], b, count=0,flags=0)
-                vpn["local-auth-info"]['id-string'] = b
-              else:
-                if _cntlr == 2: 
-                  vpn["local-auth-info"]['id-string'] = device["local_auth_identity"]
-                else:
-                  vpn["local-auth-info"]['id-string'] = device["local1_auth_identity"]
-              #vpn["local-auth-info"]['key'] = device["local_auth_key"]
-              #vpn["local-auth-info"]['id-string'] = device["local_auth_identity"]
-              #vpn["local-auth-info"]['key'] = a
-              #vpn["local-auth-info"]['id-string'] = b
+        vpn_prof_list = list(filter(lambda x: "name" in x and x['name'].find(old_p_cntlr["name"]) != -1, jstr["vpn-profile"]))
+        if len(vpn_prof_list) > 1:
+          # Be more specific
+          vpn_prof_list = list(filter(lambda x: "name" in x and x['name'].find(old_p_cntlr["name"]+"-Profile") != -1, jstr["vpn-profile"]))
+        if len(vpn_prof_list) == 1:
+          vpn_prof_list_new = {}
+          vpn_prof_list_new["vpn-profile"] = copy.deepcopy(vpn_prof_list)
+          found = 0
+          for elem in vpn_prof_list_new["vpn-profile"]:
+            elem['name'] = new_p_cntlr["controllerName"] + "-Profile"
+            if "local-auth-info" in elem:
               found = found + 1
-            if "peer-auth-info" in vpn:
               if _cntlr == 2: 
-                vpn["peer-auth-info"]["id-string"] = device["remote_auth_identity"]
+                elem["local-auth-info"]['key'] = device["local_auth_key"]
+                elem["local-auth-info"]['id-string'] = device["local_auth_identity"]
               else:
-                vpn["peer-auth-info"]["id-string"] = device["remote1_auth_identity"]
+                elem["local-auth-info"]['key'] = device["local1_auth_key"]
+                elem["local-auth-info"]['id-string'] = device["local1_auth_identity"]
+            if "peer-auth-info" in elem:
               found = found + 1
-            if found == 2: break
-          #else:
-          #  # New addition
-          #  jstr["vpn-profile"].remove(vpn)
+              if _cntlr == 2: 
+                elem["peer-auth-info"]["id-string"] = device["remote_auth_identity"]
+              else:
+                elem["peer-auth-info"]["id-string"] = device["remote1_auth_identity"]
+            if found == 2: break 
 
-        # Only send the PATCH if we found all our elements
-        if found == 2:
-          #mlog.info("IPSEC VPN Profile after Deletion = {0}".format(json.dumps(jstr,indent=4)))
-          time.sleep(10)
-          payload = json.dumps(jstr)
-          vdict = {}
-          uri =  _uri.rsplit('?',1)[0]
-          #uri = uri + "?unhide=deprecated"
-          vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PATCH', 'uri': uri,
-                'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
-                 'auth': vd_data['auth']
-          }
-          mlog.info("Sending PATCH from function {0}".format(get_device_ipsec_vpn_profile.__name__))
-          [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
 
-          if len(resp_str) > 3:
-            jstr = json_loads(resp_str)
-            mlog.info("IPSEC VPN Profile after PATCH = {0}".format(json.dumps(jstr,indent=4)))
+          # Only send the PATCH if we found all our elements
+          if found == 2:
+            #mlog.info("IPSEC VPN Profile after Deletion = {0}".format(json.dumps(jstr,indent=4)))
+            # the sleep here is a killer -- do not enable
+            #time.sleep(10)
+            payload = json.dumps(vpn_prof_list_new)
+            uri =  _uri.rsplit('?',1)[0]
+            #uri = uri + "?unhide=deprecated"
+            vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PATCH', 'uri': uri,
+                  'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
+                   'auth': vd_data['auth']
+            }
+            mlog.info("Sending PATCH from function {0}".format(get_device_ipsec_vpn_profile.__name__))
+            #mlog.info("Sending Data {0}".format(json.dumps(vpn_prof_list_new,indent=4)))
+            [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
 
-          #if device["type"] == "hub-controller": 
-          #  get_hub_cntlr_device_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=vd_data, device=device,_cntlr=_cntlr)
+            if len(resp_str) > 3:
+              jstr = json_loads(resp_str)
+              mlog.info("IPSEC VPN Profile after PATCH = {0}".format(json.dumps(jstr,indent=4)))
 
+            #if device["type"] == "hub-controller": 
+            #  get_hub_cntlr_device_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=vd_data, device=device,_cntlr=_cntlr)
+            time.sleep(10)
         else:
-          mlog.error("Not Sending PATCH from function {0}".format(get_ipsec_vpn_profile.__name__))
+          mlog.error("Did not get proper info in vpn-profile Len={0}, expecting {1}".format(len(vpn_prof_list), 1))
     else : 
       mlog.error("Not Sending PATCH from function {0}".format(get_ipsec_vpn_profile.__name__))
     return ''
@@ -518,53 +505,40 @@ def get_device_system_controller( _method, _uri, _payload,resp='200',vd_data=Non
         #mlog.info("System Controller = {0}".format(json.dumps(newjstr,indent=4)))
 
       if "controller" in jstr:
-        for i in jstr["controller"] :
-          if i['name'] != old_p_cntlr["name"] :
-            jstr["controller"].remove(i)
+        sys_cntlr_list = {}
+        sys_cntlr_list["controller"] = copy.deepcopy(list(filter(lambda x: "name" in x and x['name'] == old_p_cntlr["name"], jstr["controller"])))
 
-        found = 0
-        for i in jstr["controller"] :
-          if i['name'] == old_p_cntlr["name"] :
-            i['name'] = new_p_cntlr["controllerName"]
-            i["site-name"] = new_p_cntlr["controllerName"]
-            if "transport-addresses" in i and "transport-address" in i["transport-addresses"]:
-                for j in  i["transport-addresses"]["transport-address"]:
-                  if "Internet" in j["transport-domains"]:
-                    j['name'] = new_p_cntlr["controllerName"] + '-Transport-INET'
-                    j['ip-address'] = new_p_cntlr["inet_public_ip_address"]
-                    found = found + 1
-                    mlog.info("Added INET pulic IP: {0}".format(new_p_cntlr["inet_public_ip_address"]))
-                  elif "MPLS" in j["transport-domains"]:
-                    #elif len(j["transport-domains"]) > 1  and "mpls_public_ip_address" in new_p_cntlr:
-                    j['name'] = new_p_cntlr["controllerName"] + '-Transport-MPLS'
-                    j['ip-address'] = new_p_cntlr["mpls_public_ip_address"]
-                    found = found + 1
-                    mlog.info("Added MPLS pulic IP: {0}".format(new_p_cntlr["mpls_public_ip_address"]))
-                  else:
-                    mlog.error("Unidentified Transport Domain:{0} ".format(' '.join(j["transport-domains"])))
-                    
-        if found > 0 : 
-          # since we are doing a POST we now need to remove the list
-          newjstr = {}
-          newjstr = { "controller" : jstr["controller"][0] }
-          payload = json.dumps(newjstr)
-          vdict = {}
-          uri =  _uri.rsplit('?',1)[0]
-          # For POST to work properly we need to modify the uri too
-          uri =  uri.rsplit('/',1)[0]
-          vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'POST', 'uri': uri,
-                'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
-                 'auth': vd_data['auth']
-          }
-          [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+        if len(sys_cntlr_list["controller"]) == 0 or len(sys_cntlr_list["controller"]) > 1:
+          mlog.error("Do not have proper information Len={0} Expecting = 1 ... returning".format(len(sys_cntlr_list["controller"])))
+          return ''
+        mlist = sys_cntlr_list["controller"][0]
+        mlist["name"] = new_p_cntlr["controllerName"]
+        if "transport-addresses" in mlist and "transport-address" in mlist["transport-addresses"]:
+          for elem in  mlist["transport-addresses"]["transport-address"]:
+            if "Internet" in elem["transport-domains"]:
+              elem['name'] = new_p_cntlr["controllerName"] + '-Transport-INET'
+              elem['ip-address'] = new_p_cntlr["inet_public_ip_address"]
+            elif "MPLS" in elem["transport-domains"]:
+              elem['name'] = new_p_cntlr["controllerName"] + '-Transport-MPLS'
+              elem['ip-address'] = new_p_cntlr["mpls_public_ip_address"]
 
-          if len(resp_str) > 3:
-            jstr = json_loads(resp_str)
-            mlog.info("System Controller after PATCH = {0}".format(json.dumps(jstr,indent=4)))
+        payload = json.dumps(sys_cntlr_list)
+        uri =  _uri.rsplit('?',1)[0]
+        # For POST to work properly we need to modify the uri too
+        uri =  uri.rsplit('/',1)[0]
+        vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'POST', 'uri': uri,
+              'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
+               'auth': vd_data['auth']
+        }
+        [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
 
+        if len(resp_str) > 3:
+          jstr = json_loads(resp_str)
+          mlog.info("System Controller after PATCH = {0}".format(json.dumps(jstr,indent=4)))
+
+        # this is the sdwan controller data that we have saved
+        if newdict is not None:
           [out, resp_str] = common.newcall(newdict,content_type='json',ncs_cmd="no",jsonflag=1)
-        else: 
-          mlog.error("Could not find anything to add in function {0} for device = {1} ".format(get_system_controller.__name__,device["name"] ))
     else:
       mlog.error("Could not send PATCH from function {0} for device = {1} ".format(get_system_controller.__name__,device["name"] ))
 
@@ -746,7 +720,6 @@ def get_device_sdwan_controller( _method, _uri, _payload,resp='200',vd_data=None
       new_p_cntlr = get_new_peer_controller_name(_cntlr)
       # First the delete
       payload = {}
-      vdict = {}
       uri =  _uri.rsplit('?',1)[0]
       uri =  uri + "/" + old_p_cntlr['name'] 
       vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'DELETE', 'uri': uri,
@@ -754,28 +727,25 @@ def get_device_sdwan_controller( _method, _uri, _payload,resp='200',vd_data=None
              'auth': vd_data['auth']
       }
       [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-      if len(resp_str) > 3:
+      if out == 1 and len(resp_str) > 3:
         newjstr = json_loads(resp_str)
         #mlog.info("SDWAN Controller = {0}".format(json.dumps(newjstr,indent=4)))
+      elif out == 0:
+          mlog.error("Failure in DELETE of Controller data returning")
+          return None
 
       if "controller" in jstr:
         found = 0
+        sdwan_cntlr_list = {}
+        sdwan_cntlr_list["controller"] = copy.deepcopy(list(filter(lambda x: "name" in x and x['name'] == old_p_cntlr["name"], jstr["controller"])))
+        if len(sdwan_cntlr_list["controller"]) == 0 or len(sdwan_cntlr_list["controller"]) > 1:
+          mlog.error("Do not have proper information Len={0} Expecting = 1 ... returning".format(len(sdwan_cntlr_list["controller"])))
+          return None
+        mlist = sdwan_cntlr_list["controller"][0]
+        mlist["name"] = new_p_cntlr["controllerName"]
 
-        for i in jstr["controller"] :
-          if i['name'] != old_p_cntlr['name'] :
-            jstr["controller"].remove(i)
 
-        for i in jstr["controller"] :
-          if i['name'] == old_p_cntlr['name'] :
-            i['name'] = new_p_cntlr["controllerName"]
-            found = found + 1
-
-      if found > 0 :
-        newjstr = {}
-        newjstr = { "controller" : jstr["controller"][0] }
-        payload = json.dumps(newjstr)
-        #payload = json.dumps(jstr)
-        vdict = {}
+        payload = json.dumps(sdwan_cntlr_list)
         uri =  _uri.rsplit('?',1)[0]
         # For POST to work properly we need to modify the uri too
         uri =  uri.rsplit('/',1)[0]
@@ -784,29 +754,7 @@ def get_device_sdwan_controller( _method, _uri, _payload,resp='200',vd_data=None
                'auth': vd_data['auth']
         }
         # we will not call the Rest API but return the vdict
-        #if device["type"] == "hub-controller":
-        #  get_device_sdwan_site( _method, _uri, _payload,resp='200',vd_data=vd_data, device=device,_cntlr=_cntlr)
         return vdict
-        '''
-        [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-
-        if len(resp_str) > 3:
-          jstr = json_loads(resp_str)
-          mlog.info("SDWAN Controller after PATCH = {0}".format(json.dumps(jstr,indent=4)))
-        return vdict
-
-        if out == 1: 
-          payload = {}
-          vdict = {}
-          uri =  uri + "/" + old_p_cntlr['name'] 
-          vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'DELETE', 'uri': uri,
-                'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
-                 'auth': vd_data['auth']
-          }
-          [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-        else:
-          mlog.error("Not Sending DELETE from function {0} for device = {1} ".format(get_sdwan_controller.__name__,device["name"]))
-        '''
       else : 
         mlog.error("Could not find anything to add in function {0} for device = {1} ".format(get_sdwan_controller.__name__,device["name"] ))
 
@@ -1303,11 +1251,11 @@ def my_split_string(_str, n):
 def read_input_from_user(_option, _comb_dict):
 
     if _option == 2:
-      _str = (bcolors.OKWARN + "Choose a number or multiple numbers separated by spaces" 
-                  " to continue moving Controller-2 or enter 0 to start moving Controller-1  or enter -1 to view the table: " + bcolors.ENDC)
+      _str = (bcolors.OKWARN + "Choose A NUMBER or MULTIPLE NUMBERS SEPARATED BY SPACE"  +
+                  " to continue moving Controller-2\n OR ENTER 0 to start moving Controller-1  OR ENTER -1 to view the table: " + bcolors.ENDC)
     else: 
-      _str = (bcolors.OKWARN + "Choose a number or multiple numbers separated by spaces"
-                  " to continue moving Controller-1 or enter 0 to quit the program or  enter -1 to view the table: " + bcolors.ENDC)
+      _str = (bcolors.OKWARN + "Choose A NUMBER OR MULTIPLE NUMBERS SEPARATED BY SPACE" +
+                  " to continue moving Controller-1\n OR ENTER 0 to quit the program OR  ENTER -1 to view the table: " + bcolors.ENDC)
       
     while 1:
       output_list = []
@@ -1400,7 +1348,7 @@ def print_device_table(comb_dict ):
           #        format(_key,v['name'],v['poststaging-template'],
           #        v['dg-group'],v['status'],new_dirstatus, green=bcolors.OKGREEN,endc=bcolors.ENDC,
           #        col0=6,col1=pcol1,col2=pcol2,col3=pcol3,col4=15,col5=14))
-          print("|{0:<{col0}}|{1:<{col1}}|{2:<{col2}}|{3:<{col3}}|{green}{4:<{col4}}{endc}|{5:<{col5}}|".
+          print("|{0:<{col0}}|{green}{1:<{col1}}{endc}|{2:<{col2}}|{3:<{col3}}|{4:<{col4}}|{5:<{col5}}|".
                   format(_key,v['status'],v['name'],v['poststaging-template'],
                   v['dg-group'],new_dirstatus, green=bcolors.OKGREEN,endc=bcolors.ENDC,
                   col0=pcol0,col1=pcol1,col2=pcol2,col3=pcol3,col4=pcol4,col5=pcol5))
@@ -1473,7 +1421,7 @@ def get_devices_list( _all_device, _batch_device, _batch_device_num, option=2):
 
     mlog.warn(bcolors.OKWARN + "==============Moving Controller-{0} ==========".format(str(option)) + bcolors.ENDC)
     cnt_list = list(range(1,len(glbl.vnms.data['newdevicelist'])+1))
-    bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['devices']))
+    bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['newdevicelist']))
     comb_dict=dict(zip(bId_list,glbl.vnms.data['newdevicelist']))
     #print_device_table(comb_dict)
 
@@ -1604,74 +1552,76 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
         if skip == 0:
           # We start processing each device in the list
           for i in new_dir_items:
-             # check the format of the files
-             if not re.match(r'^\d{3}_.+\.json$', i):
-                continue
-             _key = i[4:]
-             if _key in fil:
-                _val = fil[_key]
-             else:
-                if _key[0:3] == 'GET':
-                  fil[_key]=get_default
-                else:
-                  fil[_key]=create_dns_config
-                _val = fil[_key]
-             my_template = template_env.get_template(i)
-             _newkey = _key.split(".")[0]
-             #print("==============In %s==========" %(_newkey))
-             mlog.info("==============In {0} for Device={1}==========".format(_newkey,dev["name"]))
-             if args['test'] : continue
-             #ret = yes_or_no("Continue: " )
-             #if ret == 0 : sys.exit("Exiting")
-             #elif ret == 2: continue
-             # we need to check the sync status of the device from the Director in question. If for some some reason that is false we bail out right here
-             if ((_newkey == 'GET_DEVICE_SDWAN_CONTROLLER' and check_device_sync_status(dirdata, dev)) or (_newkey != 'GET_DEVICE_SDWAN_CONTROLLER')):
-               pass
-             else: 
-               break
-             if _key[0:3] == 'GET':
-               if _newkey == 'GET_CONTROLLER_WORKFLOW' or _newkey == 'GET_PEER_CONTROLLER_WORKFLOW':
-                 x= my_template.render()
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,_ofile=None)
-               elif _newkey == 'GET_VNF_MANAGER':
-                 x= my_template.render(templateName=dev["poststaging-template"])
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
-               elif _newkey == 'GET_SDWAN_CONTROLLER':
-                 x= my_template.render(templateName=dev["poststaging-template"])
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
-               elif _newkey == 'GET_SYSTEM_CONTROLLER':
-                 x= my_template.render(templateName=dev["poststaging-template"])
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
-               elif _newkey == 'GET_IPSEC_VPN_PROFILE':
-                 x= my_template.render(templateName=dev["poststaging-template"])
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
-               elif _newkey == 'GET_DEVICE_SDWAN_CONTROLLER':
-                 if _cntlr == 2:
-                   save_config_snapshot(dev["name"],dirdata, _cntlr)
-                 x= my_template.render(deviceName=dev["name"])
-                 y= json_loads(x)
-                 newvdict = _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev, _cntlr=_cntlr)
-               elif _newkey == 'GET_DEVICE_SYSTEM_CONTROLLER':
-                 x= my_template.render(deviceName=dev["name"])
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev,newdict=newvdict, _cntlr=_cntlr)
-                 newvdict = {}
-               elif _newkey == 'GET_DEVICE_IPSEC_VPN_PROFILE':
-                 x= my_template.render(deviceName=dev["name"])
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev, _cntlr=_cntlr)
-               elif _newkey == 'GET_DEVICE_VNF_MANAGER':
-                 x= my_template.render(deviceName=dev["name"])
-                 y= json_loads(x)
-                 _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev,_cntlr=_cntlr)
-                 # now we do a repeated connect on device from newdir
-                 device_connect(newdir,device=dev,_cntlr=_cntlr)
-                 write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+            # check the format of the files
+            if not re.match(r'^\d{3}_.+\.json$', i):
+              continue
+            _key = i[4:]
+
+            if _key in fil: _val = fil[_key]
+            else:
+              if _key[0:3] == 'GET': fil[_key]=get_default
+              else: fil[_key]=create_dns_config
+              _val = fil[_key]
+
+            my_template = template_env.get_template(i)
+            _newkey = _key.split(".")[0]
+            #print("==============In %s==========" %(_newkey))
+            mlog.info("==============In {0} for Device={1}==========".format(_newkey,dev["name"]))
+            if args['test'] : continue
+            #ret = yes_or_no("Continue: " )
+            #if ret == 0 : sys.exit("Exiting")
+            #elif ret == 2: continue
+            # we need to check the sync status of the device from the Director in question. If for some some reason that is false we bail out right here
+            if ((_newkey == 'GET_DEVICE_SDWAN_CONTROLLER' and check_device_sync_status(dirdata, dev)) or (_newkey != 'GET_DEVICE_SDWAN_CONTROLLER')):
+              pass
+            else: 
+              break
+            if _key[0:3] == 'GET':
+              if _newkey == 'GET_CONTROLLER_WORKFLOW' or _newkey == 'GET_PEER_CONTROLLER_WORKFLOW':
+                x= my_template.render()
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,_ofile=None)
+              elif _newkey == 'GET_VNF_MANAGER':
+                x= my_template.render(templateName=dev["poststaging-template"])
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
+              elif _newkey == 'GET_SDWAN_CONTROLLER':
+                x= my_template.render(templateName=dev["poststaging-template"])
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
+              elif _newkey == 'GET_SYSTEM_CONTROLLER':
+                x= my_template.render(templateName=dev["poststaging-template"])
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
+              elif _newkey == 'GET_IPSEC_VPN_PROFILE':
+                x= my_template.render(templateName=dev["poststaging-template"])
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=olddir,device=dev)
+              elif _newkey == 'GET_DEVICE_SDWAN_CONTROLLER':
+                if _cntlr == 2:
+                  save_config_snapshot(dev["name"],dirdata, _cntlr)
+                x= my_template.render(deviceName=dev["name"])
+                y= json_loads(x)
+                newvdict = _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev, _cntlr=_cntlr)
+                if newvdict is None:
+                  mlog.error("Can not Migrate Device={0}".format(dev["name"]))
+                  break
+              elif _newkey == 'GET_DEVICE_SYSTEM_CONTROLLER':
+                x= my_template.render(deviceName=dev["name"])
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev,newdict=newvdict, _cntlr=_cntlr)
+                newvdict = None
+              elif _newkey == 'GET_DEVICE_IPSEC_VPN_PROFILE':
+                x= my_template.render(deviceName=dev["name"])
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev, _cntlr=_cntlr)
+              elif _newkey == 'GET_DEVICE_VNF_MANAGER':
+                x= my_template.render(deviceName=dev["name"])
+                y= json_loads(x)
+                _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),vd_data=dirdata,device=dev,_cntlr=_cntlr)
+                # now we do a repeated connect on device from newdir
+                device_connect(newdir,device=dev,_cntlr=_cntlr)
+                write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
 
         # we are done with processing of one device
         cnt = cnt+1
@@ -1679,7 +1629,7 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
           # we are moving single devices
           break
         if cnt%batch_num == 0: 
-          ret = yes_or_no2("Choose y to continue or n to break from migrating Controller-{0}".format(_cntlr))
+          ret = yes_or_no2("Pause after migration of devices for Controller-{0}".format(_cntlr))
           if ret == 0:
             break
 

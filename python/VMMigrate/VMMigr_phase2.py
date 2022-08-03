@@ -872,6 +872,7 @@ def  decrypt_key(dev):
         vdict = {'body': json.dumps(_payload) , 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
         [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
         if out == 1 and len(resp_str) > 3:
+          mlog.info("Device={0} local_auth_key={1} replaced by  Decryted Response={2}".format(dev["name"],dev["local_auth_key"],resp_str))
           dev["local_auth_key"] = resp_str
         else:
           mlog.error("Failed for local_auth key ")
@@ -881,6 +882,7 @@ def  decrypt_key(dev):
         vdict = {'body': json.dumps(_payload) , 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
         [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
         if out == 1 and len(resp_str) > 3:
+          mlog.info("Device={0} local1_auth_key={1} replaced by  Decryted Response={2}".format(dev["name"],dev["local1_auth_key"],resp_str))
           dev["local1_auth_key"] = resp_str
         else:
           mlog.error("Failed for local1_auth key ")
@@ -905,41 +907,6 @@ def  deploy_device_workflow(dev):
       vdict = {'body': _payload , 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri}
       [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
       if out == 1 and len(resp_str) > 3:
-        jstr = json_loads(resp_str)
-        auth_keys = {}
-        for mcntlr in glbl.cntlr.data['new_cntlr']:
-          a = jstr['versanms.sdwan-device-workflow']['postStagingTemplateInfo']['templateData']['device-template-variable']['variable-binding']['attrs']
-          local_auth_key = '{$v_'+ glbl.cust.data["custName"] + '_' + mcntlr["controllerName"] + '_Local_auth_email_key__IKELKey}'
-          local_auth_identity = '{$v_'+ glbl.cust.data["custName"] + '_' + mcntlr["controllerName"] + '_Local_auth_email_identifier__IKELIdentifier}'
-          for val in a:
-            #print val
-            if "name" in val and val["name"] == local_auth_key :
-              if "peerControllers" in mcntlr:
-                dev["local_auth_key"] = ""
-                dev["local_auth_key"] = val["value"]
-                auth_keys["local_auth_key"] = val["value"]
-              else: 
-                dev["local1_auth_key"] = ""
-                dev["local1_auth_key"] = val["value"]
-                auth_keys["local1_auth_key"] = val["value"]
-            elif "name" in val and val["name"] == local_auth_identity :
-              if "peerControllers" in mcntlr:
-                dev["local_auth_identity"] = ""
-                dev["local_auth_identity"] = val["value"]
-              else: 
-                dev["local1_auth_identity"] = ""
-                dev["local1_auth_identity"] = val["value"]
-          if "peerControllers" in mcntlr:
-            dev["remote_auth_identity"] = ""
-            dev["remote_auth_identity"] = mcntlr["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
-          else: 
-            dev["remote1_auth_identity"] = ""
-            dev["remote1_auth_identity"] = mcntlr["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
-
-        decrypt_key(dev)
-
-        write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-        # the above for the cntlr loop has ended here
         vdict = {'body': resp_str , 'resp': resp, 'resp2': resp2, 'method': "PUT", 'uri': _uri}
         [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
         if out == 1:
@@ -952,9 +919,41 @@ def  deploy_device_workflow(dev):
           if ret == 1:
             mlog.info("Deploy Device Workflow POST was successful for device: {0}".format(dev["name"]))
             # before we return back we need to change the VNF Manager in the device template on the new director
-            dev["deployed"] = "1"
-            write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-            return True
+            _uri = "/vnms/sdwan/workflow/devices/device/" + dev["name"]
+            _payload = {}
+            vdict = {'body': _payload , 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri}
+            [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+            if out == 1 and len(resp_str) > 3:
+              jstr = json_loads(resp_str)
+              auth_keys = {}
+              for mcntlr in glbl.cntlr.data['new_cntlr']:
+                a = jstr['versanms.sdwan-device-workflow']['postStagingTemplateInfo']['templateData']['device-template-variable']['variable-binding']['attrs']
+                local_auth_key = '{$v_'+ glbl.cust.data["custName"] + '_' + mcntlr["controllerName"] + '_Local_auth_email_key__IKELKey}'
+                local_auth_identity = '{$v_'+ glbl.cust.data["custName"] + '_' + mcntlr["controllerName"] + '_Local_auth_email_identifier__IKELIdentifier}'
+                for val in a:
+                  #print val
+                  if "name" in val and val["name"] == local_auth_key :
+                    if "peerControllers" in mcntlr:
+                      dev["local_auth_key"] = val["value"]
+                      auth_keys["local_auth_key"] = val["value"]
+                    else: 
+                      dev["local1_auth_key"] = val["value"]
+                      auth_keys["local1_auth_key"] = val["value"]
+                  elif "name" in val and val["name"] == local_auth_identity :
+                    if "peerControllers" in mcntlr:
+                      dev["local_auth_identity"] = val["value"]
+                    else: 
+                      dev["local1_auth_identity"] = val["value"]
+                if "peerControllers" in mcntlr:
+                  dev["remote_auth_identity"] = mcntlr["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
+                else: 
+                  dev["remote1_auth_identity"] = mcntlr["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
+
+              decrypt_key(dev)
+
+              dev["deployed"] = "1"
+              write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+              return True
           else: 
             mlog.error("Deploy Device Workflow POST was NOT successful for device: {0}".format(dev["name"]))
             dev["deployed"] = "0"
