@@ -7,8 +7,6 @@ import re
 #import requests
 import time
 import base64
-#import xmltodict
-#import subprocess
 import json
 from pprint import pprint
 from collections import OrderedDict, Counter
@@ -50,7 +48,7 @@ class bcolors:
   BOLD = '\033[1m'
   UNDERLINE = '\033[4m'
 
-
+# argcheck
 def argcheck():
   """ This performs adds the  argument and checks the requisite inputs
   """
@@ -66,6 +64,7 @@ def argcheck():
     usage()
     sys.exit(0)
 
+# usage
 def usage():
   mystr = os.path.basename(sys.argv[0])
   print(bcolors.OKCHECK)
@@ -78,6 +77,7 @@ Usage:
   """ %locals())
   print(bcolors.ENDC)
 
+# json load
 def json_loads(_str,**kwargs):
     global mlog
     try:
@@ -89,6 +89,7 @@ def json_loads(_str,**kwargs):
 
 
 
+# get default
 def get_default( _method, _uri,_payload,resp='200', ofile=None):
     global vnms, analy, cntlr, cust, mlog
     vdict = {}
@@ -107,6 +108,7 @@ def get_default( _method, _uri,_payload,resp='200', ofile=None):
     fp.close()
     return
 
+# deploy controller -- may not be used
 def deploy_controller( _method, _uri,_payload,resp='202',name="Controller"):
     global vnms, analy, cntlr, cust, mlog
     vdict = {}
@@ -117,6 +119,7 @@ def deploy_controller( _method, _uri,_payload,resp='202',name="Controller"):
     common.check_controller_status(name=name)
     return 
 
+# process diff between backups
 def process_diff(f1, f2):
     cnt1=Counter()
     for i in f1:
@@ -129,6 +132,7 @@ def process_diff(f1, f2):
 
     
 
+# get backup
 def get_backup( _method, _uri,_payload,resp='200',vd_data=None, option=2):
     resp2='202'
     vdict = {}
@@ -178,6 +182,7 @@ def get_backup( _method, _uri,_payload,resp='200',vd_data=None, option=2):
     return True
  
 
+# get dir release info
 def get_dir_release_info( _method, _uri, _payload,resp='200', _name=None,vd_data=None,vd_data1=None,_ofile=None):
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_release_info.__name__,_ofile))
@@ -244,6 +249,7 @@ def get_dir_release_info( _method, _uri, _payload,resp='200', _name=None,vd_data
       sys.exit("This is most likely a password issue. Please change in input file and re-run")
     return ''
 
+# get dir time zones
 def get_dir_time_zones ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_time_zones.__name__,_ofile))
@@ -268,6 +274,7 @@ def get_dir_time_zones ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
       return
     return ''
 
+# get dir ntp data
 def get_dir_ntp_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_ntp_server.__name__,_ofile))
@@ -293,6 +300,7 @@ def get_dir_ntp_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
       return
     return ''
 
+# get dir dns server
 def get_dir_dns_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_dns_server.__name__,_ofile))
@@ -318,6 +326,7 @@ def get_dir_dns_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
       return
     return ''
 
+# get org data
 def get_org_data ( _method, _uri, _payload,resp='200', vd_data=None,vd_data1=None):
   global vnms, analy, cntlr, cust, admin, mlog
   mlog.info("In function " + get_org_data.__name__)
@@ -372,6 +381,7 @@ def get_org_data ( _method, _uri, _payload,resp='200', vd_data=None,vd_data1=Non
 
     
 
+# get nms provider data
 def get_nms_provider( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_nms_provider.__name__,_ofile))
@@ -420,6 +430,7 @@ def get_nms_provider( _method, _uri, _payload,resp='200', _name=None,_ofile=None
     get_wan_ntwk(_ofile)
     return ''
 
+# auth connector data
 def create_delete_default_auth_connector(_ofile):
     out = common.create_out_data("PATCH","200",_str,jstr)
     fp=open(_ofile,"w+")
@@ -429,6 +440,7 @@ def create_delete_default_auth_connector(_ofile):
     #create_delete_default_auth_connector(_ofile)
     return ''
 
+# get dir analytics cluster data
 def get_dir_analytics_cluster ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_analytics_cluster.__name__,_ofile))
@@ -451,6 +463,7 @@ def get_dir_analytics_cluster ( _method, _uri, _payload,resp='200', _name=None,_
     create_delete_default_auth_connector(_ofile)
     return ''
 
+# get dir auth connector
 def get_dir_auth_connector ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_auth_connector.__name__,_ofile))
@@ -472,6 +485,7 @@ def get_dir_auth_connector ( _method, _uri, _payload,resp='200', _name=None,_ofi
     fp.close()
     return ''
 
+# get dir default auth connector
 def get_dir_default_auth_connector ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_default_auth_connector.__name__,_ofile))
@@ -493,6 +507,7 @@ def get_dir_default_auth_connector ( _method, _uri, _payload,resp='200', _name=N
     fp.close()
     return ''
 
+# get dir auth connector config
 def get_dir_auth_connector_config ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_auth_connector_config.__name__,_ofile))
@@ -514,6 +529,7 @@ def get_dir_auth_connector_config ( _method, _uri, _payload,resp='200', _name=No
     fp.close()
     return ''
 
+# get controller config
 def get_controller_config( _method, _uri, _payload,resp='200', vd_data=None,option=0,_name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
 
@@ -535,6 +551,7 @@ def get_controller_config( _method, _uri, _payload,resp='200', vd_data=None,opti
       #glbl.cntlr.data[_name][option]["configuration"] = jstr
       #write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
 
+# write controller config
 def write_controller_config(_cntlr,name,cntlr_num,jstr):
     global vnms, analy, cntlr, cust, admin, mlog
     fname ="cntlr_config.json"
@@ -567,6 +584,7 @@ def write_controller_config(_cntlr,name,cntlr_num,jstr):
     fin.close()
     
 
+# get controller org
 def get_controller_org( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_org.__name__,_ofile))
@@ -610,6 +628,7 @@ def get_controller_org( _method, _uri, _payload,resp='200', _name=None,_ofile=No
       sys.exit("Did not find proper org data in function {0}".format(get_controller_org.__name__))
     return ''
 
+# get controller org services
 def get_controller_org_services( _method, _uri, _payload,resp='200', _name=None,vd_data=None,vd_data1=None,_ofile=None,option=0):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_org_services.__name__,_ofile))
@@ -731,6 +750,7 @@ def get_controller_org_services( _method, _uri, _payload,resp='200', _name=None,
 
     return ''
 
+# get controller system
 def get_controller_system ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_system.__name__,_ofile))
@@ -765,6 +785,7 @@ def get_controller_system ( _method, _uri, _payload,resp='200', _name=None,_ofil
       sys.exit("Did not find proper system data in function {0}".format(get_controller_system.__name__))
     return ''
 
+# manipulate interface -- may not be used
 def manipulate_interfaces(jstr,_option):
     global vnms, analy, cntlr, cust, mlog
     if "configuration" not in glbl.cntlr.data['new_cntlr'][_option] or "configuration" not in glbl.cntlr.data['old_cntlr'][_option]:
@@ -808,6 +829,7 @@ def manipulate_interfaces(jstr,_option):
 
 
 
+# get controller vni data
 def get_controller_vni( _method, _uri, _payload,resp='200', _name=None,_ofile=None,_option=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -835,6 +857,7 @@ def get_controller_vni( _method, _uri, _payload,resp='200', _name=None,_ofile=No
     return ''
 
 
+# get controller alarms
 def get_controller_alarms( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -863,6 +886,7 @@ def get_controller_alarms( _method, _uri, _payload,resp='200', _name=None,_ofile
     return ''
 
 
+# get controller synch
 def get_controller_synch( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     # this does not call any rest api. it just writes things to a file
     global vnms, analy, cntlr, cust, mlog
@@ -882,6 +906,7 @@ def get_controller_synch( _method, _uri, _payload,resp='200', _name=None,_ofile=
     fp.close()
     return ''
 
+# get controller commit
 def get_controller_commit( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     # this does not call any rest api. it just writes things to a file
     global vnms, analy, cntlr, cust, mlog
@@ -901,6 +926,7 @@ def get_controller_commit( _method, _uri, _payload,resp='200', _name=None,_ofile
     fp.close()
     return ''
 
+# build deploy template
 def build_deploy_tmplt ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     mlog.info("In function {0} with outfile={1}".format(build_deploy_tmplt.__name__,_ofile))
     infile="in_phase1/" + _name
@@ -927,6 +953,7 @@ def build_deploy_tmplt ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
     return ''
 
 
+# get device group
 def get_device_group( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     # this does not call any rest api. it just writes things to a file
     global vnms, analy, cntlr, cust, mlog
@@ -946,6 +973,7 @@ def get_device_group( _method, _uri, _payload,resp='200', _name=None,_ofile=None
     fp.close()
     return ''
 
+# get controller build
 def controller_config_build( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     # this does not call any rest api. it just writes things to a file
     global vnms, analy, cntlr, cust, mlog
@@ -965,6 +993,7 @@ def controller_config_build( _method, _uri, _payload,resp='200', _name=None,_ofi
     fp.close()
     return ''
 
+# get wan ntwk
 def get_wan_ntwk( ofile):
     # this does not call any rest api. it just writes things to a file
     global vnms, analy, cntlr, cust, mlog
@@ -994,6 +1023,7 @@ def get_wan_ntwk( ofile):
       fp.close()
     return ''
 
+# deploy new controller
 def deploy_controller_new( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     # this does not call any rest api. it just writes things to a file
     global vnms, analy, cntlr, cust, mlog
@@ -1013,6 +1043,7 @@ def deploy_controller_new( _method, _uri, _payload,resp='200', _name=None,_ofile
     fp.close()
     return ''
 
+# get controller ntp
 def get_controller_ntp ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1038,6 +1069,7 @@ def get_controller_ntp ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
         return
     return ''
 
+# get controller routing
 def get_controller_routing ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1063,6 +1095,7 @@ def get_controller_routing ( _method, _uri, _payload,resp='200', _name=None,_ofi
         sys.exit("Did not find proper routing data in function {0}".format(get_controller_routing.__name__))
     return ''
 
+# write json file
 def write_outfile(_vnms,_analy,_cntlr,_cust, _admin):
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function {0} : Output file:vm_phase2.json".format(write_outfile.__name__))
@@ -1077,6 +1110,7 @@ def write_outfile(_vnms,_analy,_cntlr,_cust, _admin):
     fin.write(mstr1)
     fin.close()
 
+# get old director sdwan workflow list
 def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1142,6 +1176,7 @@ def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=Non
 
      
 
+# get new director sdwan workflow list
 def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None, vd_data=None):
     global vnms, analy, cntlr, cust, admin, mlog
     resp2 = '202'
@@ -1205,6 +1240,7 @@ def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None, vd
       sys.exit("Did not get proper sdwan worflow data ")
     return ''
     
+# determine the active and peer controllers
 def determine_active_peer_cntlr(_cnames, _method, _uri, _payload,resp='200', vd_data=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1233,6 +1269,7 @@ def determine_active_peer_cntlr(_cnames, _method, _uri, _payload,resp='200', vd_
       return _oname
     else: return [ None, None ]
     
+# get controller workflow
 def get_controller_workflow( _method, _uri, _payload,resp='200', _ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1255,6 +1292,7 @@ def get_controller_workflow( _method, _uri, _payload,resp='200', _ofile=None):
         sys.exit("Did not find proper ntp data in function {0}".format(get_controller_routing.__name__))
     return ''
 
+# deploy org workflow
 def deploy_org_workflow( _method, _uri, _payload,resp='200', _name=None,vd_data=None,vd_data1=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1324,6 +1362,7 @@ def deploy_org_workflow( _method, _uri, _payload,resp='200', _name=None,vd_data=
 #    out = analycall(vdict)
 #    return ''
 
+# dns config
 def create_dns_config( _method, _uri,_payload,resp='200'):
     vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
@@ -1331,6 +1370,7 @@ def create_dns_config( _method, _uri,_payload,resp='200'):
     print(json_loads(resp_str))
     return ''
 
+# yes no
 def yes_or_no(question):
     if pyVer.major == 3:
       reply = str(input(question+' (y/n): ')).lower().strip()
@@ -1343,6 +1383,7 @@ def yes_or_no(question):
     else:
         return yes_or_no("Ughhh... please re-enter ") 
 
+# setup input output files
 def setup_files():
     
     #"005_GET_ANALYTICS_CLUSTER.json" : _str + '005_CREATE_ANALYTICS_CLUSTER.json',
@@ -1391,6 +1432,7 @@ def setup_files():
     }
     return vdict
 
+# transform input file to output file
 def transform_in(infile):
     global vnms, analy, cntlr, cust, admin, mlog, mdict
 
@@ -1402,6 +1444,7 @@ def transform_in(infile):
 
       
 
+# main
 def main():
     #global vnms, analy, cntlr, cust, admin, auth, debug, mlog, mdict
     #mdict = readfile("in_rest.cfg")

@@ -113,8 +113,8 @@ Upon successful completion, the script marks the status of the device as C12-Com
 
 1. Open Terminal (preferably xterm) and Log onto the Director and change Directory.
 2. Export variables: This is optional
-   export LINES=$(LINES)
-        export COLUMNS=$(COLUMNS)
+   export LINES=$(echo $LINES)
+        export COLUMNS=$(echo $COLUMNS)
 3. Change vm_phase1.json. Please read document. THIS IS AN IMPORTANT STEP. Please do this carefully.
 4. Run various phases:
    ./VMMigr_phase1.py -f vm_phase1.json (Phase 1)

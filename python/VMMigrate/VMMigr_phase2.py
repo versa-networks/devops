@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 #si sw=2 sts=2 et
 import os, sys, signal, argparse
 import jinja2
@@ -7,12 +7,9 @@ import re
 import requests
 import time
 import base64
-import xmltodict
-#import subprocess
 import json
 from pprint import pprint
 from collections import OrderedDict
-#import uuid
 from pprint import pprint
 import logging
 import logging.handlers
@@ -27,7 +24,6 @@ else:
   import httplib
 
 
-#import vnms
 vnms =  None
 analy = None 
 cntlr = None
@@ -147,7 +143,7 @@ def find_transport_create_mapping(transpDomain, networkName):
 
 
 
-
+# Create the controller. Added checks to call the function back if there are errors.
 def create_controller( _method, _uri,_payload,resp='200', name="Controller"):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function " + create_controller.__name__)
@@ -227,7 +223,7 @@ def get_default( _method, _uri,_payload,resp='200', ofile=None):
     fp.write(out1)
     fp.close()
     return
-
+# Checking the Old and New Controller Configs
 def check_controller_config():
     global vnms, analy, cntlr, cust, mlog
 
@@ -282,7 +278,7 @@ def check_controller_config():
       if ret == 0 : sys.exit("Found Error in Controller Config")
       else: pass
 
-
+# Build for the Controller. Such that it south-bound is locked
 def create_controller_build( _method, _uri,_payload,resp='202',name="Controller"):
     global vnms, analy, cntlr, cust, mlog
     vdict = {}
@@ -302,6 +298,7 @@ def create_controller_build( _method, _uri,_payload,resp='202',name="Controller"
         sys.exit("Did not get correct resp for Controller {0} is NOT in sync -- Exiting ".format(name))
     return 
 
+# Deploy the Controller
 def deploy_controller( _method, _uri,_payload,resp='202',name="Controller", option=0):
     global vnms, analy, cntlr, cust, mlog
     vdict = {}
@@ -354,6 +351,7 @@ def deploy_controller( _method, _uri,_payload,resp='202',name="Controller", opti
 
     return 
 
+# Get Director Release Info
 def get_dir_release_info ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function " + get_dir_release_info.__name__)
@@ -386,6 +384,7 @@ def get_dir_release_info ( _method, _uri, _payload,resp='200', _name=None,_ofile
         sys.exit("This is most likely a password issue. Please change in input json file: vm_phase2.json and re-run")
     return ''
 
+# Get Director Time Zone
 def get_dir_time_zones ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_time_zones.__name__,_ofile))
@@ -406,6 +405,7 @@ def get_dir_time_zones ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
       mlog.info("Timezone Info = {0}".format(json.dumps(jstr,indent=4)))
     return ''
 
+# Get Director NTP Server
 def get_dir_ntp_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_ntp_server.__name__,_ofile))
@@ -424,6 +424,7 @@ def get_dir_ntp_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
       mlog.info("NTP Info = {0}".format(json.dumps(jstr,indent=4)))
     return ''
 
+# Get Director DNS Server
 def get_dir_dns_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_dns_server.__name__,_ofile))
@@ -467,6 +468,7 @@ def controller_connect(device):
       mlog.warn("No connection from new Director to contoller={0} -- Good! Any previous errors can be ignored ".format(device["name"]))
       return True
 
+# Delete existing Analytics Cluster Data
 def cleanup_existing_analytics_cluster():
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0}".format(cleanup_existing_analytics_cluster.__name__))
@@ -489,16 +491,16 @@ def cleanup_existing_analytics_cluster():
             [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="yes",jsonflag=1)
 
         
-
+# Gets the controller configi. This takes long
 def get_controller_config( _method, _uri, _payload,resp='200', vd_data=None,option=0,_name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
 
     resp2='202'
 
+    mlog.warn("Getting Controller Config for New Controller={0}. Please be patient".format(option+1))
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
             'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
             'auth': vd_data['auth'] }
-    #[out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
       jstr = json_loads(resp_str)
@@ -507,10 +509,8 @@ def get_controller_config( _method, _uri, _payload,resp='200', vd_data=None,opti
       for i in scrub_list:
         common.scrub(jstr,i)
       write_controller_config(glbl.cntlr,"new_cntlr",option,jstr)
-      #glbl.cntlr.data[_name][option]["configuration"] = {}
-      #glbl.cntlr.data[_name][option]["configuration"] = jstr
-      #write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
 
+# Write the Controller Config to file.  In this file ONLY the new controller data is written
 def write_controller_config(_cntlr,name,cntlr_num,jstr):
     global vnms, analy, cntlr, cust, admin, mlog
     fname ="cntlr_config.json"
@@ -537,7 +537,7 @@ def write_controller_config(_cntlr,name,cntlr_num,jstr):
       fin.close()
     
     
-
+# Push the NMS provider Information. Care is taken to delete the Old Analytics Cluster Information
 def set_nms_provider( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(set_nms_provider.__name__,_ofile))
@@ -552,7 +552,7 @@ def set_nms_provider( _method, _uri, _payload,resp='200', _name=None,_ofile=None
     if len(resp_str) > 3:
       jstr = json_loads(resp_str)
       mlog.info("NMS Info after DELETE = {0}".format(json.dumps(jstr,indent=4)))
-    #return ''
+
     cleanup_existing_analytics_cluster()
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="yes",jsonflag=1)
@@ -628,7 +628,7 @@ def get_dir_auth_connector_config ( _method, _uri, _payload,resp='200', _name=No
       pprint(jstr)
     return ''
 
-
+# Deploy Org Workflow
 def deploy_org_workflow( _method, _uri, _payload,resp='200', name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(deploy_org_workflow.__name__,_ofile))
@@ -674,7 +674,7 @@ def deploy_org_workflow( _method, _uri, _payload,resp='200', name=None,_ofile=No
          [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
          if len(resp_str) > 3:
             jstr = json_loads(resp_str)
-            pprint(jstr)
+            #pprint(jstr)
           
       i=0
       for _elem in glbl.cntlr.data['new_cntlr']:
@@ -687,6 +687,7 @@ def deploy_org_workflow( _method, _uri, _payload,resp='200', name=None,_ofile=No
 
     return ''
    
+# Get the sdwan Workflow list from New Director
 def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -707,6 +708,7 @@ def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None):
            write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
     return ''
 
+# Find out if template is for a device onboarded to HCN. Must have no controllers present
 def is_template_for_hcn(dev):
     resp = '200'
     resp2 = '202'
@@ -738,9 +740,61 @@ def is_template_for_hcn(dev):
         return False
 
 
+# deploy template for a device onboarded to hcn. Notice that the controller section is missing. Recreates back the template
+def  deploy_template_workflow_device_onboarded_to_hcn(dev):
+      global vnms, analy, cntlr, cust, mlog
+      mlog.warn("Deploying Template Workflow for: {0}".format(dev["poststaging-template"]))
+      # determine if the template used for this device is actually for hcn
+      resp = '200'
+      resp2 = '202'
+      vdict = {}
+      _payload = {}
+      _uri = "/vnms/sdwan/workflow/templates/template/" +  dev["poststaging-template"]
+      vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri}
+      [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+      if out == 1 and len(resp_str) > 3:
+        jstr = json_loads(resp_str)
+        if "versanms.sdwan-template-workflow" in jstr and "templateName" in  jstr["versanms.sdwan-template-workflow"]:
+          if dev["poststaging-template"] not in jstr["versanms.sdwan-template-workflow"]["templateName"]:
+            mlog.warn("This is a HA template with template={0} with template={1}".format(dev["poststaging-template"],jstr["versanms.sdwan-template-workflow"]["templateName"]))
+            dev["template_deployed"] = "1"
+            write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+            return True
+        if "versanms.sdwan-template-workflow" in jstr: 
+          if "analyticsCluster" in jstr["versanms.sdwan-template-workflow"] and len(jstr["versanms.sdwan-template-workflow"]["analyticsCluster"]) > 0: 
+            if len(glbl.analy.data)  > 0:
+              mlog.info("Changing Analytics Cluster data for template={0} to {1}".format(dev["poststaging-template"],glbl.analy.data[0]["name"]))
+              jstr["versanms.sdwan-template-workflow"]["analyticsCluster"] = glbl.analy.data[0]["name"]
+          vdict = {}
+          _payload = json.dumps(jstr)
+          _uri = "/vnms/sdwan/workflow/templates/template/" + dev["poststaging-template"]
+          vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': "PUT", 'uri': _uri}
+          [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+          if out == 0:
+            mlog.error("Workflow template PUT deploy = {0} was NOT successful".format(dev["poststaging-template"]))
+            dev["template_deployed"] = "0"
+            if "redundantPair" in jstr["versanms.sdwan-template-workflow"]:
+              dev["redundantPair_templ"] = ""
+              dev["redundantPair_templ"] = jstr["versanms.sdwan-template-workflow"]["redundantPair"]["templateName"]
+            write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+            return False
+          # Now the deploy
+          #if template_manipulation(dev):
+          get_vnf_manager(dev)
+          return re_create_template(dev)
+          # Here we will not do a clean and recreate but just recreate
+      else: 
+        # the template for a paired device 
+        # will need to figure out how to deal with these
+        mlog.info("Deploy Template Workflow = {0} was not successful".format(dev["poststaging-template"]))
+        dev["template_deployed"] = "0"
+        write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+        return False
+      return True
 
 
 
+# deploy template for a device Not onboarded to hcn. Adds the new controller section. Recreates back the template
 def  deploy_template_workflow(dev):
       global vnms, analy, cntlr, cust, mlog
       mlog.warn("Deploying Template Workflow for: {0}".format(dev["poststaging-template"]))
@@ -748,8 +802,9 @@ def  deploy_template_workflow(dev):
       if dev["type"] == "branch" :
         ret = is_template_for_hcn(dev)
         if ret: 
-          dev["template_deployed"] = "1" # We fake that template deploy is done
-          return True # This is a template for the HCN
+          return deploy_template_workflow_device_onboarded_to_hcn(dev)
+          #dev["template_deployed"] = "1" # We fake that template deploy is done
+          #return True # This is a template for the HCN
 
       resp = '200'
       resp2 = '202'
@@ -788,26 +843,8 @@ def  deploy_template_workflow(dev):
             return False
           # Now the deploy
           #if template_manipulation(dev):
+          get_vnf_manager(dev)
           return re_create_template(dev)
-          '''
-          newpayload = {}
-          _uri = "/vnms/sdwan/workflow/templates/template/deploy/" +  dev["poststaging-template"]
-          vdict = {'body': newpayload, 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
-          [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-          if out == 0:
-            mlog.error("Deploy Template Workflow POST = {0} was NOT successful".format(dev["poststaging-template"]))
-            dev["template_deployed"] = "0"
-            if "redundantPair" in jstr["versanms.sdwan-template-workflow"]:
-              dev["redundantPair_templ"] = ""
-              dev["redundantPair_templ"] = jstr["versanms.sdwan-template-workflow"]["redundantPair"]["templateName"]
-            write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-            return False
-          else:
-            mlog.info("Deploy Template Workflow = {0} was successful".format(dev["poststaging-template"]))
-            dev["template_deployed"] = "1"
-            write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-            return True
-          '''
           # Here we will not do a clean and recreate but just recreate
       else: 
         # the template for a paired device 
@@ -818,6 +855,7 @@ def  deploy_template_workflow(dev):
         return False
       return True
 
+# Gets and replace the VNF Manager for the template
 def get_vnf_manager(device):
     global vnms, analy, cntlr, cust, mlog
 
@@ -852,52 +890,76 @@ def get_vnf_manager(device):
           mlog.info("VNF Manager after PUT = {0}".format(json.dumps(jstr,indent=4)))
     return ''
 
-def create_dns_config( _method, _uri,_payload,resp='200',name=None,option=0):
-    vdict = {}
-    vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
-    [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no")
-    if len(resp_str) > 3:
-      jstr = json_loads(resp_str)
-      mlog.info("Response = {0}".format(json.dumps(jstr,indent=4)))
-    return ''
+# Decrypts the keys for the new director. Checks to see that release is 21.2 or len > 100. Otherwise it returns the same data
+def decrypt_new_key(_data):
+    resp = '200'
+    resp2 = '202'
+    if len(_data) < 100 or glbl.vnms.data["rel"].find("21.2") == -1 :
+      return _data
 
+    _uri = "/vnms/operations/encryption/decrypt"
+    _payload = { "cipherText": _data }
+    # All done on New Dir
+    vdict = {'body': json.dumps(_payload), 'resp': '200', 'resp2': resp2, 'method':"POST", 'uri': _uri,
+            'vd_ip' :  newdir['vd_ip'], 'vd_rest_port': newdir['vd_rest_port'],
+            'auth': newdir['auth'] }
+    [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+    if out == 1 and len(resp_str) > 3:
+      return resp_str
+    else:
+      mlog.error("Decryption failed for Old Director Failed for Data={0}".format(_data))
+      return None
+
+# Decrypts the keys for the old director. Checks to see that release is 21.2 or len > 100. Otherwise it returns the same data
+def decrypt_old_key(_data):
+    resp = '200'
+    resp2 = '202'
+    if len(_data) < 100 or glbl.vnms.data["rel"].find("21.2") == -1 :
+      return _data
+
+    _uri = "/vnms/operations/encryption/decrypt"
+    _payload = { "cipherText": _data }
+    # All done on Old Dir
+    vdict = {'body': json.dumps(_payload), 'resp': '200', 'resp2': resp2, 'method':"POST", 'uri': _uri,
+            'vd_ip' :  olddir['vd_ip'], 'vd_rest_port': olddir['vd_rest_port'],
+            'auth': olddir['auth'] }
+    [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+    if out == 1 and len(resp_str) > 3:
+      return resp_str
+    else:
+      mlog.error("Decryption failed for Old Director Failed for Data={0}".format(_data))
+      return None
+
+    
+# Decrypts the keys for the new director.
 def  decrypt_key(dev):
-      resp = '200'
-      resp2 = '202'
-      vdict = {}
-      _uri = "/vnms/operations/encryption/decrypt"
+    resp = '200'
+    resp2 = '202'
+    vdict = {}
+    _uri = "/vnms/operations/encryption/decrypt"
 
-      if "local_auth_key" in dev and len(dev["local_auth_key"]) > 100:
-        _payload = { "cipherText": dev["local_auth_key"] }
-        vdict = {'body': json.dumps(_payload) , 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
-        [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-        if out == 1 and len(resp_str) > 3:
-          mlog.info("Device={0} local_auth_key={1} replaced by  Decryted Response={2}".format(dev["name"],dev["local_auth_key"],resp_str))
-          dev["local_auth_key"] = resp_str
-        else:
-          mlog.error("Failed for local_auth key ")
+    if "local_auth_key" in dev and len(dev["local_auth_key"]) > 100:
+      _payload = { "cipherText": dev["local_auth_key"] }
+      vdict = {'body': json.dumps(_payload) , 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
+      [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+      if out == 1 and len(resp_str) > 3:
+        mlog.info("Device={0} local_auth_key={1} replaced by  Decryted Response={2}".format(dev["name"],dev["local_auth_key"],resp_str))
+        dev["local_auth_key"] = resp_str
+      else:
+        mlog.error("Failed for local_auth key ")
 
-      if "local1_auth_key" in dev and len(dev["local1_auth_key"]) > 100:
-        _payload = { "cipherText": dev["local1_auth_key"] }
-        vdict = {'body': json.dumps(_payload) , 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
-        [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-        if out == 1 and len(resp_str) > 3:
-          mlog.info("Device={0} local1_auth_key={1} replaced by  Decryted Response={2}".format(dev["name"],dev["local1_auth_key"],resp_str))
-          dev["local1_auth_key"] = resp_str
-        else:
-          mlog.error("Failed for local1_auth key ")
+    if "local1_auth_key" in dev and len(dev["local1_auth_key"]) > 100:
+      _payload = { "cipherText": dev["local1_auth_key"] }
+      vdict = {'body': json.dumps(_payload) , 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
+      [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+      if out == 1 and len(resp_str) > 3:
+        mlog.info("Device={0} local1_auth_key={1} replaced by  Decryted Response={2}".format(dev["name"],dev["local1_auth_key"],resp_str))
+        dev["local1_auth_key"] = resp_str
+      else:
+        mlog.error("Failed for local1_auth key ")
 
-
-def  deploy_device_workflow(dev):
-      global vnms, analy, cntlr, cust, mlog
-      mlog.warn("Deploy Device Workflow for device: {0}".format(dev["name"]))
-
-      if dev["onboard_to_hcn"] == 1: 
-        dev["deployed"] = "1" # We fake that template deploy is done
-        return True # This is a template for the HCN
-      if dev["template_deployed"] == "0": 
-        mlog.error("Deploy Device Workflow can not be done since template deploy failed for device: {0}".format(dev["name"]))
-        return False # This is a template for the HCN
+# Deploy device workflow for devices onboarded to HCN. May not be used
+def  deploy_device_workflow_for_hcn(dev):
 
       resp = '200'
       resp2 = '202'
@@ -907,69 +969,123 @@ def  deploy_device_workflow(dev):
       vdict = {'body': _payload , 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri}
       [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
       if out == 1 and len(resp_str) > 3:
+        jstr = json_loads(resp_str)
+        a = jstr['versanms.sdwan-device-workflow']['postStagingTemplateInfo']['templateData']['device-template-variable']['variable-binding']['attrs']
+        for elem in a:
+          if "name" in elem and elem["name"].find("IKELKey") != -1 :
+            a = decrypt_old_key(elem["value"])
+            if a is not None:
+              elem["value"] = a
+            else:
+              mlog.error("Error could not decrypt for Key={0}".format(elem["name"]))
+
+
+        # Now it is time to push the data
         vdict = {'body': resp_str , 'resp': resp, 'resp2': resp2, 'method': "PUT", 'uri': _uri}
         [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
         if out == 1:
+          mlog.info("Deploy Device Workflow PUT was successful for device: {0}".format(dev["name"]))
+          # we can not deploy the device workflow because the hub controllers are not alive on the new director
+        return
+
+# Deploy device workflow for devices
+def  deploy_device_workflow(dev):
+
+      mlog.warn("Deploy Device Workflow for device: {0}".format(dev["name"]))
+      if dev["template_deployed"] == "0": 
+        mlog.error("Deploy Device Workflow can not be done since template deploy failed for device: {0}".format(dev["name"]))
+        return False 
+
+      resp = '200'
+      resp2 = '202'
+      vdict = {}
+      _uri = "/vnms/sdwan/workflow/devices/device/" + dev["name"]
+      _payload = {}
+      vdict = {'body': _payload , 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri}
+      [ret, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+      if ret == 1:
+        mlog.info("GET to device succeeded Device={0}".format(dev["name"]))
+        jstr = json_loads(resp_str)
+
+        vdict = {'body': json.dumps(jstr) , 'resp': resp, 'resp2': resp2, 'method': "PUT", 'uri': _uri}
+        [ret, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+        if ret == 1 and dev["onboard_to_hcn"] != 1: 
           mlog.info("Deploy Device Workflow PUT was successful for device: {0}".format(dev["name"]))
           time.sleep(10)
           _uri = "/vnms/sdwan/workflow/devices/device/deploy/" + dev["name"]
           _payload = {}
           vdict = {'body': _payload , 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri}
           [ret, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-          if ret == 1:
-            mlog.info("Deploy Device Workflow POST was successful for device: {0}".format(dev["name"]))
-            # before we return back we need to change the VNF Manager in the device template on the new director
+          if ret == 1: 
+            # NOW we need to do a GET and save details to the device
             _uri = "/vnms/sdwan/workflow/devices/device/" + dev["name"]
             _payload = {}
             vdict = {'body': _payload , 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri}
-            [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-            if out == 1 and len(resp_str) > 3:
+            [ret, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+            if ret == 1  and len(resp_str) > 3:
               jstr = json_loads(resp_str)
-              auth_keys = {}
-              for mcntlr in glbl.cntlr.data['new_cntlr']:
-                a = jstr['versanms.sdwan-device-workflow']['postStagingTemplateInfo']['templateData']['device-template-variable']['variable-binding']['attrs']
-                local_auth_key = '{$v_'+ glbl.cust.data["custName"] + '_' + mcntlr["controllerName"] + '_Local_auth_email_key__IKELKey}'
-                local_auth_identity = '{$v_'+ glbl.cust.data["custName"] + '_' + mcntlr["controllerName"] + '_Local_auth_email_identifier__IKELIdentifier}'
-                for val in a:
-                  #print val
-                  if "name" in val and val["name"] == local_auth_key :
-                    if "peerControllers" in mcntlr:
-                      dev["local_auth_key"] = val["value"]
-                      auth_keys["local_auth_key"] = val["value"]
-                    else: 
-                      dev["local1_auth_key"] = val["value"]
-                      auth_keys["local1_auth_key"] = val["value"]
-                  elif "name" in val and val["name"] == local_auth_identity :
-                    if "peerControllers" in mcntlr:
-                      dev["local_auth_identity"] = val["value"]
-                    else: 
-                      dev["local1_auth_identity"] = val["value"]
-                if "peerControllers" in mcntlr:
-                  dev["remote_auth_identity"] = mcntlr["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
-                else: 
-                  dev["remote1_auth_identity"] = mcntlr["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
+              a = jstr['versanms.sdwan-device-workflow']['postStagingTemplateInfo']['templateData']['device-template-variable']['variable-binding']['attrs']
+              new_cntlr_names = list(map(lambda x: x['name'], glbl.cntlr.data['new_cntlr']))
+              for val in a:
+                if "value" in val and val["name"].find("Key") != -1 :
+                  if val["name"].find(new_cntlr_names[0]) == -1 and val["name"].find(new_cntlr_names[1]) == -1:
+                    mlog.info("Not Controller Device={0} Name={1} Value={2}".format(dev["name"],val["name"],val["value"]))
+                    # Not for cntlr -- must be site to site ipsec
+                    # Not making any changes here -- maybe later
+                  elif val["name"].find(new_cntlr_names[0]) != -1:
+                    # For controller 1
+                    _data = decrypt_new_key(val["value"])
+                    #data2 = decrypt_new_key(val["value"])
+                    if _data is not None:
+                      dev["local1_auth_key"] = _data
+                      mlog.info("Device={0}: local1_auth_key={1}".format(dev["name"],dev["local1_auth_key"]))
 
-              decrypt_key(dev)
+                  elif val["name"].find(new_cntlr_names[1]) != -1:
+                    # For controller 2
+                    _data = decrypt_new_key(val["value"])
+                    #_data2 = decrypt_new_key(val["value"])
+                    if _data is not None:
+                      dev["local_auth_key"] = _data
+                      mlog.info("Device={0}: local_auth_key={1}".format(dev["name"],dev["local_auth_key"]))
 
-              dev["deployed"] = "1"
-              write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-              return True
-          else: 
-            mlog.error("Deploy Device Workflow POST was NOT successful for device: {0}".format(dev["name"]))
-            dev["deployed"] = "0"
+                elif "value" in val and val["name"].find("IKELIdentifier") != -1 :
+                  if val["name"].find(new_cntlr_names[0]) == -1 and val["name"].find(new_cntlr_names[1]) == -1:
+                    mlog.info("Not Controller Device={0} Name={1} Value={2}".format(dev["name"],val["name"],val["value"]))
+                    # Not for cntlr -- must be site to site ipsec
+                    # Not making any changes here -- maybe later
+                  elif val["name"].find(new_cntlr_names[0]) != -1:
+                    # For controller 1
+                    dev["local1_auth_identity"] = val["value"]
+                    dev["remote1_auth_identity"] = glbl.cntlr.data['new_cntlr'][0]["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
+                    mlog.info("Device={0}: local1_auth_identity={1} remote1_auth_identity={2}".format(dev["name"],dev["local1_auth_identity"],dev["remote1_auth_identity"]))
+
+                  elif val["name"].find(new_cntlr_names[1]) != -1:
+                    # For controller 2
+                    dev["local_auth_identity"] = val["value"]
+                    dev["remote_auth_identity"] = glbl.cntlr.data['new_cntlr'][1]["controllerName"] + '@' +  glbl.cust.data["custName"] + '.com' 
+                    mlog.info("Device={0}: local_auth_identity={1} remote_auth_identity={2}".format(dev["name"],dev["local_auth_identity"],dev["remote_auth_identity"]))
+            mlog.warn("Deploy Device Workflow for device: {0} was sucessful".format(dev["name"]))
+            dev["deployed"] = "1"
             write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-            return False
+            return True
+        elif dev["onboard_to_hcn"] == 1 and ret == 1: 
+          mlog.warn("Deploy Device Workflow for device: {0} was partly sucessful since device onboarded to Hub Controller".format(dev["name"]))
+          dev["deployed"] = "1"
+          write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+          return True
         else: 
-            mlog.error("Deploy Device Workflow PUT was NOT successful for device: {0}".format(dev["name"]))
-            dev["deployed"] = "0"
-            write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-            return False
+          mlog.error("Deploy Device Workflow PUT was NOT successful for device: {0}".format(dev["name"]))
+          dev["deployed"] = "0"
+          write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
+          return False
       else: 
         mlog.error("Deploy Device Workflow GET was NOT successful for device: {0}".format(dev["name"]))
         dev["deployed"] = "0"
         write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
         return False
+
      
+# Gets the Device Group in case we are re-running. Only those devices are used 
 def get_device_group_new( _method, _uri, _payload,resp='200', _name=None,_ofile=None, option=0):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1022,6 +1138,7 @@ def get_device_group_new( _method, _uri, _payload,resp='200', _name=None,_ofile=
     write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
     return ''
     
+# Initialize the Device data
 def init_device_data(_dev, jstr, i, found=1):
     if found == 1:
       if "poststaging-template" not in _dev:
@@ -1047,6 +1164,7 @@ def init_device_data(_dev, jstr, i, found=1):
     write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
         
      
+# Gets the Device Group 
 def get_device_group( _method, _uri, _payload,resp='200', _name=None,_ofile=None, option=0):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1076,33 +1194,10 @@ def get_device_group( _method, _uri, _payload,resp='200', _name=None,_ofile=None
                     mlog.info("Found device in list {0} ".format(devname))
                     dev = glbl.vnms.data['devices'][j]
                     init_device_data(dev, jstr, i, found=1)
-                    '''
-                    if "poststaging-template" not in glbl.vnms.data['devices'][j]:
-                      glbl.vnms.data['devices'][j]["poststaging-template"] = jstr["device-group"][i]["poststaging-template"]
-                    if "dg-group" not in glbl.vnms.data['devices'][j]:
-                      glbl.vnms.data['devices'][j]["dg-group"] = jstr["device-group"][i]["name"]
-                    if "deployed" not in glbl.vnms.data['devices'][j]:
-                      glbl.vnms.data['devices'][j]["deployed"] = "0"
-                    if "template_deployed" not in glbl.vnms.data['devices'][j]:
-                      glbl.vnms.data['devices'][j]["template_deployed"] = "0"
-                    if "onboard_to_hcn" not in glbl.vnms.data['devices'][j]:
-                      glbl.vnms.data['devices'][j]["onboard_to_hcn"] = 0
-                    write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-                    '''
                     found = 1
                 if found == 0:
                   mlog.warn("Device={0} not found in the list adding now".format(devname))
                   init_device_data(dev, jstr, i, found=0)
-                  '''
-                  a = {}
-                  a["name"] = devname
-                  a["poststaging-template"] =  jstr["device-group"][i]["poststaging-template"]
-                  a["dg-group"] =  jstr["device-group"][i]["name"]
-                  a["deployed"] =  "0"
-                  a["template_deployed"] = "0"
-                  glbl.vnms.data['devices'].append(a) 
-                  write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
-                  '''
                     
         if totalcnt <= (count + 25): break
         else: count = count + 25
@@ -1135,6 +1230,7 @@ def get_device_group( _method, _uri, _payload,resp='200', _name=None,_ofile=None
     write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
     return ''
     
+# Checks to dee if Hub Controllers are Present
 def is_hub_cntlr_present():
     global vnms, analy, cntlr, cust, mlog
     c = glbl.vnms.data.get('hub_cntlr_present', None)
@@ -1143,9 +1239,7 @@ def is_hub_cntlr_present():
     # the dict itself does not exist we need to get the appliance summary again to determine. Return None for now
     return None 
 
-
-
-
+# Get Parent OrgId
 def get_parent_orgid( _method, _uri, _payload,resp='200',_name=None, _ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1156,7 +1250,6 @@ def get_parent_orgid( _method, _uri, _payload,resp='200',_name=None, _ofile=None
     if out == 1 and len(resp_str) > 3:
       jstr = json_loads(resp_str)
       if 'uuid' in jstr:
-        glbl.vnms.data['parentOrgId'] = ""
         glbl.vnms.data['parentOrgId'] = jstr['uuid']
         write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
       else:
@@ -1165,7 +1258,7 @@ def get_parent_orgid( _method, _uri, _payload,resp='200',_name=None, _ofile=None
       mlog.error("Could not get parent Org UUID")
     return ''
 
-
+# Get Controller workflow
 def get_controller_workflow( _method, _uri, _payload,resp='200', _ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
@@ -1185,6 +1278,7 @@ def get_controller_workflow( _method, _uri, _payload,resp='200', _ofile=None):
       fp.close()
     return ''
 
+# Delete Controller workflow. First checks to see it is really present or not 
 def delete_controller_workflow(_name ):
     resp2 = '404'
     vdict = {}
@@ -1201,6 +1295,7 @@ def delete_controller_workflow(_name ):
         jstr = json_loads(resp_str)
     return 
 
+# Delete Controller using its UUID
 def delete_controller_by_uuid( _uuid ):
     resp2 = '202'
     vdict = {}
@@ -1220,6 +1315,7 @@ def delete_controller_by_uuid( _uuid ):
       #pprint(jstr)
     return 
 
+# Create wan ntwk for Reference Template -- not used
 def create_wan_ntwk_for_reference_tmplt():
     wan_list = []
     if 'transportDomain' in  glbl.vnms.data and len(glbl.vnms.data['transportDomain']) > 0: 
@@ -1238,6 +1334,7 @@ def create_wan_ntwk_for_reference_tmplt():
     return None
         
     
+# Create Reference template -- not used
 def create_reference_tmplt(_method, _uri,_payload,resp='200',name=None, option=0):
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function {0} ".format(create_reference_tmplt.__name__))
@@ -1283,6 +1380,7 @@ def create_reference_tmplt(_method, _uri,_payload,resp='200',name=None, option=0
     vdict = {'body': payload1,  'resp': resp, 'method': "DELETE", 'uri': uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
 
+# Recreate Template. Note we use the active section
 def re_create_template(dev):
     resp = "200"
     resp2 = "202"
@@ -1316,6 +1414,7 @@ def re_create_template(dev):
     return False
 
 
+# Template Manipulation -- not used
 def template_manipulation(dev):
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function {0} ".format(template_manipulation.__name__))
@@ -1395,26 +1494,11 @@ def template_manipulation(dev):
     get_vnf_manager(dev)
     return True
     
+# Puts these files in in_phase3 directory
 def post_script():
     # we need to write a few files so it is easier on the next phase
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function {0} ".format(post_script.__name__))
-    '''
-    i = 0
-    for dev in glbl.cntlr.data['old_cntlr']:
-      jstr = {}
-      _uri = '/vnms/sdwan/workflow/controllers/controller/' + dev['name']
-      out = common.create_out_data("GET","200",_uri, jstr)
-      if i == 0: 
-        fname = "in_phase3/" + "{:03d}_GET_CONTROLLER_WORKFLOW.json".format(i)
-      else:
-        fname = "in_phase3/" + "{:03d}_GET_PEER_CONTROLLER_WORKFLOW.json".format(i)
-      fp=open(fname,"w+")
-      out1 = json.dumps(out, indent=4)
-      fp.write(out1)
-      fp.close()
-      i = i + 1
-    '''
 
     _str = '/api/config/devices/template/'+ '{{templateName}}' 
     for i in range(13,17):
@@ -1462,6 +1546,7 @@ def post_script():
       fp.close()
     return
         
+# Gets appliance details especially the BranchId
 def get_appliance_details(_dev_list, _len):
     global vnms, analy, cntlr, cust, admin, mlog
     resp2 = '202'
@@ -1505,9 +1590,7 @@ def get_appliance_details(_dev_list, _len):
         elem_no_branchId = elem_no_branchId + 1
 
 
-
-
-
+# Gets existing (old) controllers
 def get_existing_controller():
     global vnms, analy, cntlr, cust, admin, mlog
     resp2 = '202'
@@ -1531,7 +1614,7 @@ def get_existing_controller():
       old_cntlr_list = list(filter(lambda x: x['type'] == 'controller', jstr))
       old_cntlr_names = list(map(lambda x: x['name'], old_cntlr_list))
       dev_list = list(filter(lambda x: x['type'] != 'controller', jstr))
-      hub_cntlr_list = list(filter(lambda x: x['type'] == 'hub_controller' or x['type'] == 'hub_controller', jstr))
+      hub_cntlr_list = list(filter(lambda x: x['type'] == 'hub_controller' or x['type'] == 'hub-controller', jstr))
       if len(hub_cntlr_list) > 0: 
         new_hub_cntlr_list = copy.deepcopy( hub_cntlr_list )
         if 'hub_cntlr_present' not in glbl.vnms.data:
@@ -1574,21 +1657,6 @@ def get_existing_controller():
         mlog.error("Did not find devices = {0}".format(json.dumps(jstr,indent=4)))
         return False
 
-
-      '''
-      for dev in old_cntlr_list: 
-        # No need to do this step if we the earlier found was matched
-        if found > 1: break 
-        _payload = {}
-        uri = "/vnms/sdwan/workflow/controllers/controller/" + dev["name"]
-        vdict = {'body': _payload, 'resp': '200', 'resp2': resp2, 'method': "GET", 'uri':uri }
-        [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
-        if len(resp_str) > 3 :
-          jstr = json_loads(resp_str)
-          if "versanms.sdwan-controller-workflow" in jstr and "peerControllers" in jstr["versanms.sdwan-controller-workflow"]:
-            dev["peerControllers"]=  []
-            dev["peerControllers"]=  jstr["versanms.sdwan-controller-workflow"]["peerControllers"]
-      '''
 
 
       for dev in old_cntlr_list: 
@@ -1639,6 +1707,7 @@ def get_existing_controller():
 
     return False
 
+# Sync to for Controllers
 def set_cntlr_synch_to( _method, _uri,_payload,resp='200',name=None, option=0):
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no")
@@ -1659,7 +1728,8 @@ def set_cntlr_synch_to( _method, _uri,_payload,resp='200',name=None, option=0):
           set_cntlr_synch_to( _method, _uri,_payload,resp='200', name=name, option=option)
           
     return ''
-    
+
+# create dns config. This is default function call for files that have no callback
 def create_dns_config( _method, _uri,_payload,resp='200',name=None, option=0):
     vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
@@ -1669,6 +1739,7 @@ def create_dns_config( _method, _uri,_payload,resp='200',name=None, option=0):
       mlog.info("Response for Method={0} URI={1} str = {2}".format(_method,_uri,json.dumps(jstr,indent=4)))
     return ''
 
+# yes or no question
 def yes_or_no3(question, option = 0):
     if pyVer.major== 3:
       reply = str(input(question+' (y/n): ')).lower().strip()
@@ -1679,6 +1750,7 @@ def yes_or_no3(question, option = 0):
       elif reply[0] == 'y': return 1
     return 1
 
+# yes or no question
 def yes_or_no2(question):
     if pyVer.major == 3:
       reply = str(input(question+' (y/n): ')).lower().strip()
@@ -1689,17 +1761,7 @@ def yes_or_no2(question):
     else:
         return yes_or_no2("Did not understand input: Please re-enter ") 
 
-#def yes_or_no(question):
-#    if pyVer.major == 3:
-#      reply = str(input(question+' (y[default]/n/s): ')).lower().strip()
-#    else:
-#      reply = str(raw_input(question+' (y[default]/n/s): ')).lower().strip()
-#    if reply[0] == 'n': return 0
-#    elif reply[0] == 'y': return 1
-#    elif reply[0] == 's': return 2
-#    else:
-#        return yes_or_no("Did not understand input: Please re-enter ") 
-
+# yes or no question
 def yes_or_no(question, option=0):
 
     if option == 0:
@@ -1723,6 +1785,7 @@ def yes_or_no(question, option=0):
       else:
           return yes_or_no("Did not understand input: Please re-enter ",option) 
 
+# write the output json file
 def write_outfile(_vnms,_analy,_cntlr,_cust, _admin):
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function {0} : Output file:vm_phase3.json".format(write_outfile.__name__))
@@ -1737,6 +1800,7 @@ def write_outfile(_vnms,_analy,_cntlr,_cust, _admin):
     fin.write(mstr1)
     fin.close()
 
+# read input file -- may not be used
 def read_input_file(_infile, option=None):
     global vnms, analy, cntlr, cust, admin, auth, debug, mlog, mdict
 
@@ -1762,6 +1826,7 @@ def read_input_file(_infile, option=None):
       return json_loads(jstr)
 
 
+# process the input files
 def process_normal(fil,template_env,template_path, option=False):
     global vnms, analy, cntlr, cust, admin, auth, debug, mlog
 
@@ -1769,7 +1834,9 @@ def process_normal(fil,template_env,template_path, option=False):
     dir_items = sorted(os.listdir(template_path))
     for i in dir_items:
        # check the format of the files
+       #print("Got item={0}".format(i))
        if not re.match(r'^\d{3}_.+\.json$', i):
+          print("Got Not match item={0}".format(i))
           continue
        if option: 
           # Here we are dealing with the re-read case. We just need to read one file 
@@ -1901,6 +1968,7 @@ def process_normal(fil,template_env,template_path, option=False):
          y= json_loads(x)
          _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),name=name,option=1)
        elif _newkey == 'BUILD_DEPLOY_REF_TMPLT':
+         continue
          wan_list =  create_wan_ntwk_for_reference_tmplt()
          lan_intf_num = str(len(wan_list)+1)
          controllerName=[glbl.cntlr.data['new_cntlr'][0]["controllerName"],glbl.cntlr.data['new_cntlr'][1]["controllerName"]]
@@ -1909,12 +1977,13 @@ def process_normal(fil,template_env,template_path, option=False):
          y= json_loads(x)
          _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),name="Ref_Template",option=0)
 
-
+# split a string on length
 def my_split_string(_str, n):
     my_list = [_str[index : index + n] for index in range(0, len(_str), n)]
     return my_list
 
 
+# get terminal size
 def get_terminal_size():
   global MYLINES, MYCOL
   os_env = os.environ
@@ -1928,6 +1997,7 @@ def get_terminal_size():
   else:
     MYCOL = 70
 
+# perform initial checks
 def perform_initial_checks():
     err = 0
     mlog.warn("Performing Initial checks. Please be patient")
@@ -1980,7 +2050,7 @@ def perform_initial_checks():
 
 
 
-
+# show device status 
 def show_devices_status( ):
     global vnms, analy, cntlr, cust, admin, auth, debug, mlog, NOT_DEPLOYED 
     cnt_list = []
@@ -2001,14 +2071,6 @@ def show_devices_status( ):
       mlog.error("Name not found in devices list ")
       return
 
-    '''
-    for i in range(len(glbl.vnms.data['devices'])):
-      #if len(glbl.vnms.data["devices"][i]["name"]) > pcol1 : pcol1= len(glbl.vnms.data["devices"][i]["name"]) + 1 
-      #if len(glbl.vnms.data["devices"][i]['poststaging-template']) > pcol2 : pcol2= len(glbl.vnms.data["devices"][i]['poststaging-template']) + 1
-      #if len(glbl.vnms.data["devices"][i]['dg-group']) > pcol3 : pcol3= len(glbl.vnms.data["devices"][i]['dg-group']) + 1 
-      cnt_list.append(count)
-      count = count + 1
-    '''
     cnt_list = list(range(1,len(glbl.vnms.data['devices'])+1))
     bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['devices']))
     comb_dict=dict(zip(bId_list,glbl.vnms.data['devices']))
@@ -2103,7 +2165,7 @@ def show_devices_status( ):
            "You can re-run the program  multiple time using the same command.\n" +
            "IF THE ERRORS ARE NOT FIXED, the corresponding devices will NOT be migrated." + bcolors.ENDC)
 
-
+# main
 def main():
     #global vnms, analy, cntlr, cust, admin, auth, debug, mlog, mdict
     global mlog, mdict, newdir, olddir
@@ -2139,9 +2201,7 @@ def main():
     if debug == 0:
         mlog.setLevel(logging.WARNING)
 
-    # before we write the output file we need to see if old_cntlr data is present or not
-    # Initialize it
-
+    # Initialize director information. Note the variables are global
     newdir= {'vd_ip' :  glbl.admin.data['new_dir']['vd_ip'],
             'vd_rest_port': glbl.admin.data['new_dir']['vd_rest_port'],
             'auth': glbl.admin.data['new_dir']['auth'] }
@@ -2159,6 +2219,7 @@ def main():
     #write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
     get_terminal_size()
 
+    # before we write the output file we need to see if old_cntlr data is present or not
     perform_initial_checks()
 
 
