@@ -1,0 +1,56 @@
+{
+  "access-policy": {
+    "name": "RULE_NAME",
+    "rule-disable": "false",
+    "match": {
+      "source": {
+        "zone": {},
+        "address": {
+          "address-list": [
+            "RULE_SRC_LIST"
+          ]
+        },
+        "site-name": [],
+        "user": {
+          "user-type": "any",
+          "local-database": {
+            "status": "disabled"
+          },
+          "external-database": {
+            "status": "disabled"
+          }
+        }
+      },
+      "destination": {
+        "zone": {},
+        "address": {
+          "address-list": [
+            "RULE_DST_LIST"
+          ]
+        },
+        "site-name": []
+      },
+      "services": {
+        "predefined-services-list": [
+          "RULE_SERVICES"
+        ],
+        "services-list": []
+      },
+      "application": {},
+      "url-reputation": {},
+      "ttl": {}
+    },
+    "set": {
+      "lef": {
+        "event": "never",
+        "options": {
+          "send-pcap-data": {
+            "enable": false
+          }
+        }
+      },
+      "action": "RULE_ACTION",
+      "tcp-session-keepalive": "disabled"
+    }
+  }
+}
