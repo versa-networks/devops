@@ -34,10 +34,10 @@ if __name__ == '__main__':
     parser.add_argument('--group', default='Default-Policy', type=str,help='Policy Group Name')
     parser.add_argument('--user', default='Administrator', type=str,help='GUI username of Director')
     parser.add_argument('--password', default='versa123', type=str,help='GUI password of Director')
-    parser.add_argument('--csv_file', default='access-rules-create.csv', type=str,help='CSV File including the access policy rules')
+    parser.add_argument('--csv_file', default='rules-create.csv', type=str,help='CSV File including the access policy rules')
 
     args            = parser.parse_args()
-    csv_file        = open(args.file, 'r')
+    csv_file        = open(args.csv_file, 'r')
     csv_reader      = csv.reader(csv_file, delimiter=';')
     payload_list    = []
     
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         rule_service        = row[3]
         rule_action         = row[4]
 
-        json_template = open('./access-rules-create.json')
+        json_template = open('./rules-create.json')
         
         payload = json_template.read()
         payload = payload.replace('RULE_NAME',rule_name)
