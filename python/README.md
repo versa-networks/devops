@@ -21,6 +21,6 @@ Script for deleting archive logs on an Analytics node for a given Organization
 ## Day1
 Day1 scripts to provision the Director and the Controller
 ## VOS Framework
-A script to automate NG Firewall rule changes on VOS.
+This repository provides scripts to help you save time when creating or modifiying too many rules on VOS.
 ## Device Sync Status
 Script to identify Template and Director sync status for a tenant.
