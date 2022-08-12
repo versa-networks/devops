@@ -37,7 +37,9 @@ Before you get started make sure you have the following information:
 5) The name of the organization where the CPE is managed
 6) The name of the Access Policy group where the rules are located ( Default is Default-Policy )
 
-##  Exemple
+![ALT](./rules-edit.png)
+
+##  Example
 
 I'm putting below a couple of interresting examples to perform mass changes on VOS access policies. 
 Note that by default, ```--user=Administrator``` and  ```--password=versa123```. Make sure you change those variable if required.
