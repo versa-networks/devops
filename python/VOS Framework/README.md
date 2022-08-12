@@ -1,16 +1,16 @@
-### Description
+## Description
 
 Welcome aboard fellow devops, this is where you will find the VOS Framework which you are free to use.
 This repository provides scripts to help you save a massive amount of time when creating or modifiying security rules ( but not only ) on VOS.
 
-### Motivation
+## Motivation
 
 Every once in a while you will have to perform anoying & time consumings tasks on your devices , i ve been there so many time  I wanted to find a way to make our life easier. Let me share a couple of examples.
 
 - You need to create 234 security rules based on an excel sheet.
-- You need to remove disabled rules on each devices in the organization ( too bad there are 100 of them ).
+- You need to remove disabled rules on each devices in the organization (too bad there are 100 of them).
 - You need to add log settings on security rules when it is missing.
-- You need to enable rules with the TAG XYZ after they have been approved by Corp ( too bad again , Corp approves dozen of them each week )
+- You need to enable rules with the TAG OK after they were approved (Corp approves dozen of them each week).
 
 And the list goes on :)
 
@@ -27,5 +27,5 @@ pip3 install argparse
 
 | SR No | Project                                                                                                                                | Description                                             |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1     | [VOS Rule Edit](https://github.com/)                                                                                                   | Manipulate VOS rules like a pro                         |
-| 2     | [VOS Rule Create](https://github.com/)                                                                                                 | Create VOS rules at the speed of light                  |
+| 1     | [VOS Rule Edit](https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/rule-edit)                               | Manipulate VOS rules like a pro                         |
+| 2     | [VOS Rule Create](https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/rule-create)                           | Create VOS rules at the speed of light                  |
