@@ -35,6 +35,8 @@ MYLINES = 0
 MYCOL = 0
 args = None
 hub_controller_complete = 0
+partition = None
+LOG_FILENAME = None
 
 class bcolors:
   """ the background colors
@@ -57,7 +59,8 @@ def argcheck():
   mystr = os.path.basename(sys.argv[0])
   parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),description='%(prog)s Help:',usage='%(prog)s -f filename [options]', add_help=False)
   parser.add_argument('-f','--file',required=True, help='input file [required ]' )
-  parser.add_argument('-d','--debug',default=0, help='set/unset debug flag')
+  parser.add_argument('-d','--debug',default=0, type=int, help='set/unset debug flag')
+  parser.add_argument('-p','--partition',type=int, default=0, help='set/unset debug flag')
   parser.add_argument('-t','--test',action='store_true', help='set/unset test flag')
 
   try:
@@ -71,8 +74,9 @@ def usage():
   print(bcolors.OKCHECK)
   print( """\
 Usage:
-    To change versions use:
       %(mystr)s --f/-f <infile>
+    To add more partition:
+      %(mystr)s -f <infile> --partition/-p [1/2/3/4]
     To add more debug:
       %(mystr)s -f <infile> --debug/-d [0/1]
   """ %locals())
@@ -90,7 +94,6 @@ def json_loads(_str,**kwargs):
 
 def get_default( _method, _uri,_payload,resp='200', ofile=None):
     global vnms, analy, cntlr, cust, mlog
-    vdict = {}
     mlog.info("In function " + get_default.__name__)
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
@@ -106,16 +109,25 @@ def get_default( _method, _uri,_payload,resp='200', ofile=None):
     fp.close()
     return
 
-def write_outfile(_vnms,_analy,_cntlr,_cust, _admin):
+def write_outfile(_vnms,_analy,_cntlr,_cust, _admin, option=0):
     global vnms, analy, cntlr, cust, admin, mlog
-    mlog.info("In function {0} : Output file:vm_phase4.json".format(write_outfile.__name__))
+    fname = None
+    if partition == 0:
+      if option == 0: fname = "vm_phase4.json"
+      else: fname = "vm_phase3.json"
+    else:
+      if option == 0: fname = "vm_phase4_{:02d}.json".format( partition )
+      else: fname = "vm_phase3_{:02d}.json".format(partition)
+
+
+    mlog.info("In function {0} : Output file:{1}".format(write_outfile.__name__, fname))
     jstr = {}
     jstr["Vnms"] = _vnms.data
     jstr["Analytics"] = _analy.data
     jstr["Controller"] = _cntlr.data
     jstr["Admin"] = _admin.data
     jstr["Customer"] = _cust.data
-    fin=open("vm_phase4.json", "w+")
+    fin=open(fname, "w+")
     mstr1 = json.dumps(jstr, indent=4)
     fin.write(mstr1)
     fin.close()
@@ -151,7 +163,6 @@ def get_n_fill_bind_data(_method, _uri, _payload,resp='200',vd_data=None, device
           "/devicegroup/" + dg_group + "?offset=0&limit=25")
     payload = {}
     resp2 = '202'
-    vdict = {}
     vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -186,7 +197,6 @@ def get_n_fill_bind_data(_method, _uri, _payload,resp='200',vd_data=None, device
                   found = found + 1
       if found >= 2 : 
         payload = json.dumps(jstr)
-        vdict = {}
         uri = ("/nextgen/binddata/templateData/template/" + device["poststaging-template"] + 
               "/devicegroup/" + dg_group)
         vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PUT', 'uri': uri,
@@ -218,12 +228,11 @@ def get_hub_cntlr_device_ipsec_vpn_profile( vd_data=None, device=None,_cntlr=2):
 
     if _cntlr != 1 : # we will do this only if _cntlr = 1
       return ''
-    mlog.warn("Modifying IPSEC VPN Profile details for device = {0} since it is a Hub-Controller".format(device["name"]))
+    mlog.warn("Modifying IPSEC VPN Profile details for Device={0} since it is a Hub-Controller".format(device["name"]))
     _uri="/api/config/devices/device/" + device["name"] + "/config/orgs/org-services/alpha/ipsec/vpn-profile?deep=true&offset=0&limit=25"
     _payload = {}
     resp = '200'
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': "GET" , 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -259,7 +268,6 @@ def get_hub_cntlr_device_ipsec_vpn_profile( vd_data=None, device=None,_cntlr=2):
         #mlog.info("IPSEC VPN Profile after Deletion = {0}".format(json.dumps(jstr,indent=4)))
         time.sleep(10)
         payload = json.dumps(vpn_data[i])
-        vdict = {}
         uri =  _uri.rsplit('?',1)[0] + "/" + vpn_profile[i]
         vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PUT', 'uri': uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
@@ -284,9 +292,8 @@ def get_device_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=Non
       mlog.error("Bad inputs in function {0} ".format(get_device_ipsec_vpn_profile.__name__))
       return
 
-    mlog.warn("Modifying IPSEC VPN Profile details for device = {0} ".format(device["name"]))
+    mlog.warn("Modifying IPSEC VPN Profile details for Device={0} ".format(device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -308,7 +315,6 @@ def get_device_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=Non
       new_p_cntlr = get_new_peer_controller_name(_cntlr)
       # Delete the OlD VPN profile first
       payload = {}
-      vdict = {}
       uri =  _uri.rsplit('?',1)[0]
       uri =  uri + "/" + old_p_cntlr["name"] + "-Profile"
       vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'DELETE', 'uri': uri,
@@ -386,7 +392,6 @@ def get_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=None, devi
 
     mlog.info("In function {0} with device = {1} ".format(get_ipsec_vpn_profile.__name__, device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -432,7 +437,6 @@ def get_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=None, devi
         # Only send the PATCH if we found all our elements
         if found == 2:
           payload = json.dumps(jstr)
-          vdict = {}
           uri =  _uri.rsplit('?',1)[0]
           uri = uri + "?unhide=deprecated"
           vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PATCH', 'uri': uri,
@@ -448,7 +452,6 @@ def get_ipsec_vpn_profile( _method, _uri, _payload,resp='200',vd_data=None, devi
 
           if out == 1:
             payload = {}
-            vdict = {}
             uri =  _uri.rsplit('?',1)[0]
             uri =  uri + "/" + old_p_cntlr["name"] + "-Profile"
             vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'DELETE', 'uri': uri,
@@ -474,9 +477,8 @@ def get_device_system_controller( _method, _uri, _payload,resp='200',vd_data=Non
       mlog.error("Bad inputs in function {0} ".format(get_device_system_controller.__name__))
       return
 
-    mlog.warn("Modifying System Controller details for device = {0} ".format(device["name"]))
+    mlog.warn("Modifying System Controller details for Device={0} ".format(device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -492,7 +494,6 @@ def get_device_system_controller( _method, _uri, _payload,resp='200',vd_data=Non
       new_p_cntlr = get_new_peer_controller_name(_cntlr)
       # first let us do the delete
       payload = {}
-      vdict = {}
       uri =  _uri.rsplit('?',1)[0]
       uri =  uri + "/" + old_p_cntlr["name"] 
       vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'DELETE', 'uri': uri,
@@ -513,6 +514,8 @@ def get_device_system_controller( _method, _uri, _payload,resp='200',vd_data=Non
           return ''
         mlist = sys_cntlr_list["controller"][0]
         mlist["name"] = new_p_cntlr["controllerName"]
+        if "site-name" in mlist:
+          mlist["site-name"] = new_p_cntlr["controllerName"]
         if "transport-addresses" in mlist and "transport-address" in mlist["transport-addresses"]:
           for elem in  mlist["transport-addresses"]["transport-address"]:
             if "Internet" in elem["transport-domains"]:
@@ -554,7 +557,6 @@ def get_system_controller( _method, _uri, _payload,resp='200',vd_data=None, devi
 
     mlog.info("In function {0} with device = {1} ".format(get_system_controller.__name__, device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -589,7 +591,6 @@ def get_system_controller( _method, _uri, _payload,resp='200',vd_data=None, devi
                     
         if found > 0 : 
           payload = json.dumps(jstr)
-          vdict = {}
           uri =  _uri.rsplit('?',1)[0]
           vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PATCH', 'uri': uri,
                 'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
@@ -603,7 +604,6 @@ def get_system_controller( _method, _uri, _payload,resp='200',vd_data=None, devi
 
           if out == 1:
             payload = {}
-            vdict = {}
             uri =  uri + "/" + old_p_cntlr["name"] 
             vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'DELETE', 'uri': uri,
                   'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
@@ -662,7 +662,6 @@ def get_device_sdwan_site(vd_data=None, device=None,_cntlr=2):
     _payload = {}
     resp = '200'
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': "GET" , 'uri': uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -677,7 +676,6 @@ def get_device_sdwan_site(vd_data=None, device=None,_cntlr=2):
         jstr["branch-vnf-manager"]["ip-addresses"] = south_ip
       # First the delete
       payload = json.dumps(jstr)
-      vdict = {}
       vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PUT', 'uri': uri,
             'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
              'auth': vd_data['auth']
@@ -687,7 +685,7 @@ def get_device_sdwan_site(vd_data=None, device=None,_cntlr=2):
         newjstr = json_loads(resp_str)
         #mlog.info("SDWAN Controller = {0}".format(json.dumps(newjstr,indent=4)))
     else: 
-      mlog.error("Could not send PUT from function {0} for device = {1} ".format(get_device_sdwan_site.__name__,device["name"] ))
+      mlog.error("Could not send PUT from function {0} for Device={1} ".format(get_device_sdwan_site.__name__,device["name"] ))
     return ''
 
 #get device sdwan controller
@@ -698,9 +696,8 @@ def get_device_sdwan_controller( _method, _uri, _payload,resp='200',vd_data=None
       mlog.error("Bad inputs in function {0} ".format(get_device_sdwan_controller.__name__))
       return
 
-    mlog.warn("Modifying SDWAN Controller details for device = {0} ".format(device["name"]))
+    mlog.warn("Modifying SDWAN Controller details for Device={0} ".format(device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -778,7 +775,6 @@ def get_sdwan_controller( _method, _uri, _payload,resp='200',vd_data=None, devic
 
     mlog.info("In function {0} with device = {1} ".format(get_sdwan_controller.__name__, device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -798,7 +794,6 @@ def get_sdwan_controller( _method, _uri, _payload,resp='200',vd_data=None, devic
 
       if found > 0 :
         payload = json.dumps(jstr)
-        vdict = {}
         uri =  _uri.rsplit('?',1)[0]
         vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'PATCH', 'uri': uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
@@ -812,7 +807,6 @@ def get_sdwan_controller( _method, _uri, _payload,resp='200',vd_data=None, devic
 
         if out == 1: 
           payload = {}
-          vdict = {}
           uri =  uri + "/" + old_p_cntlr['name'] 
           vdict = {'body': payload, 'resp': resp, 'resp2': resp2, 'method': 'DELETE', 'uri': uri,
                 'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
@@ -836,9 +830,8 @@ def get_device_vnf_manager( _method, _uri, _payload,resp='200',vd_data=None, dev
       mlog.error("Bad inputs in function {0} ".format(get_device_vnf_manager.__name__))
       return
 
-    mlog.warn("Modifying VNF Manager details for device = {0} ".format(device["name"]))
+    mlog.warn("Modifying VNF Manager details for Device={0} ".format(device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -880,7 +873,6 @@ def get_vnf_manager( _method, _uri, _payload,resp='200',vd_data=None, device=Non
 
     mlog.info("In function {0} with device = {1} ".format(get_vnf_manager.__name__, device["name"]))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth']
@@ -907,7 +899,6 @@ def get_vnf_manager( _method, _uri, _payload,resp='200',vd_data=None, device=Non
 
 # default callback
 def create_dns_config( _method, _uri,_payload,resp='200'):
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no")
     if len(resp_str) > 3:
@@ -932,7 +923,6 @@ def get_lef_status (vd_data,device,_cntlr):
     resp='200'
     resp2 = '202'
     _payload ={}
-    vdict = {}
     _uri = ( "/vnms/dashboard/appliance/" + device["name"] + "/live?&command=orgs/org-services/" + 
               glbl.cust.data["custName"] +  "/lef/collectors?deep" )
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':"GET", 'uri': _uri,
@@ -1025,7 +1015,6 @@ def get_bgp_status(vd_data,device,_cntlr):
     _uri = ( "/vnms/dashboard/appliance/" + device["name"] + "/live?&command=bgp/neighbors/brief/" + 
                 glbl.cust.data["custName"] + "-Control-VR?deep" )
     _payload = {}
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':"GET", 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
                'auth': vd_data['auth'] }
@@ -1059,7 +1048,6 @@ def check_device_sync_status(vd_data, device):
     _uri = "/vnms/dashboard/appliance/" + device["uuid"] + "/syncStatus"
     #mlog.warn("Director with IP {0} is Checking Sync Status for device {1}. Please be patient".format(vd_data['vd_ip'],device["name"]))
     _payload = {}
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri,
             'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
              'auth': vd_data['auth']
@@ -1073,10 +1061,10 @@ def check_device_sync_status(vd_data, device):
           jstr = json_loads(resp_str)
           if ("versanms.ApplianceStatus" in jstr and "sync-status" in  jstr["versanms.ApplianceStatus"] and "unreachable" in  jstr["versanms.ApplianceStatus"] and 
                jstr["versanms.ApplianceStatus"]["sync-status"] == "IN_SYNC"  and  jstr["versanms.ApplianceStatus"]["unreachable"] == 0): 
-            mlog.warn("Device {0} is in Sync from Director with IP {1}".format(device["name"],vd_data['vd_ip']))
+            mlog.warn("Device:{0} is in Sync from Director with IP {1}".format(device["name"],vd_data['vd_ip']))
             return True
 
-    mlog.error("Device {0} is either Unreachable or NOT in Sync from Director with IP {1}".format(device["name"],vd_data['vd_ip']))
+    mlog.error("Device:{0} is either Unreachable or NOT in Sync from Director with IP {1}".format(device["name"],vd_data['vd_ip']))
     return False
     
 
@@ -1086,7 +1074,6 @@ def  deploy_device_workflow_for_hcn(dev):
 
       resp = '200'
       resp2 = '202'
-      vdict = {}
       _uri = "/vnms/sdwan/workflow/devices/device/" + dev["name"]
       _payload = {}
       vdict = {'body': _payload , 'resp': resp, 'resp2': resp2, 'method': "GET", 'uri': _uri}
@@ -1126,7 +1113,6 @@ def device_connect(vd_data,device=None,_cntlr=2):
     _uri = "/api/config/devices/device/" + device["name"] + "/_operations/connect"
     mlog.warn("Director with IP {0} is trying  to connect to device {1}. Please be patient".format(vd_data['vd_ip'],device["name"]))
     _payload = {}
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': "POST", 'uri': _uri,
             'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
              'auth': vd_data['auth']
@@ -1159,7 +1145,7 @@ def device_connect(vd_data,device=None,_cntlr=2):
         if len(resp_str) > 3:
           jstr = json_loads(resp_str)
           if "output" in jstr and "result" in  jstr["output"] and jstr["output"]["result"] == 1: 
-            mlog.info("Sync from Director with IP {0} successful for device {1}".format(vd_data['vd_ip'],device["name"]))
+            mlog.info("Sync from Director with IP {0} successful for Device={1}".format(vd_data['vd_ip'],device["name"]))
             device["status"] = "C2-Complete"
             if is_hub_cntlr_present():
               if hub_controller_complete == 0 : 
@@ -1170,11 +1156,11 @@ def device_connect(vd_data,device=None,_cntlr=2):
                 deploy_device_workflow_for_hcn(device) 
             return
       else:
-        mlog.error("Sync from Director with IP {0} NOT successful for device {1}".format(vd_data['vd_ip'],device["name"]))
+        mlog.error("Sync from Director with IP {0} NOT successful for Device={1}".format(vd_data['vd_ip'],device["name"]))
         return
     else: 
       device["status"] = "C12-Complete"
-      mlog.warn("Performing checks from Director with IP {0} for device {1}. Please be patient".format(vd_data['vd_ip'],device["name"]))
+      mlog.warn("Performing checks from Director with IP {0} for Device={1}. Please be patient".format(vd_data['vd_ip'],device["name"]))
       for i in range (0,3):
         time.sleep(30)
         if get_bgp_status( vd_data,device,_cntlr): break
@@ -1237,7 +1223,11 @@ def get_n_process_appliance_list( vd_data):
         else: count = count + 25
     write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
     # Find and print the error list
-    errorlist = list(filter(lambda x: "deviceStatus" in x and (x['deviceStatus']["ping-status"]!= "REACHABLE" or x['deviceStatus']["sync-status"]!= "IN_SYNC"), glbl.vnms.data["devices"]))
+    if partition == 0:
+      errorlist = list(filter(lambda x: "deviceStatus" in x and (x['deviceStatus']["ping-status"]!= "REACHABLE" or x['deviceStatus']["sync-status"]!= "IN_SYNC"), glbl.vnms.data["devices"]))
+    else:
+      errorlist = list(filter(lambda x: "deviceStatus" in x and x['partition'] == partition and (x['deviceStatus']["ping-status"]!= "REACHABLE" or x['deviceStatus']["sync-status"]!= "IN_SYNC"), glbl.vnms.data["devices"]))
+
     if len(errorlist) > 0:
       print ("The following devices are in error status from Director = {0}".format(vd_data['vd_ip']))
       col0=int(MYCOL/4)
@@ -1290,12 +1280,15 @@ def my_split_string(_str, n):
 # read input from user
 def read_input_from_user(_option, _comb_dict):
 
+    cntlr_names = [glbl.cntlr.data['old_cntlr'][0]["controllerName"],glbl.cntlr.data['old_cntlr'][1]["controllerName"]]
+    cntlr_name = glbl.cntlr.data['old_cntlr'][_option-1]["controllerName"]
     if _option == 2:
+      p_cntlr_name = glbl.cntlr.data['old_cntlr'][0]["controllerName"]
       _str = (bcolors.OKWARN + "Choose A NUMBER or MULTIPLE NUMBERS SEPARATED BY SPACE"  +
-                  " to continue moving Controller-2\n OR ENTER 0 to start moving Controller-1  OR ENTER -1 to view the table: " + bcolors.ENDC)
+                  " to continue moving Controller={0}\n OR ENTER 0 to start moving {1}  OR ENTER -1 to view the table: ".format(cntlr_name,p_cntlr_name) + bcolors.ENDC)
     else: 
       _str = (bcolors.OKWARN + "Choose A NUMBER OR MULTIPLE NUMBERS SEPARATED BY SPACE" +
-                  " to continue moving Controller-1\n OR ENTER 0 to quit the program OR  ENTER -1 to view the table: " + bcolors.ENDC)
+                  " to continue moving Controller={0}\n OR ENTER 0 to quit the program OR  ENTER -1 to view the table: ".format(cntlr_name) + bcolors.ENDC)
       
     while 1:
       output_list = []
@@ -1317,11 +1310,11 @@ def read_input_from_user(_option, _comb_dict):
           elif num in _comb_dict:
             if (_option == 2 and "status" in _comb_dict[num] and  
                   (_comb_dict[num]["status"] == "C2-Complete" or _comb_dict[num]["status"] == "C12-Complete")):
-              print("Controller 2 Migration is complete. Re-enter a different the number to continue")
+              print("Controller={0} Migration is complete. Re-enter a different the number to continue".format(cntlr_name))
               err = 1
               break
             elif _option == 1 and "status" in _comb_dict[num] and _comb_dict[num]["status"] == "C12-Complete":
-              print("Controller 1 and 2 Migration is complete. Re-enter a different the number to continue")
+              print("Controller={0} and Controller={1} Migration is complete. Re-enter a different the number to continue".format(cntlr_names[0],cntlr_names[1]))
               err = 1
               break
             elif _option == 1 and "status" not in _comb_dict[num]:
@@ -1460,11 +1453,17 @@ def get_devices_list( _all_device, _batch_device, _batch_device_num, option=2):
       glbl.vnms.data["newdevicelist"] = new_device_list
       write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
     
+    cntlr_name = glbl.cntlr.data['old_cntlr'][option-1]["controllerName"]
+    mlog.warn(bcolors.OKWARN + "==============Moving Controller:{0} ==========".format(str(cntlr_name)) + bcolors.ENDC)
+    if partition == 0:
+      cnt_list = list(range(1,len(glbl.vnms.data['newdevicelist'])+1))
+      bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['newdevicelist']))
+      comb_dict=dict(zip(bId_list,glbl.vnms.data['newdevicelist']))
+    else:
+      devlist = list(filter(lambda x: x['partition'] == partition,glbl.vnms.data['newdevicelist']))
+      bId_list = list(map(lambda x: x['branchId'],devlist))
+      comb_dict=dict(zip(bId_list,devlist))
 
-    mlog.warn(bcolors.OKWARN + "==============Moving Controller-{0} ==========".format(str(option)) + bcolors.ENDC)
-    cnt_list = list(range(1,len(glbl.vnms.data['newdevicelist'])+1))
-    bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['newdevicelist']))
-    comb_dict=dict(zip(bId_list,glbl.vnms.data['newdevicelist']))
     #print_device_table(comb_dict)
 
     if _all_device == 1:
@@ -1533,7 +1532,6 @@ def save_config_snapshot (dev, vd_data, _cntlr):
     configSnapshotName = (configSnapshotName + 
       "{0:04d}_{1:02d}_{2:02d}_{3:02d}_{4:02d}".format(localtime.tm_year,
       localtime.tm_mon,localtime.tm_mday,localtime.tm_hour,localtime.tm_min))
-    vdict = {}
     _uri = "/vnms/operations/save/snapshot/" + configSnapshotName  + "/device/" + dev
     _payload = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':"POST" , 'uri': _uri,
@@ -1569,6 +1567,7 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
     else:
       dirdata = newdir
 
+    cntlr_names = [glbl.cntlr.data['old_cntlr'][0]["controllerName"],glbl.cntlr.data['old_cntlr'][1]["controllerName"]]
     # The while loop is needed so that we do the get device list
     while 1:
       num_list, batch_num, comb_list=get_devices_list( all_device, batch_device, batch_device_num, option=_cntlr)
@@ -1676,7 +1675,7 @@ def process_device_list (fil,template_env,template_path,tmpl_device,newdir,olddi
           # we are moving single devices
           break
         if cnt%batch_num == 0: 
-          ret = yes_or_no2("Pause after migration of devices for Controller-{0}".format(_cntlr))
+          ret = yes_or_no2("Pause after migration of devices for Controller={0}".format(cntlr_names[_cntlr-1]))
           if ret == 0:
             break
 
@@ -1749,9 +1748,12 @@ def perform_initial_checks():
       elif "local1_auth_key" not in elem:
         err = err + 1
         mlog.error("For device={0} local1_auth_key is not present".format(elem["name"]))
+      elif partition != 0 and "partition" not in elem:
+        err = err + 1
+        mlog.error("Partition passed to script={0} but for device={1} but partition is not present".format(elem["name"]))
     if err > 0: 
-      mlog.warn(bcolors.OKWARN+"We can not proceed with the above errors. Please fix then in the input file and then restart"+ 
-                "Typing a n (No)  will exit the program. Typing a y (Yes) will continue" + bcolors.ENDC)
+      mlog.warn(bcolors.OKWARN+"We can not proceed with the above errors. Please fix then in the input file and then restart\n"+ 
+                "\t\tTyping a n (No)  will exit the program. Typing a y (Yes) will continue" + bcolors.ENDC)
       ret = yes_or_no(bcolors.OKWARN+"To Continue press y and to Exit press n: "+ bcolors.ENDC,1)
       if ret == 1: pass
       else: sys.exit("Initial Checks failed")
@@ -1762,12 +1764,15 @@ def perform_initial_checks():
 # main
 def main():
     #global vnms, analy, cntlr, cust, admin, auth, debug, mlog, mdict
-    global mlog, mdict
-    #mdict = readfile("in_rest.cfg")
-    argcheck()
-    debug = int(args['debug'])
+    global mlog, mdict, partition
+    debug = args['debug']
     infile = args['file']
-    LOG_FILENAME = 'vmMigrate.log'
+    partition = args['partition']
+    #if partition == 0:
+    #  LOG_FILENAME = 'vmMigrate.log'
+    #else:
+    #  LOG_FILENAME = 'vmMigrate_{:02d}.log'.format(partition)
+
     LOG_SIZE = 8 * 1024 * 1024
     mlog,f_hndlr,s_hndlr=glbl.init(infile,LOG_FILENAME, LOG_SIZE,"VMMigr3",debug)
     if debug == 0:
@@ -1777,8 +1782,15 @@ def main():
       glbl.setup_level(f_hndlr, logging.INFO)
       glbl.setup_level(s_hndlr, logging.INFO)
        
-    mlog.warn(bcolors.OKWARN + "===============Starting Phase 3 Execution==========" + bcolors.ENDC)
-    mlog.warn(bcolors.OKWARN + "Are you running the script more than once. If so, you mist exit the script,\ncopy vm_phase4.json to vm_phase3.json and then restart script.\n" + bcolors.ENDC)
+    mlog.warn(bcolors.OKWARN + "===============Starting Phase 3 Execution LOGS={0} ==========".format(LOG_FILENAME) + bcolors.ENDC)
+    mlog.warn(bcolors.OKWARN + "Have you verified that New Controllers have valid connections to Analytics" + bcolors.ENDC)
+    if  'runNo' not in glbl.vnms.data:
+      glbl.vnms.data['runNo'] = 1
+      write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin,option=1)
+    else:
+      glbl.vnms.data['runNo'] = glbl.vnms.data['runNo'] + 1
+      mlog.warn(bcolors.OKWARN + "Looks like you running the script more than once. If so, you mist exit the script,\ncopy vm_phase4.json to vm_phase3.json and then restart script.\n" + bcolors.ENDC)
+
     ret = yes_or_no2("To continue press y and to exit press n : " )
     if ret == 0 : return
     elif ret == 1: pass
@@ -1829,9 +1841,16 @@ def main():
 
     view_inital_table = yes_or_no2(bcolors.OKWARN + "Do you want to view Initial table. Type y or n" + bcolors.ENDC)
     if view_inital_table == 1 :
-      bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['devices']))
-      comb_dict=dict(zip(bId_list,glbl.vnms.data['devices']))
-      print_device_table(comb_dict)
+      if partition == 0: 
+        bId_list = list(map(lambda x: x['branchId'],glbl.vnms.data['devices']))
+        comb_dict=dict(zip(bId_list,glbl.vnms.data['devices']))
+        print_device_table(comb_dict)
+      else: 
+        devlist = list(filter(lambda x: x['partition'] == partition,glbl.vnms.data['devices']))
+        bId_list = list(map(lambda x: x['branchId'],devlist))
+        comb_dict=dict(zip(bId_list,devlist))
+        print_device_table(comb_dict)
+
 
     all_device = yes_or_no2(bcolors.OKWARN + "Do you want to migrate all devices. Type y or n " + bcolors.ENDC )
     if all_device  == 0 :
@@ -1857,9 +1876,14 @@ def main():
     mlog.warn(bcolors.OKWARN + "==============Completed execution of Phase 3==========\n" + bcolors.ENDC)
 
 if __name__ == "__main__":
+  argcheck()
+  if args['partition'] == 0:
+    LOG_FILENAME = 'vmMigrate.log'
+  else:
+    LOG_FILENAME = "vmMigrate_{0:02d}.log".format(args['partition'])
   _cnt1 = 0
-  if os.path.isfile("vmMigrate.log"):
-    with open("vmMigrate.log","r") as fp:
+  if os.path.isfile(LOG_FILENAME):
+    with open(LOG_FILENAME,"r") as fp:
       for _cnt1,line in enumerate(fp):
         pass
     fp.close()
@@ -1869,8 +1893,8 @@ if __name__ == "__main__":
 
   _errlog=""
   _cnt2 = 0
-  if os.path.isfile("vmMigrate.log"):
-    with open("vmMigrate.log","r") as fp:
+  if os.path.isfile(LOG_FILENAME):
+    with open(LOG_FILENAME,"r") as fp:
       for _cnt2,line in enumerate(fp):
         if _cnt2 >= _cnt1:
           if re.search("ERROR -",line):
