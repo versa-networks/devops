@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 import os, sys, signal, argparse
 
@@ -13,7 +13,7 @@ import subprocess
 import ssl
 import json
 from pprint import pprint
-from collections import OrderedDict, Counter 
+from collections import OrderedDict, Counter
 import uuid
 from pprint import pprint
 import logging
@@ -25,7 +25,7 @@ if pyVer.major == 3:
 else:
   import httplib
 
-
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 #import vnms
 vnms =  None
@@ -72,31 +72,31 @@ class Admin:
     self.data = _vdict
 
 def argcheck():
-  """ This performs adds the  argument and checks the requisite inputs
-  """
-  global args
-  mystr = os.path.basename(sys.argv[0])
-  parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),description='%(prog)s Help:',usage='%(prog)s -f filename [options]', add_help=False)
-  parser.add_argument('-f','--file',required=True, help='input file [required ]' )
-  parser.add_argument('-d','--debug',default=0, help='set/unset debug flag')
+    """ This performs adds the  argument and checks the requisite inputs
+    """
+    global args
+    mystr = os.path.basename(sys.argv[0])
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),description='%(prog)s Help:',usage='%(prog)s -f filename [options]', add_help=False)
+    parser.add_argument('-f','--file',required=True, help='input file [required ]' )
+    parser.add_argument('-d','--debug',default=0, help='set/unset debug flag')
 
-  try:
-    args = vars(parser.parse_args())
-  except:
-    usage()
-    sys.exit(0)
+    try:
+      args = vars(parser.parse_args())
+    except:
+      usage()
+      sys.exit(0)
 
 def usage():
-  mystr = os.path.basename(sys.argv[0])
-  print(bcolors.OKCHECK)
-  print( """\
+    mystr = os.path.basename(sys.argv[0])
+    print(bcolors.OKCHECK)
+    print( """\
 Usage:
     To change versions use:
       %(mystr)s --f/-f <infile>
     To add more debug:
       %(mystr)s -f <infile> --debug/-d [0/1]
   """ %locals())
-  print(bcolors.ENDC)
+    print(bcolors.ENDC)
 
 def json_loads(_str,**kwargs):
     global log
@@ -105,11 +105,9 @@ def json_loads(_str,**kwargs):
       return _jstr
     except Exception as ex:
        log.error('Json load failed: {}'.format(ex))
-       sys.test('Json load failed: {}'.format(ex))
+       sys.exit('Json load failed: {}'.format(ex))
 
 
-#from jinja2 import Environment, PackageLoader
-#, select_autoescape
 def analycall(api_dict):
     global debug, admin, log
     prefix_uri = "https://{0}:{1}/versa/".format(api_dict['ip'],admin.data['analy_rest_port1'])
@@ -148,7 +146,6 @@ def analycall(api_dict):
       sess.close()
       return [True, resp_code, res.text]
     else: 
-      #print("Failed")
       log.error("Failed Rest API to Analytics: {0}".format(res.text))
       sess.close()
       return [False, resp_code, res.text]
@@ -161,115 +158,114 @@ def call(api_dict, auth_type='Basic', content_type="xml", ncs_cmd="yes", max_ret
     ret_true = [1, ""]
     ret_false = [0, ""]
     try:
-        resp_string = ""
-        if content_type == "json":
-            if ncs_cmd == "yes":
-                request_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Content-type": "application/vnd.yang.data+json"
-                }
-                rest_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Accept": "application/vnd.yang.data+json",
-                    "Content-type": "application/vnd.yang.data+json"
-                }
-            else:
-                request_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Content-type": "application/json"
-                }
-                rest_headers = {
-                    "Authorization": "Basic %s" % auth,
-                    "Accept": "application/json",
-                    "Content-type": "application/json"
-                }
+      resp_string = ""
+      if content_type == "json":
+        if ncs_cmd == "yes":
+          request_headers = {
+                  "Authorization": "Basic %s" % auth,
+                  "Content-type": "application/vnd.yang.data+json"
+          }
+          rest_headers = {
+                  "Authorization": "Basic %s" % auth,
+                  "Accept": "application/vnd.yang.data+json",
+                  "Content-type": "application/vnd.yang.data+json"
+          }
         else:
-            rest_headers = {
-                "Authorization": "Basic %s" % auth,
-                "Accept": "application/xml",
-                "Content-type": "application/xml"
-            }
-        empty_headers = {"Authorization": "Basic %s" % auth, "Accept": "*/*"}
-        if api_dict['method'] == "GET" and jsonflag == 0:
-            headers = empty_headers
-        else:
-            headers = rest_headers
+          request_headers = {
+                  "Authorization": "Basic %s" % auth,
+                  "Content-type": "application/json"
+          }
+          rest_headers = {
+                  "Authorization": "Basic %s" % auth,
+                  "Accept": "application/json",
+                  "Content-type": "application/json"
+          }
+      else:
+        rest_headers = {
+              "Authorization": "Basic %s" % auth,
+              "Accept": "application/xml",
+              "Content-type": "application/xml"
+        }
+      empty_headers = {"Authorization": "Basic %s" % auth, "Accept": "*/*"}
+      if api_dict['method'] == "GET" and jsonflag == 0:
+        headers = empty_headers
+      else:
+        headers = rest_headers
         if content_type == "xml2":
-            headers = {
+          headers = {
                 "Authorization": "Basic %s" % auth,
                 "Accept": "application/xml",
                 "Content-type": "application/xml"
-            }
+          }
 
-        att = 0
-        while att  < 2: 
-          try:
-            if pyVer.major == 3:
-              webservice = httplib.HTTPSConnection(admin.data['vd_ip'], int(admin.data['vd_rest_port']),context=ssl._create_unverified_context())
-            else: 
-              webservice = httplib.HTTPSConnection(admin.data['vd_ip'], int(admin.data['vd_rest_port']))
+      att = 0
+      while att  < 2: 
+        try:
+          if pyVer.major == 3:
+            webservice = httplib.HTTPSConnection(admin.data['vd_ip'], int(admin.data['vd_rest_port']),context=ssl._create_unverified_context())
+          else: 
+            webservice = httplib.HTTPSConnection(admin.data['vd_ip'], int(admin.data['vd_rest_port']))
 
-            webservice.request(api_dict['method'], api_dict['uri'],
+          webservice.request(api_dict['method'], api_dict['uri'],
                            api_dict['body'], headers)
-            break
-          except:
-            att = att + 1
-            log.error("Attempt : %s" % (str(att)))
+          break
+        except:
+          att = att + 1
+          log.error("Attempt : %s" % (str(att)))
 
-        resp_obj = webservice.getresponse()
-        if pyVer.major == 3:
-          resp_string = (resp_obj.read()).decode(encoding='utf-8',errors="ignore")
-        else:
-          resp_string = (resp_obj.read()).decode('utf-8')
+      resp_obj = webservice.getresponse()
+      if pyVer.major == 3:
+        resp_string = (resp_obj.read()).decode(encoding='utf-8',errors="ignore")
+      else:
+        resp_string = (resp_obj.read()).decode('utf-8')
           #resp_string = str(resp_obj.read())
-        resp_code = str(resp_obj.status)
-        response = resp_code
-        reason = str(resp_obj.reason)
-        webservice.close()
-        # We can not be so strict so we are just check 2 digits of the response code 
-        #if not (resp_code == api_dict['resp'] or
-        #        ('resp2' in api_dict and resp_code == api_dict['resp2'])):
-        if not (resp_code[0:2] == api_dict['resp'][0:2] or
+      resp_code = str(resp_obj.status)
+      response = resp_code
+      reason = str(resp_obj.reason)
+      webservice.close()
+      # We can not be so strict so we are just check 2 digits of the response code 
+      #if not (resp_code == api_dict['resp'] or
+      #        ('resp2' in api_dict and resp_code == api_dict['resp2'])):
+      if not (resp_code[0:2] == api_dict['resp'][0:2] or
                 ('resp2' in api_dict and resp_code[0:2] == api_dict['resp2'][0:2])):
-            if not api_dict['method'] == 'GET':
-               if debug:
-                log.error(
-                    "Did not recieve expected Response Code: Expected %s Got %s with Reason: %s"
-                    % (api_dict['resp'], resp_code,resp_string))
-               else:
-                log.error(
-                    "Did not recieve expected Response Code: Expected %s Got %s"
-                    % (api_dict['resp'], resp_code))
-            else:
-               if debug:
-                log.error(
-                    "Did not recieve expected Response Code: Expected %s Got %s ; \nResponse String: %s"
-                    % (api_dict['resp'], resp_code, resp_string))
-               else:
-                log.error(
-                    "Did not recieve expected Response Code: Expected %s Got %s ; \n"
-                    % (api_dict['resp'], resp_code))
-            #print("-" * 10)
-            return [0, resp_string]
+        if not api_dict['method'] == 'GET':
+          if debug:
+            log.error(
+                  "Did not recieve expected Response Code: Expected %s Got %s with Reason: %s"
+                  % (api_dict['resp'], resp_code,resp_string))
+          else:
+            log.error(
+                  "Did not recieve expected Response Code: Expected %s Got %s"
+                  % (api_dict['resp'], resp_code))
         else:
-            if 'task-id' in resp_string:
-                # Task is created, we need to poll
-                task_id = _get_task_id(resp_string)
-                curr_task_id = task_id
-                if not task_id:
-                    return ret_false
-                retval, stat = _task_poll(task_id,
+          if debug:
+            log.error(
+                  "Did not recieve expected Response Code: Expected %s Got %s ; \nResponse String: %s"
+                  % (api_dict['resp'], resp_code, resp_string))
+          else:
+            log.error(
+                  "Did not recieve expected Response Code: Expected %s Got %s ; \n"
+                  % (api_dict['resp'], resp_code))
+        #print("-" * 10)
+        return [0, resp_string]
+      else:
+        if 'task-id' in resp_string:
+          # Task is created, we need to poll
+          task_id = _get_task_id(resp_string)
+          curr_task_id = task_id
+          if not task_id: return ret_false
+          retval, stat = _task_poll(task_id,
                                   max_retry=max_retry_for_task_completion,initialwait=initialwait)
-                if retval == True: 
-                  curr_task_id = None
-                  return ret_true
-                else: return ret_false 
-            if api_dict['method'] == 'GET':
-                return [1, resp_string]
+          if retval == True: 
+            curr_task_id = None
+            return ret_true
+          else: return ret_false 
+          if api_dict['method'] == 'GET':
             return [1, resp_string]
+        return [1, resp_string]
     except Exception as ex:
-        log.error("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))
-        return ret_false
+      log.error("ERROR, Exception @ REST-Api CALL = %s for URI %s : Error: %s" %(api_dict['method'], api_dict['uri'], str(ex)))
+      return ret_false
 
 def _task_poll( task_id, max_retry=5, sleep_interval=5,initialwait=0):
     global log
@@ -286,43 +282,45 @@ def _task_poll( task_id, max_retry=5, sleep_interval=5,initialwait=0):
     task_progress = ""
     if initialwait > 0 : time.sleep(initialwait)
     while timeout and count <= max_retry :
-        [ret,task_progress] = call(api_dict,content_type="json",ncs_cmd="no")
-        found = 0
-        # check the task progress
-        if len(task_progress) > 3:
-            try:
-              jstr = json_loads(task_progress)
-              if ("versa-tasks.task" in jstr and "versa-tasks.percentage-completion" in jstr["versa-tasks.task"]): 
-                found = 1
-                if int(jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]) == 100:
-                  log.warn('Polling Status: %s:  Task %s : Completion: %s' \
-                    %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
-                  timeout = 0
-                elif jstr["versa-tasks.task"]["versa-tasks.task-status"] == 'FAILED':
-                  timeout = 0
-                else: 
-                  log.warn('Polling Status: %s:  Task %s : Completion: %s' \
-                    %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
-              else:  # so we did not get task completion
-                log.warn('Task: %s Resp string: %s Count: %d RetyCnt: %d' \
-                    %(task_id,task_progess,count, retrycnt)) 
-                if retrycnt >= retrycntmax: 
-                  break
-                else:
-                  retrycnt = retrycnt + 1
-                  pass
-            except:
-              found = 0
+      [ret,task_progress] = call(api_dict,content_type="json",ncs_cmd="no")
+      found = 0
+      # check the task progress
+      if len(task_progress) > 3:
+        try:
+          jstr = json_loads(task_progress)
+          if ("versa-tasks.task" in jstr and "versa-tasks.percentage-completion" in jstr["versa-tasks.task"]): 
+            found = 1
+            if int(jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]) == 100:
+              log.warn('Polling Status: %s:  Task %s : Completion: %s' \
+                %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
+              timeout = 0
+            elif jstr["versa-tasks.task"]["versa-tasks.task-status"] == 'FAILED':
+              timeout = 0
+            else: 
+              log.warn('Polling Status: %s:  Task %s : Completion: %s' \
+                %(count, task_id, jstr["versa-tasks.task"]["versa-tasks.percentage-completion"]))
+          else:  # so we did not get task completion
+            log.warn('Task: %s Resp string: %s Count: %d RetyCnt: %d' \
+                %(task_id,task_progess,count, retrycnt)) 
+            if retrycnt >= retrycntmax: 
+              break
+            else:
+              retrycnt = retrycnt + 1
               pass
-        time.sleep(sleep_interval)
-        count += 1
+        except:
+          found = 0
+          pass
+      time.sleep(sleep_interval)
+      count += 1
+
+    # We are outside the while loop now
     if found == 1:
       if jstr["versa-tasks.task"]["versa-tasks.task-status"] != 'FAILED': 
         return True, "PASS"
       elif jstr["versa-tasks.task"]["versa-tasks.task-status"] == 'FAILED':
         log.error('Task Failed: %s  Resp string: %s  Count %d RetyCntr %d' \
                     %(task_id, task_progess,count, retrycnt)) 
-        log.error("Return False FAIL")
+        #log.error("Return False FAIL")
         return False, "FAIL"
     return False, "FAIL"
 
@@ -365,7 +363,6 @@ def create_overlay():
     return
 
 def enable_ha( _method, _uri, _payload,resp='200'):
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",max_retry_for_task_completion=500, jsonflag=1, initialwait=30)
     return
@@ -376,17 +373,34 @@ def onboard_provider_org( _method, _uri, _payload,resp='200'):
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     return
 
-def create_controller( _method, _uri,_payload,resp='200'):
+def create_controller( _method, _uri,_payload,resp='200',name="Controller"):
     resp = '200'
-    vdict = {}
-    vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
-    [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+    log.warn(bcolors.OKWARN + "Have you performed an erase config on the controller: {0} and verified that services are running.\nIf not do so now".format(name) + bcolors.ENDC)
+    if yes_or_no("Continue: "):
+      vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
+      [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
+      if status == 1:
+        log.warn("Creation of New Controller={0} successful".format(name))
+        if len (resp_str) > 3 :
+          newjstr = json_loads(resp_str)
+          log.info("Return json from POST on Controller: {0} = {1}".format(name,json.dumps(newjstr,indent=4)))
+        else:
+          log.error("Creation of New Controller={0} NOT successful".format(name))
+          log.warn(bcolors.OKWARN+"We can not proceed without the Controller Create." +
+              'You can fix the error and then refresh (type r) to try the creation again.' +
+              "Typing a n (No)  will exit the program. Typing a y (Yes) will continue" + bcolors.ENDC)
+          ret = yes_or_no2(bcolors.OKWARN+"To Refresh press r, to Continue press y and to Exit press n: "+ bcolors.ENDC,1)
+          if ret == 0 : sys.exit("Creation of New Controller = {0} NOT sucessful ".format(name))
+          elif ret == 1: pass
+          else:
+            create_controller( _method, _uri,_payload,resp=resp, name=name)
+      else: 
+        log.error("Bad Status returned for Controller={0}".format(name))
     return
 
 def get_controller_tvi( _method, _uri,_payload,resp='200',_cntlr_id=None):
     global vnms, analy, cntlr, cust, admin, log
     resp2='202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if out == 1 and len(resp_str) > 3:
@@ -419,7 +433,6 @@ def check_controller_status(name="Controller"):
     uri = "/nextgen/appliance/status/"+ name + "?byName=true"
     resp = '200'
     method = 'GET'
-    vdict = {}
     vdict = {'body': body, 'resp': resp, 'method': method, 'uri': uri}
     [out,resp_str] = call(vdict, content_type="json", ncs_cmd="no")
     if out == 1 and len(resp_str) > 3:
@@ -431,28 +444,58 @@ def check_controller_status(name="Controller"):
 
 def deploy_controller( _method, _uri,_payload,resp='202',name="Controller"):
     global vnms, analy, cntlr, cust
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out,resp_str] = call(vdict, content_type="json", ncs_cmd="no")
     # Now we need to check the status
     #check_controller_status(name=name)
     if out == 1: 
+      log.warn("Deploy of Controller={0} succeeded. Check Controller Sync Status. Please be patient".format(name))
       for i in range(0,5):
         time.sleep(5)
         [out,resp_str] = check_controller_status(name=name)
         if out == 1 and len(resp_str) > 3:
           jstr = json_loads(resp_str)
           if "syncStatus" in jstr and jstr["syncStatus"] == "IN_SYNC":
+            log.warn("Got Sync from Controller={0}".format(name))
             break
-    else: 
-       log.error("Did not receive proper response. Status=%d"%(out)) 
-       sys.exit("Did not receive proper response. Status=%d"%(out)) 
+    else:
+      log.error("Deploy of Controller={0} NOT successful".format(name))
+      log.warn(bcolors.OKWARN+"We can not proceed without the Controller Deploy." +
+              'You can fix the error and then refresh (type r) to try the creation again.' +
+              "Typing a n (No)  will exit the program. Typing a y (Yes) will continue" + bcolors.ENDC)
+      ret = yes_or_no2(bcolors.OKWARN+"To Refresh press r, to Continue press y and to Exit press n: "+ bcolors.ENDC,1)
+      if ret == 0 : sys.exit("Deploy of Controller = {0} NOT sucessful ".format(name))
+      elif ret == 1: pass
+      else:
+        deploy_controller( _method, _uri,_payload,resp=resp, name=name)
+
+    log.warn("Checking Controller={0} Sync Status. Please be patient".format(name))
+    found = 0
+    rc = 1
+    while rc:
+      for i in range(0,5):
+        time.sleep(5)
+        [out,resp_str] = common.check_controller_status(name=name)
+        if out == 1 and len(resp_str) > 3:
+          jstr = json_loads(resp_str)
+          if "syncStatus" in jstr and jstr["syncStatus"] == "IN_SYNC":
+            log.warn("New Controller = {0} in Sync. ".format(name))
+            found = 1
+            rc = 0
+            break
+      if found == 0:
+        log.warn(bcolors.OKWARN+"Controller Sync Status is not Correct." + 'You can fix the error and then refresh (type r) to try the deploy again' +
+                  "Typing a n (No)  will exit the program. Typing a y (Yes) will continue" + bcolors.ENDC)
+        ret = yes_or_no2(bcolors.OKWARN+"To Refresh press r, to Continue press y and to Exit press n: "+ bcolors.ENDC,1)
+        if ret == 0 : sys.exit("Controller not in proper state for Controller: {0}".format(name))
+        elif ret == 1: rc = 0
+        else: pass
+
     return 
 
 def get_available_orgId( _method, _uri, _payload,resp='200'):
     global vnms, analy, cntlr, cust, admin, log
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     if resp_str == "":
@@ -475,7 +518,6 @@ def get_available_orgId( _method, _uri, _payload,resp='200'):
 def get_available_vrf_id( _method, _uri, _payload,resp='200'):
     global vnms, analy, cntlr, cust, admin, log
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     jstr = json_loads(resp_str)
@@ -493,7 +535,6 @@ def get_available_vrf_id( _method, _uri, _payload,resp='200'):
 def get_controller_site_id( _method, _uri, _payload,resp='200'):
     global vnms, analy, cntlr, cust, admin, log
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     if len(resp_str) > 3 :
@@ -506,7 +547,7 @@ def get_controller_site_id( _method, _uri, _payload,resp='200'):
       write_outfile(vnms,analy,cntlr,cust, admin)
     else:
       log.error("Did not get Controller Site Id")
-      exit(0)
+      sys.exit("Did not get Controller Site Id")
     return ''
 
 def process_diff(f1, f2):
@@ -522,7 +563,6 @@ def process_diff(f1, f2):
 def get_backup( _method, _uri,_payload,resp='200'):
     global log
     resp2='202'
-    vdict = {}
     uri = "/api/config/system/_operations/recovery/list"
     payload = {}
     vdict1 = {'body': payload, 'resp': resp,'resp2': resp2, 'method': "POST", 'uri': uri}
@@ -558,7 +598,6 @@ def get_backup( _method, _uri,_payload,resp='200'):
 def get_parent_org_uuid( _method, _uri, _payload,resp='200'):
     global vnms, analy, cntlr, cust, admin, log
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     if len(resp_str) > 3 :
@@ -575,7 +614,6 @@ def get_parent_org_uuid( _method, _uri, _payload,resp='200'):
 def get_cust_orgid( _method, _uri, _payload,resp='200'):
     global vnms, analy, cntlr, cust, admin, log
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     if len(resp_str) > 3:
@@ -592,7 +630,6 @@ def get_cust_orgid( _method, _uri, _payload,resp='200'):
 def get_bgp_id( _method, _uri, _payload,resp='200'):
     global vnms, analy, cntlr, cust, admin,log
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
@@ -606,7 +643,6 @@ def get_bgp_id( _method, _uri, _payload,resp='200'):
 
 def analytics_call( _method, _uri,_payload,resp='200'):
     global debug, admin
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri, 'ip': admin.data['analy_ip']}
     for _ in range(0,5): 
       [ret, resp_code, resp] =  analycall(vdict) 
@@ -624,7 +660,6 @@ def analytics_call( _method, _uri,_payload,resp='200'):
 # the only difference between analytics_call and analytics_call1 is the ip which we are passing in the vdict
 def analytics1_call( _method, _uri,_payload,resp='200'):
     global debug, admin,log
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri, 'ip': admin.data['analy_ip1']}
     for _ in range(0,5): 
       [ret, resp_code, resp] =  analycall(vdict) 
@@ -641,7 +676,6 @@ def analytics1_call( _method, _uri,_payload,resp='200'):
 
 def create_dns_config( _method, _uri,_payload,resp='200'):
     global log
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     if out != 1 :
@@ -650,7 +684,6 @@ def create_dns_config( _method, _uri,_payload,resp='200'):
 
 def create_ntp_config( _method, _uri,_payload, resp='200'):
     global log
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     if out != 1 :
@@ -659,7 +692,6 @@ def create_ntp_config( _method, _uri,_payload, resp='200'):
 
 def update_org_limits (_method, _uri, _payload,resp='200'):
     global log
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = call(vdict,content_type='json',ncs_cmd="no")
     if out != 1 :
@@ -715,35 +747,63 @@ def yes_or_no(question):
     else:
         return yes_or_no("Ughhh... please re-enter ") 
 
+def yes_or_no2(question, option=0):
+
+    if option == 0:
+      if pyVer.major== 3:
+        reply = str(input(question)).lower().strip()
+      else:
+        reply = str(raw_input(question)).lower().strip()
+      if reply[0] == 'n': return 0
+      elif reply[0] == 'y': return 1
+      elif reply[0] == 's': return 2
+      else:
+        return yes_or_no2("Did not understand input: Please re-enter ",option)
+    else:
+      if pyVer.major== 3:
+        reply = str(input(question)).lower().strip()
+      else:
+        reply = str(raw_input(question)).lower().strip()
+      if reply[0] == 'n': return 0
+      elif reply[0] == 'y': return 1
+      elif reply[0] == 'r': return 2
+      else:
+        return yes_or_no2("Did not understand input: Please re-enter ",option)
+
 def setup_logging(logfile,log_size):
         
-        global log
-        if log is not None: return
-        ## Enable logging
-        log = logging.getLogger('day1')
+    global log
+    if log is not None: return
+    ## Enable logging
+    log = logging.getLogger('day1')
+    while len(log.handlers) > 0:
+      h = log.handlers[0]
+      log.removeHandler(h)
+      #print("Number of handlers={}".format(len(log.handlers)))
 
-        # Set logging level
-        log.setLevel(logging.DEBUG)
 
-        # create formatter
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s")
-        cli_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(lineno)d - %(message)s")
+    # Set logging level
+    log.setLevel(logging.DEBUG)
 
-        # create a rotating handler
-        handler = logging.handlers.RotatingFileHandler(logfile,
-                                    maxBytes=log_size, backupCount=5)
-        stdouth = logging.StreamHandler(sys.stdout)
+    # create formatter
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s")
+    cli_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(lineno)d - %(message)s")
 
-        # add formatter to ch
-        stdouth.setFormatter(cli_formatter)
-        handler.setFormatter(formatter)
+    # create a rotating handler
+    handler = logging.handlers.RotatingFileHandler(logfile,
+                                maxBytes=log_size, backupCount=5)
+    stdouth = logging.StreamHandler(sys.stdout)
 
-        # Add the log message handler to the logger
-        log.addHandler(handler)
-        log.addHandler(stdouth)
-        #cls.log = log
-        #cls.log_info(cls.VERSA_BANNER)
-        return 
+    # add formatter to ch
+    stdouth.setFormatter(cli_formatter)
+    handler.setFormatter(formatter)
+
+    # Add the log message handler to the logger
+    log.addHandler(handler)
+    log.addHandler(stdouth)
+    #cls.log = log
+    #cls.log_info(cls.VERSA_BANNER)
+    return 
 
 def manipulate_analy_data(a1):
     if a1 is not None:
@@ -835,6 +895,9 @@ def main():
          else:
            admin.data['auth'] = base64.encodestring('%s:%s' % (str(admin.data['user']), str(admin.data['password']))).replace('\n', '')
 
+    log.warn("Please check your Customer Name={0}, Controller Names={1} {2} and IPs before we continue".format(cust.data['custName'],cntlr.data[0]['controllerName'],cntlr.data[1]['controllerName']))
+    if yes_or_no("Continue"): pass
+    else: return
 
 
     fil = OrderedDict()
@@ -1055,7 +1118,7 @@ def main():
                                 parentOrgName=vnms.data['parentOrgName'],
                                 defaultAnalyticsClusterName=myanaly['defaultAnalyticsClusterName1'])
          y= json_loads(x)
-         _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']))
+         _val(str(y['method']), str(y['path']), json.dumps(y['payload']),resp=str(y['response']),name=mycntrl['controllerName'])
        elif _newkey == 'DEPLOY_CONTROLLER' or _newkey == 'DEPLOY_PEER_CONTROLLER':
          if _newkey == 'DEPLOY_CONTROLLER' : mycntrl = cntlr1 
          else:
