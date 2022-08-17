@@ -34,6 +34,7 @@ admin = None
 debug = 0
 mlog = None
 mdict = None
+LOG_FILENAME = None
 
 class bcolors:
   """ the background colors
@@ -56,7 +57,7 @@ def argcheck():
   mystr = os.path.basename(sys.argv[0])
   parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),description='%(prog)s Help:',usage='%(prog)s -f filename [options]', add_help=False)
   parser.add_argument('-f','--file',required=True, help='input file [required ]' )
-  parser.add_argument('-d','--debug',default=0, help='set/unset debug flag')
+  parser.add_argument('-d','--debug',default=0,type=int,help='set/unset debug flag')
 
   try:
     args = vars(parser.parse_args())
@@ -92,7 +93,6 @@ def json_loads(_str,**kwargs):
 # get default
 def get_default( _method, _uri,_payload,resp='200', ofile=None):
     global vnms, analy, cntlr, cust, mlog
-    vdict = {}
     mlog.info("In function " + get_default.__name__)
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
@@ -111,7 +111,6 @@ def get_default( _method, _uri,_payload,resp='200', ofile=None):
 # deploy controller -- may not be used
 def deploy_controller( _method, _uri,_payload,resp='202',name="Controller"):
     global vnms, analy, cntlr, cust, mlog
-    vdict = {}
     mlog.info("In function " + deploy_controller.__name__)
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     common.call(vdict,content_type='json',ncs_cmd="no")
@@ -135,7 +134,6 @@ def process_diff(f1, f2):
 # get backup
 def get_backup( _method, _uri,_payload,resp='200',vd_data=None, option=2):
     resp2='202'
-    vdict = {}
     #vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     uri = "/api/config/system/_operations/recovery/list"
     payload = {}
@@ -187,7 +185,6 @@ def get_dir_release_info( _method, _uri, _payload,resp='200', _name=None,vd_data
     global vnms, analy, cntlr, cust, admin, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_release_info.__name__,_ofile))
     resp2 = '202'
-    vdict = {}    
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
               'auth': vd_data['auth'] }
@@ -254,7 +251,6 @@ def get_dir_time_zones ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_time_zones.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
@@ -279,7 +275,6 @@ def get_dir_ntp_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_ntp_server.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
@@ -305,7 +300,6 @@ def get_dir_dns_server ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_dns_server.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
@@ -331,7 +325,6 @@ def get_org_data ( _method, _uri, _payload,resp='200', vd_data=None,vd_data1=Non
   global vnms, analy, cntlr, cust, admin, mlog
   mlog.info("In function " + get_org_data.__name__)
   resp2 = '202'
-  vdict = {}
   vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
             'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
             'auth': vd_data['auth'] }
@@ -386,7 +379,6 @@ def get_nms_provider( _method, _uri, _payload,resp='200', _name=None,_ofile=None
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_nms_provider.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     outjson = {}
@@ -445,7 +437,6 @@ def get_dir_analytics_cluster ( _method, _uri, _payload,resp='200', _name=None,_
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_analytics_cluster.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
@@ -468,7 +459,6 @@ def get_dir_auth_connector ( _method, _uri, _payload,resp='200', _name=None,_ofi
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_auth_connector.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     jstr = json_loads(resp_str)
@@ -490,7 +480,6 @@ def get_dir_default_auth_connector ( _method, _uri, _payload,resp='200', _name=N
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_default_auth_connector.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     jstr = json_loads(resp_str)
@@ -512,7 +501,6 @@ def get_dir_auth_connector_config ( _method, _uri, _payload,resp='200', _name=No
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_dir_auth_connector_config.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     jstr = json_loads(resp_str)
@@ -589,7 +577,6 @@ def get_controller_org( _method, _uri, _payload,resp='200', _name=None,_ofile=No
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_org.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
@@ -633,14 +620,13 @@ def get_controller_org_services( _method, _uri, _payload,resp='200', _name=None,
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_org_services.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
               'auth': vd_data['auth'] }
     [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3:
       jstr = json_loads(resp_str)
-      scrub_list = [ "device-id", "dynamic-address", "persistent-action" "pac", "vms", "user-identification", "objects", 
+      scrub_list = [ "device-id", "dynamic-address", "persistent-action" "pac", "vms", "user-identification", 
                       "keytab", "live-users", "operations" ]
       for i in scrub_list:
         common.scrub(jstr,i)
@@ -833,7 +819,6 @@ def manipulate_interfaces(jstr,_option):
 def get_controller_vni( _method, _uri, _payload,resp='200', _name=None,_ofile=None,_option=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
-    vdict = {}
     mlog.info("In function {0} with outfile={1}".format(get_controller_vni.__name__,_ofile))
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
@@ -861,7 +846,6 @@ def get_controller_vni( _method, _uri, _payload,resp='200', _name=None,_ofile=No
 def get_controller_alarms( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
-    vdict = {}
     mlog.info("In function {0} with outfile={1}".format(get_controller_alarms.__name__,_ofile))
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
@@ -892,7 +876,6 @@ def get_controller_synch( _method, _uri, _payload,resp='200', _name=None,_ofile=
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_synch.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     jstr = json_loads(_payload)
     if _ofile is None or _name is None :
@@ -912,7 +895,6 @@ def get_controller_commit( _method, _uri, _payload,resp='200', _name=None,_ofile
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_controller_commit.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     jstr = json_loads(_payload)
     if _ofile is None or _name is None :
@@ -959,7 +941,6 @@ def get_device_group( _method, _uri, _payload,resp='200', _name=None,_ofile=None
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(get_device_group.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     jstr = json_loads(_payload)
     if _ofile is None or _name is None :
@@ -979,7 +960,6 @@ def controller_config_build( _method, _uri, _payload,resp='200', _name=None,_ofi
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(controller_config_build.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     jstr = json_loads(_payload)
     if _ofile is None or _name is None :
@@ -1029,7 +1009,6 @@ def deploy_controller_new( _method, _uri, _payload,resp='200', _name=None,_ofile
     global vnms, analy, cntlr, cust, mlog
     mlog.info("In function {0} with outfile={1}".format(deploy_controller_new.__name__,_ofile))
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     jstr = _payload
     if _ofile is None or _name is None :
@@ -1047,7 +1026,6 @@ def deploy_controller_new( _method, _uri, _payload,resp='200', _name=None,_ofile
 def get_controller_ntp ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
-    vdict = {}
     mlog.info("In function {0} with outfile={1}".format(get_controller_ntp.__name__,_ofile))
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
@@ -1073,7 +1051,6 @@ def get_controller_ntp ( _method, _uri, _payload,resp='200', _name=None,_ofile=N
 def get_controller_routing ( _method, _uri, _payload,resp='200', _name=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
-    vdict = {}
     mlog.info("In function {0} with outfile={1}".format(get_controller_routing.__name__,_ofile))
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
@@ -1114,11 +1091,10 @@ def write_outfile(_vnms,_analy,_cntlr,_cust, _admin):
 def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
               'auth': vd_data['auth'] }
-    mlog.info("In function {0} with outfile={1}".format(deploy_org_workflow.__name__,_ofile))
+    mlog.info("In function {0} with outfile={1}".format(get_old_sdwan_workflow_list.__name__,_ofile))
     [out, resp_str] = common.newcall(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
     if len(resp_str) > 3: 
       jstr = json_loads(resp_str,object_pairs_hook=OrderedDict)
@@ -1180,7 +1156,6 @@ def get_old_sdwan_workflow_list( _method, _uri, _payload,resp='200', vd_data=Non
 def get_sdwan_workflow_list( _method, _uri, _payload,resp='200', _ofile=None, vd_data=None):
     global vnms, analy, cntlr, cust, admin, mlog
     resp2 = '202'
-    vdict = {}
     mlog.info("In function {0} ".format(get_sdwan_workflow_list.__name__))
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no",jsonflag=1)
@@ -1273,7 +1248,6 @@ def determine_active_peer_cntlr(_cnames, _method, _uri, _payload,resp='200', vd_
 def get_controller_workflow( _method, _uri, _payload,resp='200', _ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method': _method, 'uri': _uri}
     mlog.info("In function {0} with outfile={1}".format(get_controller_workflow.__name__,_ofile))
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no")
@@ -1296,7 +1270,6 @@ def get_controller_workflow( _method, _uri, _payload,resp='200', _ofile=None):
 def deploy_org_workflow( _method, _uri, _payload,resp='200', _name=None,vd_data=None,vd_data1=None,_ofile=None):
     global vnms, analy, cntlr, cust, mlog
     resp2 = '202'
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
               'vd_ip' :  vd_data['vd_ip'], 'vd_rest_port': vd_data['vd_rest_port'],
               'auth': vd_data['auth'] }
@@ -1323,7 +1296,6 @@ def deploy_org_workflow( _method, _uri, _payload,resp='200', _name=None,vd_data=
           cnt=cnt+1
 
       resp2 = '202'
-      vdict = {}
       vdict = {'body': _payload, 'resp': resp, 'resp2': resp2, 'method':_method , 'uri': _uri,
                 'vd_ip' :  vd_data1['vd_ip'], 'vd_rest_port': vd_data1['vd_rest_port'],
                 'auth': vd_data1['auth'] }
@@ -1349,7 +1321,6 @@ def deploy_org_workflow( _method, _uri, _payload,resp='200', _name=None,vd_data=
    
 #def analytics_call( _method, _uri,_payload,resp='200'):
 #    global debug, admin
-#    vdict = {}
 #    vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri, 'ip': glbl.admin.data['analy_ip']}
 #    out = analycall(vdict)
 #    return ''
@@ -1357,14 +1328,12 @@ def deploy_org_workflow( _method, _uri, _payload,resp='200', _name=None,vd_data=
 # the only difference between analytics_call and analytics_call1 is the ip which we are passing in the vdict
 #def analytics1_call( _method, _uri,_payload,resp='200'):
 #    global debug, admin
-#    vdict = {}
 #    vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri, 'ip': glbl.admin.data['analy_ip1']}
 #    out = analycall(vdict)
 #    return ''
 
 # dns config
 def create_dns_config( _method, _uri,_payload,resp='200'):
-    vdict = {}
     vdict = {'body': _payload, 'resp': resp, 'method': _method, 'uri': _uri}
     [out, resp_str] = common.call(vdict,content_type='json',ncs_cmd="no")
     print(json_loads(resp_str))
@@ -1449,10 +1418,8 @@ def main():
     #global vnms, analy, cntlr, cust, admin, auth, debug, mlog, mdict
     #mdict = readfile("in_rest.cfg")
     global mlog, mdict
-    argcheck()
-    debug = int(args['debug'])
+    debug = args['debug']
     infile = args['file']
-    LOG_FILENAME = 'vmMigrate.log'
     LOG_SIZE = 8 * 1024 * 1024
     mlog,f_hndlr,s_hndlr=glbl.init(infile,LOG_FILENAME, LOG_SIZE,"VMMigr1",debug)
     if debug == 0:
@@ -1461,7 +1428,7 @@ def main():
     else:
       glbl.setup_level(f_hndlr, logging.INFO)
       glbl.setup_level(s_hndlr, logging.INFO)
-    mlog.warn(bcolors.OKWARN + "===============Starting Phase 1 Execution==========" + bcolors.ENDC)
+    mlog.warn(bcolors.OKWARN + "===============Starting Phase 1 Execution LOGS={0} ==========".format(LOG_FILENAME) + bcolors.ENDC)
 
     write_outfile(glbl.vnms,glbl.analy,glbl.cntlr,glbl.cust, glbl.admin)
 
@@ -1760,9 +1727,11 @@ def main():
 
 if __name__ == "__main__":
 
+  argcheck()
+  LOG_FILENAME = 'vmMigrate.log'
   _cnt1 = 0
-  if os.path.isfile("vmMigrate.log"):
-    with open("vmMigrate.log","r") as fp:
+  if os.path.isfile(LOG_FILENAME):
+    with open(LOG_FILENAME,"r") as fp:
       for _cnt1,line in enumerate(fp):
         pass
     fp.close()
@@ -1772,8 +1741,8 @@ if __name__ == "__main__":
 
   _errlog=""
   _cnt2 = 0
-  if os.path.isfile("vmMigrate.log"):
-    with open("vmMigrate.log","r") as fp:
+  if os.path.isfile(LOG_FILENAME):
+    with open(LOG_FILENAME,"r") as fp:
       for _cnt2,line in enumerate(fp):
         if _cnt2 >= _cnt1:
           if re.search("ERROR -",line):
