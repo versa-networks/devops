@@ -8,7 +8,7 @@
   - Devices should be reachable from Versa Director. If device is not reachable script will not be able to identify Ubuntu Version, it will get "unknown" sign
 
 ## Executing the Python Scripts
-  - Option 1. Execute the script and follow instractions to provide Versa Director FQDN/IP, username, password
+  - Option 1. Execute the script and follow instructions to provide Versa Director FQDN/IP, username and password
   - Option 2. Use arguments with the script
     - -h show help message and exit
     - -d specify IP address or FQDN of your Versa Director
