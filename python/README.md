@@ -24,3 +24,5 @@ Day1 scripts to provision the Director and the Controller
 This repository provides scripts to help you save time when creating or modifiying too many rules on VOS.
 ## Device Sync Status
 Script to identify Template and Director sync status for a tenant.
+## get_ubuntu_version
+Script to identify installed Ubuntu version on devices from Versa Director.
