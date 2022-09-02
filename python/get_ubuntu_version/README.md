@@ -1,5 +1,5 @@
-## Readme for oss_upgrade
-    - Tested in Python 3.10.4
+## Readme for get_ubuntu_version
+    - Compatible and tested in Python 3.10.4
     - Tested on Director 21.2.2, 21.3.1
     - Tested on VOS 21.2.1, 21.2.2, 21.2.3
 
