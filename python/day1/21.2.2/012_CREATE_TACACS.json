@@ -1,0 +1,60 @@
+{ "method" : "PATCH",
+  "response": "204",
+   "path"   : "/api/config/nms/provider",
+   "payload" : {
+    "provider": {
+        "default-auth-connector": "{{tacacsName}}",
+        "auth-connectors": {
+            "config": {
+                "service-name": "test",
+                "auth-order": "local-then-remote",
+                "retry-count": 3,
+                "interval": 1,
+                "expiry-time": 15
+            },
+            "auth-connector": [
+                {
+                    "name": "{{tacacsName}}",
+                    "auth-connector-type": "{{tacacsConnectorType}}",
+                    "tacacs-server-details": [
+                         {% for item in tacacslist %}
+                        {
+                            "tacacs-server-ipaddress": "{{item['serverip']}}",
+                            "tacacs-server-port": "{{item['port']}}",
+                            "tacacs-secret": "{{item['secret']}}"
+                        }{{"," if not loop.last else ""}}
+                         {% endfor %}
+                    ]
+                }
+            ]
+        },
+        "analytics-cluster": [
+            {% for item in analytics_clist %}
+            {
+                "name": "{{item['defaultAnalyticsClusterName1']}}",
+                "connector-config": {
+                    "port": "{{ item['analyticsDefaultPortConnector']}}",
+                    "web-addresses": [
+                          {% for key, value in item["webaddr"].items() %}
+                        {
+                            "name": "{{key}}",
+                            "ip-address": "{{value}}"
+                        }{{"," if not loop.last else ""}}
+                          {% endfor %}
+                    ]
+                },
+                "log-collector-config": {
+                    "port": "{{item['analyticsDefaultPort']}}",
+                    "ip-address": [
+                        {% for mip in item['southip'] %} 
+                           "{{mip}}" {{", " if not loop.last else ""}}
+                        {% endfor %}
+                    ]
+                }
+            }{{"," if not loop.last else ""}}
+          {% endfor %}
+        ]
+    }
+}
+} 
+

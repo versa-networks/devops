@@ -1,0 +1,851 @@
+{
+    "Admin": {
+        "old_dir": {
+            "password": "Versa@123", 
+            "vd_rest_port": 9182, 
+            "user": "Administrator", 
+            "auth": "QWRtaW5pc3RyYXRvcjpWZXJzYUAxMjM=", 
+            "vd_ip": "192.168.185.2"
+        }, 
+        "new_dir": {
+            "password": "Versa@123", 
+            "vd_rest_port": 9182, 
+            "user": "Administrator", 
+            "auth": "QWRtaW5pc3RyYXRvcjpWZXJzYUAxMjM=", 
+            "vd_ip": "192.168.236.146"
+        }
+    }, 
+    "Analytics": {}, 
+    "Controller": {
+        "old_cntlr": [
+            {
+                "name": "Controller-1", 
+                "orgName": "Versa", 
+                "ip-address": "192.168.187.3", 
+                "org": "67989a25-cbca-4663-b43b-5e2d068708ac", 
+                "type": "controller", 
+                "uuid": "0506940c-b1be-4e43-be30-f233426be073"
+            }, 
+            {
+                "name": "Controller-2", 
+                "orgName": "Versa", 
+                "peerControllers": [
+                    "Controller-1"
+                ], 
+                "ip-address": "192.168.187.67", 
+                "org": "67989a25-cbca-4663-b43b-5e2d068708ac", 
+                "type": "controller", 
+                "uuid": "374bd663-62fd-40e5-9d89-9376104314ff"
+            }
+        ], 
+        "new_cntlr": [
+            {
+                "lastModifiedBy": "Administrator", 
+                "lastModifiedTime": "2022-05-02T22:01:58.491+0000", 
+                "workflowStatus": "Deployed", 
+                "siteId": "1", 
+                "controllerName": "wbuatcc-Controller-1", 
+                "inet_public_ip_address": "152.182.70.13", 
+                "mpls_public_ip_address": "192.168.236.154"
+            }, 
+            {
+                "lastModifiedBy": "Administrator", 
+                "lastModifiedTime": "2022-05-02T22:02:21.756+0000", 
+                "workflowStatus": "Deployed", 
+                "siteId": "2", 
+                "controllerName": "wbuatcc-Controller-2", 
+                "peerControllers": [
+                    "wbuatcc-Controller-1"
+                ], 
+                "inet_public_ip_address": "152.182.70.29", 
+                "mpls_public_ip_address": "192.168.236.186"
+            }
+        ], 
+        "num_cntlr": 2
+    }, 
+    "Vnms": {
+        "domain_ips": [
+            "206.112.194.64/26", 
+            "206.112.202.64/26"
+        ], 
+        "director": [
+            {
+                "directorIP": "192.168.236.146", 
+                "directorHostName": "wbuatcc-ffdca1-2988005e003", 
+                "director_southIP": "172.16.10.146"
+            }, 
+            {
+                "directorIP": "192.168.236.178", 
+                "directorHostName": "wbuatcc-ggdca1-2988005e003", 
+                "director_southIP": "172.16.10.162"
+            }
+        ], 
+        "parentOrgName": "Versa", 
+        "num_dir": 2, 
+        "users": {
+            "admin": "versa123", 
+            "VZuser": "versa123"
+        }, 
+        "rel": "20.2.4", 
+        "parentOrgId": "19b9c3e7-b4a9-4023-9d8a-4a1726db81ca", 
+        "wanNtwk": {
+            "PIP": "MPLS", 
+            "PIP-Backup": "MPLS", 
+            "BB": "Broadband", 
+            "INET": "Internet"
+        }, 
+        "hub_cntlr_present": 1, 
+        "hub_cntlr_devices": [
+            {
+                "name": "HC1", 
+                "orgName": "alpha", 
+                "ip-address": "10.1.64.106", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub-controller", 
+                "uuid": "6fcb2f58-221c-4535-b55d-87b0208578e0"
+            }, 
+            {
+                "name": "HC2", 
+                "orgName": "alpha", 
+                "ip-address": "10.1.64.123", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub-controller", 
+                "uuid": "2933b86f-e6dd-4550-88d2-50b7a25a3441"
+            }
+        ], 
+        "devices": [
+            {
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "name": "BB-Branch-1", 
+                "orgName": "alpha", 
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "poststaging-template": "BB-Branch-1", 
+                "dg-group": "BB-Branch-1", 
+                "ip-address": "10.1.64.120", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "d364ea67-0116-4519-a4ce-67ce9c71dbba", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                },
+                "onboard_to_hcn": 1, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "name": "BB-Branch-2", 
+                "orgName": "alpha", 
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "poststaging-template": "BB-Branch-2", 
+                "dg-group": "BB-Branch-2", 
+                "ip-address": "10.1.64.133", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "9fffc15f-1ced-4816-b4d1-2092aeb9bc2f", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }, 
+                "onboard_to_hcn": 1, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "BR-Lanner-LTE", 
+                "orgName": "alpha", 
+                "local_auth_key": "avLGrd9gYidsdzqN", 
+                "local1_auth_key": "Fn6N85bYo1z9jAaY", 
+                "local_auth_identity": "BR-Lanner-LTE@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lanner-INET-LTE", 
+                "dg-group": "Lanner-INET-LTE", 
+                "ip-address": "10.1.64.115", 
+                "local1_auth_identity": "BR-Lanner-LTE@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "9eaf9e92-565f-41cc-bf93-2a40391e3ca8", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "CSG-1", 
+                "orgName": "alpha", 
+                "local_auth_key": "seso76chaJfzMUCq", 
+                "local1_auth_key": "HsIFHN58mBuwU9Ig", 
+                "local_auth_identity": "CSG-1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "CSG-INET-PIP-Securonix", 
+                "dg-group": "CSG-INET-PIP-Securonix", 
+                "ip-address": "10.1.64.108", 
+                "local1_auth_identity": "CSG-1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "c998ae81-2b36-490d-a9d7-a7bb903fda26", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "CSG-2", 
+                "orgName": "alpha", 
+                "local_auth_key": "m5UTymh62gZq9L82", 
+                "local1_auth_key": "2k6PAPvScYhJ1F63", 
+                "local_auth_identity": "CSG-2@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "CSG-HUB-INET-PIP-Region2", 
+                "dg-group": "CSG-HUB-INET-PIP-Region2", 
+                "ip-address": "10.1.64.114", 
+                "local1_auth_identity": "CSG-2@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub", 
+                "deployed": "1", 
+                "uuid": "dcc1a0b9-0119-45f3-b566-0494dc42f5c8", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "CSG-770-1", 
+                "orgName": "alpha", 
+                "local_auth_key": "nK2F6MirTMGJVtzq", 
+                "local1_auth_key": "fC9l6mwhdpY0GeTy", 
+                "local_auth_identity": "CSG-770-1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "CSG-LTE-INET-PIP", 
+                "dg-group": "CSG-LTE-INET-PIP", 
+                "ip-address": "10.1.64.125", 
+                "local1_auth_identity": "CSG-770-1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "57b46f78-411a-4337-ac08-127afb6750e5", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Dell-930", 
+                "orgName": "alpha", 
+                "local_auth_key": "KQZcJBRNM3KlzbM8", 
+                "local1_auth_key": "DzwoN5XZAMWVxk7D", 
+                "local_auth_identity": "Dell-930@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Dell-930--INET", 
+                "dg-group": "Dell-930--INET", 
+                "ip-address": "10.1.64.107", 
+                "local1_auth_identity": "Dell-930@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "52d51ee0-8761-4da1-95e9-9c2f43d02163", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Flex-1", 
+                "orgName": "alpha", 
+                "local_auth_key": "uRtphYkbno5pf7IY", 
+                "local1_auth_key": "izipuIgwTn07jecf", 
+                "local_auth_identity": "Flex-1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Flex-1", 
+                "dg-group": "flex-1-group", 
+                "ip-address": "10.1.64.132", 
+                "local1_auth_identity": "Flex-1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "a9373d35-084a-46fb-8d0c-cd0f46859622", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Flex-2", 
+                "orgName": "alpha", 
+                "local_auth_key": "bbAPbE61030iJYks", 
+                "local1_auth_key": "uQ1ojNSt8Mh6iHbY", 
+                "local_auth_identity": "Flex-2@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Flex-1", 
+                "dg-group": "flex-1-group", 
+                "ip-address": "10.1.64.129", 
+                "local1_auth_identity": "Flex-2@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "3efb5cba-b464-44a9-a1fa-fd5bdf3b7d70", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "HC1", 
+                "orgName": "alpha", 
+                "local_auth_key": "PEdvkQNm7cdJPwP4", 
+                "local1_auth_key": "U9sea3uchgNLPZqd", 
+                "local_auth_identity": "HC1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "HC-VCP-1", 
+                "dg-group": "HC-VCP-1", 
+                "ip-address": "10.1.64.106", 
+                "local1_auth_identity": "HC1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub-controller", 
+                "deployed": "1", 
+                "uuid": "6fcb2f58-221c-4535-b55d-87b0208578e0", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }, 
+                "onboard_to_hcn": 0, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "HC2", 
+                "orgName": "alpha", 
+                "local_auth_key": "8rDqJ1cm5e1bafTx", 
+                "local1_auth_key": "oBtBoiHFnBISAz6K", 
+                "local_auth_identity": "HC2@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "HC-VCP-2", 
+                "dg-group": "HC-VCP-2", 
+                "ip-address": "10.1.64.123", 
+                "local1_auth_identity": "HC2@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub-controller", 
+                "deployed": "1", 
+                "uuid": "2933b86f-e6dd-4550-88d2-50b7a25a3441", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }, 
+                "onboard_to_hcn": 0, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "HNS-CPE-1", 
+                "orgName": "alpha", 
+                "local_auth_key": "z2KGZ2m3pD6Lzn1k", 
+                "local1_auth_key": "u1r2EHAjJ9tY8OPL", 
+                "local_auth_identity": "HNS-CPE-1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "HNS-IBO-CPE", 
+                "dg-group": "HNS-IBO-CPE", 
+                "ip-address": "10.1.64.110", 
+                "local1_auth_identity": "HNS-CPE-1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "e0836b3e-9179-43ad-ab95-076d86faf362", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Lanner-3-LTE", 
+                "orgName": "alpha", 
+                "local_auth_key": "eMbY9SbIu54YoX3I", 
+                "local1_auth_key": "iWAp72vn1stBcBGI", 
+                "local_auth_identity": "Lanner-3-LTE@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lanner-INET-HA-LTE", 
+                "dg-group": "Lanner-INET-HA-LTE", 
+                "ip-address": "10.1.64.111", 
+                "local1_auth_identity": "Lanner-3-LTE@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "aad1d160-b8d8-4300-be0e-fe74b95e914c", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Lanner-4", 
+                "orgName": "alpha", 
+                "local_auth_key": "H8OduRGSsmHNcyXL", 
+                "local1_auth_key": "8eoCdKSkeQnmCZin", 
+                "local_auth_identity": "Lanner-4@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lanner-INET-PIP", 
+                "dg-group": "Lanner-INET-PIP", 
+                "ip-address": "10.1.64.112", 
+                "local1_auth_identity": "Lanner-4@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "4722d557-ad8b-4726-bb6b-bc4792626dbb", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "OUT_OF_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Lowell-1-INET", 
+                "orgName": "alpha", 
+                "local_auth_key": "7dh5okXBF8EmU4cG", 
+                "local1_auth_key": "utfBlhrnyP6tLYU7", 
+                "local_auth_identity": "Lowell-1-INET@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lowell-HA-INET", 
+                "dg-group": "Lowell-HA-INET", 
+                "ip-address": "10.1.64.105", 
+                "local1_auth_identity": "Lowell-1-INET@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "58509018-71c3-46ad-996e-52b65f82d68d", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Lowell-2-PIP", 
+                "orgName": "alpha", 
+                "local_auth_key": "nr99RYPjJeEJs03p", 
+                "local1_auth_key": "1JZiMRoUlKj1fj2j", 
+                "local_auth_identity": "Lowell-2-PIP@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lowell-HA-PIP", 
+                "dg-group": "Lowell-HA-PIP", 
+                "ip-address": "10.1.64.124", 
+                "local1_auth_identity": "Lowell-2-PIP@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "feace19d-e01d-4e09-8d98-43967f32d45c", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Lowell-3", 
+                "orgName": "alpha", 
+                "local_auth_key": "bP8dvQWNLCN4IkEP", 
+                "local1_auth_key": "icKXjAAcHxZga91f", 
+                "local_auth_identity": "Lowell-3@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lowell-3", 
+                "dg-group": "Lowell-3", 
+                "ip-address": "10.1.64.126", 
+                "local1_auth_identity": "Lowell-3@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "536739d4-1718-41d6-9609-2afa631018aa", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "SD-IPSYNC", 
+                "orgName": "alpha", 
+                "local_auth_key": "q6TaoyZb9WFu38u0", 
+                "local1_auth_key": "h9Vw8qNk0rs5VmXp", 
+                "local_auth_identity": "SD-IPSYNC@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "IPSync-Test", 
+                "dg-group": "IPSync", 
+                "ip-address": "10.1.64.127", 
+                "local1_auth_identity": "SD-IPSYNC@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "f281081e-21c5-459c-a42f-5f99070837b6", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "SevOne-TestBranch-1", 
+                "orgName": "alpha", 
+                "local_auth_key": "H5vbC07RdfxoP7gk", 
+                "local1_auth_key": "uJLQycMISytfCVpU", 
+                "local_auth_identity": "SevOne-TestBranch-1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "SevOne-Test", 
+                "dg-group": "SevOne-TestBranch-1", 
+                "ip-address": "10.1.64.130", 
+                "local1_auth_identity": "SevOne-TestBranch-1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "c8fdb8e1-45c8-4da4-a4de-3432e7e1a3f4", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "SevOne-TestBranch-2", 
+                "orgName": "alpha", 
+                "local_auth_key": "UWMCTXnheYriafZc", 
+                "local1_auth_key": "ENkZolzOdPul5UKn", 
+                "local_auth_identity": "SevOne-TestBranch-2@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "SevOne-Test", 
+                "dg-group": "SevOne-TestBranch-1", 
+                "ip-address": "10.1.64.131", 
+                "local1_auth_identity": "SevOne-TestBranch-2@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "59a107b2-e7b6-44af-8b8e-5af222ed5932", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "OUT_OF_SYNC"
+                }
+            }, 
+            {
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "name": "Silicom-1", 
+                "orgName": "alpha", 
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "poststaging-template": "Silicom-HA-PIP", 
+                "dg-group": "Silicom-HA-PIP", 
+                "ip-address": "10.1.64.122", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "ee720f40-12c1-4955-a934-b7e32d9d6e1a", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Silicom-3", 
+                "orgName": "alpha", 
+                "local_auth_key": "Rps389nuy118b1TR", 
+                "local1_auth_key": "gNqjAcCgP8U2qs7G", 
+                "local_auth_identity": "Silicom-3@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Silicom-3-INET-PIP", 
+                "dg-group": "Silicom-3-INET-PIP", 
+                "ip-address": "10.1.64.128", 
+                "local1_auth_identity": "Silicom-3@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "031ce329-8e03-4677-9aaf-32c3fa3c3701", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Silicom-5", 
+                "orgName": "alpha", 
+                "local_auth_key": "u1bHXtt6Qlfwc9f9", 
+                "local1_auth_key": "9J7nxygSQS6QE2wo", 
+                "local_auth_identity": "Silicom-5@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Silicom-5-INET-LTE", 
+                "dg-group": "Silicom-5-INET-LTE", 
+                "ip-address": "10.1.64.109", 
+                "local1_auth_identity": "Silicom-5@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "5c43b045-155a-407b-bf80-8342652c0e54", 
+                "deviceStatus": {
+                    "ping-status": "UNREACHABLE", 
+                    "sync-status": "UNKNOWN"
+                }
+            }
+        ], 
+        "newdevicelist": [
+            {
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "name": "BB-Branch-1", 
+                "orgName": "alpha", 
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "poststaging-template": "BB-Branch-1", 
+                "dg-group": "BB-Branch-1", 
+                "ip-address": "10.1.64.120", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "d364ea67-0116-4519-a4ce-67ce9c71dbba", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                },
+                "onboard_to_hcn": 1, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "name": "BB-Branch-2", 
+                "orgName": "alpha", 
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "poststaging-template": "BB-Branch-2", 
+                "dg-group": "BB-Branch-2", 
+                "ip-address": "10.1.64.133", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "9fffc15f-1ced-4816-b4d1-2092aeb9bc2f", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }, 
+                "onboard_to_hcn": 1, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "BR-Lanner-LTE", 
+                "orgName": "alpha", 
+                "local_auth_key": "avLGrd9gYidsdzqN", 
+                "local1_auth_key": "Fn6N85bYo1z9jAaY", 
+                "local_auth_identity": "BR-Lanner-LTE@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lanner-INET-LTE", 
+                "dg-group": "Lanner-INET-LTE", 
+                "ip-address": "10.1.64.115", 
+                "local1_auth_identity": "BR-Lanner-LTE@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "9eaf9e92-565f-41cc-bf93-2a40391e3ca8", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "CSG-2", 
+                "orgName": "alpha", 
+                "local_auth_key": "m5UTymh62gZq9L82", 
+                "local1_auth_key": "2k6PAPvScYhJ1F63", 
+                "local_auth_identity": "CSG-2@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "CSG-HUB-INET-PIP-Region2", 
+                "dg-group": "CSG-HUB-INET-PIP-Region2", 
+                "ip-address": "10.1.64.114", 
+                "local1_auth_identity": "CSG-2@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub", 
+                "deployed": "1", 
+                "uuid": "dcc1a0b9-0119-45f3-b566-0494dc42f5c8", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Flex-1", 
+                "orgName": "alpha", 
+                "local_auth_key": "uRtphYkbno5pf7IY", 
+                "local1_auth_key": "izipuIgwTn07jecf", 
+                "local_auth_identity": "Flex-1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Flex-1", 
+                "dg-group": "flex-1-group", 
+                "ip-address": "10.1.64.132", 
+                "local1_auth_identity": "Flex-1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "a9373d35-084a-46fb-8d0c-cd0f46859622", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Flex-2", 
+                "orgName": "alpha", 
+                "local_auth_key": "bbAPbE61030iJYks", 
+                "local1_auth_key": "uQ1ojNSt8Mh6iHbY", 
+                "local_auth_identity": "Flex-2@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Flex-1", 
+                "dg-group": "flex-1-group", 
+                "ip-address": "10.1.64.129", 
+                "local1_auth_identity": "Flex-2@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "3efb5cba-b464-44a9-a1fa-fd5bdf3b7d70", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "HC1", 
+                "orgName": "alpha", 
+                "local_auth_key": "PEdvkQNm7cdJPwP4", 
+                "local1_auth_key": "U9sea3uchgNLPZqd", 
+                "local_auth_identity": "HC1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "HC-VCP-1", 
+                "dg-group": "HC-VCP-1", 
+                "ip-address": "10.1.64.106", 
+                "local1_auth_identity": "HC1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub-controller", 
+                "deployed": "1", 
+                "uuid": "6fcb2f58-221c-4535-b55d-87b0208578e0", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }, 
+                "onboard_to_hcn": 0, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "HC2", 
+                "orgName": "alpha", 
+                "local_auth_key": "8rDqJ1cm5e1bafTx", 
+                "local1_auth_key": "oBtBoiHFnBISAz6K", 
+                "local_auth_identity": "HC2@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "HC-VCP-2", 
+                "dg-group": "HC-VCP-2", 
+                "ip-address": "10.1.64.123", 
+                "local1_auth_identity": "HC2@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "hub-controller", 
+                "deployed": "1", 
+                "uuid": "2933b86f-e6dd-4550-88d2-50b7a25a3441", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }, 
+                "onboard_to_hcn": 0, 
+                "status": "C2-Complete"
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "HNS-CPE-1", 
+                "orgName": "alpha", 
+                "local_auth_key": "z2KGZ2m3pD6Lzn1k", 
+                "local1_auth_key": "u1r2EHAjJ9tY8OPL", 
+                "local_auth_identity": "HNS-CPE-1@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "HNS-IBO-CPE", 
+                "dg-group": "HNS-IBO-CPE", 
+                "ip-address": "10.1.64.110", 
+                "local1_auth_identity": "HNS-CPE-1@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "e0836b3e-9179-43ad-ab95-076d86faf362", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Lanner-3-LTE", 
+                "orgName": "alpha", 
+                "local_auth_key": "eMbY9SbIu54YoX3I", 
+                "local1_auth_key": "iWAp72vn1stBcBGI", 
+                "local_auth_identity": "Lanner-3-LTE@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Lanner-INET-HA-LTE", 
+                "dg-group": "Lanner-INET-HA-LTE", 
+                "ip-address": "10.1.64.111", 
+                "local1_auth_identity": "Lanner-3-LTE@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "aad1d160-b8d8-4300-be0e-fe74b95e914c", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "name": "Silicom-1", 
+                "orgName": "alpha", 
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "poststaging-template": "Silicom-HA-PIP", 
+                "dg-group": "Silicom-HA-PIP", 
+                "ip-address": "10.1.64.122", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "ee720f40-12c1-4955-a934-b7e32d9d6e1a", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }, 
+            {
+                "remote1_auth_identity": "wbuatcc-Controller-1@alpha.com", 
+                "name": "Silicom-3", 
+                "orgName": "alpha", 
+                "local_auth_key": "Rps389nuy118b1TR", 
+                "local1_auth_key": "gNqjAcCgP8U2qs7G", 
+                "local_auth_identity": "Silicom-3@alpha.com", 
+                "remote_auth_identity": "wbuatcc-Controller-2@alpha.com", 
+                "poststaging-template": "Silicom-3-INET-PIP", 
+                "dg-group": "Silicom-3-INET-PIP", 
+                "ip-address": "10.1.64.128", 
+                "local1_auth_identity": "Silicom-3@alpha.com", 
+                "org": "6ffb43d9-990b-42a5-8f46-5397ef5886bc", 
+                "type": "branch", 
+                "deployed": "1", 
+                "uuid": "031ce329-8e03-4677-9aaf-32c3fa3c3701", 
+                "deviceStatus": {
+                    "ping-status": "REACHABLE", 
+                    "sync-status": "IN_SYNC"
+                }
+            }
+        ]
+    }, 
+    "Customer": {
+        "custName": "alpha"
+    }
+}

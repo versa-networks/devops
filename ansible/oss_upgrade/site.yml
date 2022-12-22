@@ -1,0 +1,33 @@
+---
+# file: site.yml
+- hosts: localhost
+  gather_facts: no
+  vars_prompt:
+  - name: update_method
+    prompt: | 
+      ########################################
+      Select update method from the options below:
+      ########################################
+      Update batch devices 1 at a time, enter 1
+      Update batch devices concurrently, enter 2
+      ########################################      
+      Enter update method(1-2)
+    private: no
+  - name: csv_batch_file
+    prompt: What is the name of your batch file?
+    private: no  
+  - name: username
+    prompt: What is your username?
+    private: no
+  - name: passwrd
+    prompt: What is your password?
+    private: yes
+  - name: director_ip
+    prompt: What is the primary Director IP or Hostname?
+    private: no
+  - name: oss_pack_version
+    prompt: What is the OSS pack version(YYYYMMDD)?
+    private: no
+
+  roles:
+    - role: oss_update

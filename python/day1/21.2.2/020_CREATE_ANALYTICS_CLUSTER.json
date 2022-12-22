@@ -1,0 +1,30 @@
+{ "method" : "PUT",
+   "response": "204",
+   "path"   : "/api/config/nms/provider/analytics-cluster/{{defaultAnalyticsClusterName1}}/",
+   "payload" : {
+  "analytics-cluster": [
+    {
+      "name": "{{defaultAnalyticsClusterName1}}",
+      "connector-config": {
+        "port": "{{analyticsDefaultPortConnector}}",
+        "web-addresses": [ 
+          {% for key, value in analytics_address.items() %} 
+        {
+          "name": "{{key}}",
+          "ip-address" : "{{value}}"
+        }{{"," if not loop.last else ""}}
+          {% endfor %}
+        ]
+      },
+      "log-collector-config": {
+        "port": {{analyticsDefaultPort}},
+        "ip-address": [
+          {% for mip in analyip %} 
+          "{{mip}}" {{", " if not loop.last else ""}}
+          {% endfor %}
+        ]
+      }
+    }
+  ]
+}
+}

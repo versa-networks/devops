@@ -1,0 +1,74 @@
+{
+    "Vnms": {
+        "parentOrgName": "Versa",
+        "rel": "21.2.2",
+        "users": {
+            "admin": "versa123",
+            "VZuser": "versa123"
+        },
+        "num_dir": 2,
+        "domain_ips": [
+            "206.112.194.64/26",
+            "206.112.202.64/26"
+        ],
+        "director": [
+            {
+                "directorHostName": "wbuatcc-ffdca1-2988005e003",
+                "directorIP": "192.168.236.146",
+                "director_southIP": "172.16.10.146"
+            },
+            {
+                "directorHostName": "wbuatcc-ggdca1-2988005e003",
+                "directorIP": "192.168.236.178",
+                "director_southIP": "172.16.10.162"
+            }
+        ]
+    },
+    "Analytics": {},
+    "Controller": {
+        "num_cntlr": 2,
+        "new_cntlr": [
+            {
+                "controllerName": "Versa-Controller-1",
+                "siteId": "1",
+                "workflowStatus": "Deployed",
+                "lastModifiedTime": "2022-06-07T21:48:38.399+0000",
+                "lastModifiedBy": "Administrator"
+            },
+            {
+                "controllerName": "Versa-Controller-2",
+                "siteId": "2",
+                "workflowStatus": "Deployed",
+                "lastModifiedTime": "2022-06-07T21:49:35.031+0000",
+                "lastModifiedBy": "Administrator"
+            }
+        ],
+        "old_cntlr": [
+            {
+                "controllerName": "Versa-Controller-1"
+            },
+            {
+                "controllerName": "Versa-Controller-2"
+            }
+        ]
+    },
+    "Admin": {
+        "new_dir": {
+            "user": "Administrator",
+            "password": "versa123",
+            "vd_ip": "192.168.236.146",
+            "vd_rest_port": 9182,
+            "auth": "QWRtaW5pc3RyYXRvcjp2ZXJzYTEyMw=="
+        },
+        "old_dir": {
+            "user": "Administrator",
+            "password": "Versa@1234",
+            "vd_ip": "192.168.236.2",
+            "vd_rest_port": 9182,
+            "auth": "QWRtaW5pc3RyYXRvcjpWZXJzYUAxMjM0"
+        }
+    },
+    "Customer": {
+        "custName": "Customer1"
+    }
+}

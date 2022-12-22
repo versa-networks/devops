@@ -1,0 +1,15 @@
+---
+location: 
+  address1: "34 Westergate Avenue"
+  address2: "Brooklands"
+  city: "MILTON KEYNES"
+  country: "United Kingdom"
+  state: "Other"
+  zip: "MK10 7LQ"
+#  latitude: "50.83817",
+#  longitude: "-0.668412"
+template: branch01
+mpls_ipv4_static: 192.168.100.103/24
+mpls_ipv4_gw: 192.168.100.3
+lan_ipv4_static: 192.168.103.1/24
+bandwidth: 100

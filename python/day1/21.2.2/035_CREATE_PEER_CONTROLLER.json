@@ -1,0 +1,86 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/vnms/sdwan/workflow/controllers/controller",
+   "payload" : {
+  "versanms.sdwan-controller-workflow": {
+    "peerControllers": [
+    		"{{peercontrollerName}}"
+            ],
+    "controllerName": "{{controllerName}}",
+    "orgName": "{{parentOrgName}}",
+    "siteId": "{{siteId}}",
+    "stagingController": "{{stagingController}}",
+    "postStagingController": "{{postStagingController}}",
+    "analyticsCluster": "{{defaultAnalyticsClusterName}}",
+    "resourceType": "{{resourceType}}",
+    "ipv4dhcp": "{{ipv4dhcp}}",
+    "locationInfo": {
+      "country": "{{country}}",
+      "zip": "{{zipCode}}",
+      "latitude": "{{latitude}}",
+      "longitude": "{{longitude}}"
+    },
+    "bgp": {
+       "peerIP" : "{{cntrl_ntwk_ipv4_gtwy}}",
+       "peerIPAs" : "{{cntlr_mnso_peer_as}}"
+    },
+    "baremetalController": {
+      "serverIP": "{{mgmt_ntwk_ipv4_addr}}",
+      "controllerInterface": {
+        "interfaceName": "vni-0/2",
+        "unitInfoList": [
+          {
+            "networkName": "Control-Network",
+            "ipv4dhcp": "false",
+            "vlanId": "0",
+            "ipv4address": [
+              "{{cntrl_ntwk_ipv4_addr}}/{{cntrl_ntwk_ipv4_mask}}"
+            ],
+            "ipv6gateway": "",
+            "ipv4gateway": "{{cntrl_ntwk_ipv4_gtwy}}"
+          }
+        ]
+      },
+      "wanInterfaces": [
+        {
+          "interfaceName": "vni-0/0",
+          "unitInfoList": [
+            {
+              "ipv4address": [
+                "{{inet_ntwk_ipv4_addr}}/{{inet_ntwk_ipv4_mask}}"
+              ],
+              "vlanId": "0",
+              "networkName": "INET",
+              "ipv4dhcp": "false",
+              "ipv6dhcp": "false",
+              "ipv4gateway": "{{inet_ntwk_ipv4_gtwy}}",
+              "publicIPAddress": "{{inet_ntwk_public_ip}}",
+              "transportDomainList": [
+                "Internet"
+              ]
+            }
+          ]
+        },
+        {
+          "interfaceName": "vni-0/1",
+          "unitInfoList": [
+            {
+              "ipv4address": [
+                "{{pip_ntwk_ipv4_addr}}/{{pip_ntwk_ipv4_mask}}"
+              ],
+              "vlanId": "0",
+              "networkName": "PIP",
+              "ipv4dhcp": "false",
+              "ipv6dhcp": "false",
+              "ipv4gateway": "{{pip_ntwk_ipv4_gtwy}}",
+              "transportDomainList": [
+                "MPLS"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+} 
+}

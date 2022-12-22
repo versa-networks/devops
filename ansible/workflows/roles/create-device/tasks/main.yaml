@@ -1,0 +1,157 @@
+---
+- block:
+       
+#  - name: Check if Device Template exists on Versa Director
+#    uri:
+#      url: "https://{{ rest_api}}/vnms/sdwan/workflow/devices/device/{{ inventory_hostname }}"
+#      method: GET
+#      user: "{{ rest_api_username }}"
+#      password: "{{ rest_api_password }}"
+#      headers:
+#        Accept: application/json
+#        Content-Type: application/json
+#      return_content: yes
+#      force_basic_auth: yes
+#      validate_certs: no
+#      follow_redirects: all
+#      timeout: 60
+#    ignore_errors: yes
+#    register: preDevices
+#
+#  - name:
+#    debug: 
+#    #msg: "Device {{ inventory_hostname }} exists. Device will not be deployed"
+#      var: preDevices
+#    when: not preDevices.json.error
+
+  - import_role:
+      name: create-devicegroup
+
+  - import_role:
+      name: get-vd-version
+    when: vd_version is not defined
+
+  - name: Retrieve available SiteId from Versa Director
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_get_available_SiteId'] }}"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      timeout: 60
+    register: siteIdResult
+    failed_when: "siteIdResult.status != 200"
+#    when: "preDevices.json.error == 'Not Found'"
+
+  - name: Register SiteId
+    set_fact:
+      availableSiteId: "{{ siteIdResult['json']['AvailableIDResponseModel']['branchId'] }}"
+    when: siteIdResult.status == 200
+
+  - name: "Generate temporary JSON config & store in /tmp"
+    template: src="json_template.j2" dest="/tmp/{{ inventory_hostname }}.json"
+
+  - name: Create device on Versa Director Workflow
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_create_device'] }}"
+      method: POST
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400,500
+      timeout: 60
+      body_format: json
+      body: "{{ lookup('template', '../templates/json_template.j2') }}"
+    register: results
+    changed_when: results.status == 200
+    failed_when: "results.status != 200"
+#    when: "preDevices.json.error == 'Not Found'"
+
+  - name: Deploy device on Versa Director Workflow
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_deploy_device'] }}"
+      method: POST
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400
+      timeout: 60
+    when: results.status == 200
+    register: results1
+    changed_when: results1.status == 202
+    failed_when: results1.status != 202
+
+    #  - name: Output results of Create Device task
+    #debug: var=results
+
+  - name: Output results of Deploy Device task
+    #debug: var=results1
+    debug: var=results1.json.TaskResponse
+
+  - name: Register TaskId for Deployment Tasks
+    set_fact:
+      taskId: "{{ results1.json.TaskResponse['task-id'] }}"
+    when: results1.status == 202
+
+  - name: Wait for Deployment Tasks to complete on Versa Director
+    uri:
+            #      url: "https://{{ rest_api}}/vnms/tasks/task/{{ taskId }}"
+      url: "https://{{ rest_api }}/{{ results1.json.TaskResponse.link.href }}"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400
+      timeout: 60
+    register: taskResult
+    until: taskResult.json['versa-tasks.task']['versa-tasks.task-status'] == "COMPLETED"
+    retries: 6
+    delay: 10
+
+  - name: Verify Device template status is 'Deployed' on Versa Director
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_get_devices'] }}"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      timeout: 60
+    register: Devices
+    failed_when: "siteIdResult.status != 200"
+
+  - name: Return status of Devices created
+    #loop: "{{ Devices.versanms.sdwan-device-list }}"
+    debug: var=item
+    when: item.deviceName == inventory_hostname
+    with_items: "{{ Devices.json['versanms.sdwan-device-list'] }}"
+

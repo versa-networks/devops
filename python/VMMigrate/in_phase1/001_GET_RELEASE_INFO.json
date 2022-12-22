@@ -1,0 +1,5 @@
+{ "method" : "GET",
+   "response": "200",
+   "path"   : "/api/operational/system/package-info?deep=true",
+   "payload" : { } 
+}

@@ -1,0 +1,96 @@
+---
+- block:
+  - import_role:
+      name: get-vd-version
+    when: vd_version is not defined
+
+  - name: Check if Org already configured
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_get_orgs_root'] }}"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400
+      timeout: 60
+    register: OrgResult
+
+  - name: Retrieve available OrgId from Versa Director
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_get_available_OrgId'] }}"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400
+      timeout: 60      
+    register: OrgIdResult
+    when: parent_org.org_name not in OrgResult.json
+    #    failed_when: "OrgIdResult.status != 200"
+#    when: "preDevices.json.error == 'Not Found'"
+  - set_fact:
+      availableOrgId: "{{ OrgIdResult.json }}"
+    when: parent_org.org_name not in OrgResult.json
+
+  - debug: var=availableOrgId
+    when: parent_org.org_name not in OrgResult.json
+
+  - name: Retrieve available OrgId from Versa Director
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_get_available_VrfId'] }}?count=1"
+      method: GET
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400
+      timeout: 60
+    register: VrfIdResult
+    when: parent_org.org_name not in OrgResult.json
+    #    failed_when: "OrgIdResult.status != 200"
+
+  - set_fact:
+      availableVrfId: "{{ VrfIdResult.json.SdwanGlobalIds.globalIds[0] }}"
+    when: parent_org.org_name not in OrgResult.json
+
+  - debug: var=availableVrfId
+    when: parent_org.org_name not in OrgResult.json
+
+  - name: Create Parent org
+    uri:
+      url: "{{ url_resource_paths[vd_version]['vd_create_parent_org'] }}"
+      method: POST
+      user: "{{ rest_api_username }}"
+      password: "{{ rest_api_password }}"
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      follow_redirects: all
+      status_code: 202,409,204,200,201,400,500
+      timeout: 60
+      body_format: json
+      body: "{{ lookup('template', '../templates/json_template.j2') }}"
+    register: results
+    changed_when: results.status == 200
+    failed_when: "results.status != 200"
+    when: parent_org.org_name not in OrgResult.json

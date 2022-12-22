@@ -1,0 +1,35 @@
+---
+bgp:
+  instance_id: 1
+  router_id: 192.168.101.1
+  peer_asn: 65413
+  local_asn: 65412
+  local_address: 192.168.101.1
+  description: Test LAN eBGP
+  password: bgppassword123
+  holdtime: 30
+  ttl: 10
+  prefix_limit:
+    max: 512
+    threshold: 10
+    restart_interval: 60
+    action: warn
+  neighbors:
+    - 
+      neighbor: 
+        neighbor_ip: 192.168.101.10
+        local_address: 192.168.101.1
+        ttl: 10
+        peer_asn: 65413
+    -
+      neighbor:
+        neighbor_ip: 192.168.101.11
+        local_address: 192.168.101.1
+        ttl: 5
+        peer_asn: 65414
+    -
+      neighbor:
+        neighbor_ip: 192.168.101.12
+        local_address: 192.168.101.1
+        ttl: 5
+        peer_asn: 65415

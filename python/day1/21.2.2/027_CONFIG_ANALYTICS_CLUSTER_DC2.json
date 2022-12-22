@@ -1,0 +1,22 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/versa/analytics/config/system",
+   "payload" : {
+  "searchHosts": [
+      {% for mip in searchip %}
+     "{{mip}}"{{", " if not loop.last else ""}}
+      {% endfor %}
+   ],
+  "analyticsHosts": [
+      {% for mip in analyip %}
+     "{{mip}}"{{", " if not loop.last else ""}}
+      {% endfor %}
+   ],
+  "driversHosts": [
+      {% for mip in allip %}
+     "{{mip}}"{{", " if not loop.last else ""}}
+      {% endfor %}
+  ],
+  "logLevel": "DEBUG"
+}
+}

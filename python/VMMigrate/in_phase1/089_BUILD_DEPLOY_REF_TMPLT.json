@@ -1,0 +1,6 @@
+{
+    "method": "POST", 
+    "response": "200", 
+    "path": "/vnms/sdwan/workflow/templates/template",
+    "payload": {}
+}

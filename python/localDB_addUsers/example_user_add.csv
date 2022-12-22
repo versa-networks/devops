@@ -1,0 +1,4 @@
+name,description,groups,passwd,first-name,last-name,email-address,status,password
+test_user_2,testuser2,test_group,Password123!,test,user2,testuser2@versa-networks.com,CREATED,Password123!
+test_user_3,testuser3,test_group,Password123!,test,user3,testuser3@versa-networks.com,CREATED,Password123!
+test_user_4,testuser4,test_group,Password123!,test,user4,testuser4@versa-networks.com,CREATED,Password123!

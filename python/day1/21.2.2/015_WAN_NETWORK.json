@@ -1,0 +1,11 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/nextgen/organization/{{parentOrgUuid}}/wan-networks",
+   "payload" : {
+  "name": "{{versaNtwkTypeForWanNwk}}",
+  "transport-domains": [
+    "{{transDomainForWanNwk}}"
+  ],
+  "description": "{{versaNtwkTypeForWanNwk}} network"
+} 
+} 

@@ -1,0 +1,19 @@
+{ "method" : "POST",
+   "response": "200",
+   "path"   : "/nextgen/track/users/usersettings",
+   "payload" : {
+  "defaultUnlockTime": "900",
+  "maxLoginFailCount": "3",
+  "resetPasswordRequestTimeIntervalInSeconds" : "900",
+  "resetPasswordForFirstLogin": "false",
+  "passwordPolicyLowercase": "true",
+  "passwordPolicyNumber": "true",
+  "passwordPolicySpecialchar": "false",
+  "passwordPolicyUppercase": "true",
+  "passwordPolicyDictionaryWords": "false",
+  "expirePassword": "true",
+  "noOfDaysToExpirePassword": "90",
+  "passwordPolicyNumber": "true",
+  "passwordHistorySize": "3"
+}
+}

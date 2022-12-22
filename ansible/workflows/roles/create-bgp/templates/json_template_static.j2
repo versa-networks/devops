@@ -1,0 +1,96 @@
+{
+"rti-bgp": {
+    "instance-id": 3,
+    "description": "LAN eBGP",
+    "password": "hls:2922743918:337ZpL=Z",
+    "hold-time": 30,
+    "enable-alarms": [
+        null
+    ],
+    "local-address": "vni-0/3.0",
+    "ttl": 10,
+    "peer-as": 64513,
+    "remove-private": [
+        null
+    ],
+    "route-flap": {
+        "free-max-time": 180,
+        "reuse-max-time": 60,
+        "reuse-size": 256,
+        "reuse-array-size": 1024
+    },
+    "graceful-restart": {
+        "helper": "enable"
+    },
+    "prefix-limit": {
+        "maximum": 512,
+        "threshold": 10,
+        "restart-interval": 60,
+        "action": "warn"
+    },
+    "soo": "auto",
+    "prefix-list": [
+        {
+            "prefix-list-name": "test",
+            "seq": [
+                {
+                    "number": 1,
+                    "permit-or-deny": "permit",
+                    "address-family": {
+                        "ipv4": {
+                            "unicast": {
+                                "address-mask": "8.8.8.0/21",
+                                "ge_le": {
+                                    "ge": 21,
+                                    "le": 24
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "routing-peer-policy": [
+        {
+            "name": "test",
+            "term": [
+                {
+                    "term-name": "test1",
+                    "match": {
+                        "family": "inet",
+                        "as-path": "64513",
+                        "metric": 10
+                    },
+                    "action": {
+                        "filter": "accept",
+                        "rib-bgp-ecmp": false
+                    }
+                }
+            ]
+        }
+    ],
+    "router-id": "192.168.101.1",
+    "local-as": {
+        "as-number": 64512
+    },
+    "group": [
+        {
+            "name": "peer-group-test",
+            "type": "external",
+            "description": "peer-group-test-desc",
+            "local-as-mode": "mode-1",
+            "prefix-limit": {},
+            "neighbor": [
+                {
+                    "bgp-neighbor-ip": "192.168.101.11",
+                    "local-address": "vni-0/3.0",
+                    "prefix-limit": {},
+                    "ttl": 10,
+                    "peer-as": 64513
+                }
+            ]
+        }
+    ]
+}
+}

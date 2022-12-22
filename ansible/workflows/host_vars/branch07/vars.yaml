@@ -1,0 +1,9 @@
+---
+location: 
+  country: uk
+siteId: 107
+template: branch01
+mpls_ipv4_static: 192.168.100.107/24
+mpls_ipv4_gw: 192.168.100.3
+lan_ipv4_static: 192.168.107.1/24
+bandwidth: 100

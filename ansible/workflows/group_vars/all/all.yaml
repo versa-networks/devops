@@ -1,0 +1,15 @@
+parent_org:
+  org_name: acme
+  cpe_deployment_type: SDWAN
+  description: "Some Parent Description"
+  shared_control_plane: False
+  subscriptionPlan: "Default-All-Service-Plan"
+  #  authType: psk
+org_name: "{{ parent_org.org_name}}"
+#vd: 10.48.58.81
+vd: "{{ hostvars['director01']['ansible_host'] }}"
+port: 9182
+rest_api: "{{ vd }}:{{port}}"
+base_url: "https://{{ rest_api }}/"
+rest_api_username:
+rest_api_password:

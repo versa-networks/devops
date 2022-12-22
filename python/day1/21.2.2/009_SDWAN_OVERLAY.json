@@ -1,0 +1,12 @@
+{ "method" : "POST",
+  "response": "200",
+   "path"   : "/vnms/ipam/overlay/prefixes",
+   "payload" : { 
+      "prefix" : "10.0.0.0/8",
+      "status" : {
+         "value" : 1,
+         "label" : "Active"
+       },
+       "is_pool" : "true"
+   }
+} 
