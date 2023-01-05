@@ -28,12 +28,12 @@ def post_access_rule(payload):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description='Script to load access policies from a CSV file')
-    parser.add_argument('--ip', default='10.43.43.100', type=str,help='IP address of Director')
+    parser.add_argument('--ip', default='cloud221.versa-networks.com', type=str,help='IP address of Director')
     parser.add_argument('--device', default='BRANCH-11', type=str,help='Branch Device name')
     parser.add_argument('--org', default='Versa', type=str,help='Organization name')
     parser.add_argument('--group', default='Default-Policy', type=str,help='Policy Group Name')
     parser.add_argument('--user', default='Administrator', type=str,help='GUI username of Director')
-    parser.add_argument('--password', default='versa123', type=str,help='GUI password of Director')
+    parser.add_argument('--password', default='Versa#23', type=str,help='GUI password of Director')
     parser.add_argument('--csv_file', default='rules-create.csv', type=str,help='CSV File including the access policy rules')
 
     args            = parser.parse_args()
@@ -49,8 +49,7 @@ if __name__ == '__main__':
         rule_destination    = row[2]
         rule_service        = row[3]
         rule_action         = row[4]
-
-        json_template = open('./rules-create.json')
+        json_template       = open('./rules-create.json')
         
         payload = json_template.read()
         payload = payload.replace('RULE_NAME',rule_name)
@@ -59,6 +58,6 @@ if __name__ == '__main__':
         payload = payload.replace('RULE_SERVICES', rule_service.replace(',','", "'))
         payload = payload.replace('RULE_ACTION',rule_action)
         payload_list.append(payload)
-        
-    with ThreadPoolExecutor() as executor:
-        executor.map(post_access_rule, payload_list)
+ 
+    for rule in payload_list:
+        post_access_rule(rule)
