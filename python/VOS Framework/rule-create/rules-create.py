@@ -32,8 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='BRANCH-11', type=str,help='Branch Device name')
     parser.add_argument('--org', default='Versa', type=str,help='Organization name')
     parser.add_argument('--group', default='Default-Policy', type=str,help='Policy Group Name')
-    parser.add_argument('--user', default='Administrator', type=str,help='GUI username of Director')
-    parser.add_argument('--password', default='Versa#23', type=str,help='GUI password of Director')
+    parser.add_argument('--user', default='*****', type=str,help='GUI username of Director')
+    parser.add_argument('--password', default='*****', type=str,help='GUI password of Director')
     parser.add_argument('--csv_file', default='rules-create.csv', type=str,help='CSV File including the access policy rules')
 
     args            = parser.parse_args()
@@ -61,3 +61,4 @@ if __name__ == '__main__':
  
     for rule in payload_list:
         post_access_rule(rule)
+
