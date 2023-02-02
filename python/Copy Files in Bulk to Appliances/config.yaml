@@ -1,0 +1,6 @@
+# config.yaml file
+#director-ip: 34.210.227.133
+director-ip: 'cloud-demo.versa-networks.com'
+disable-ping: 'true'
+url-file: 'SES_GRP_BLACKLIST_test_.csv'
+#disable-ping: 'false'
