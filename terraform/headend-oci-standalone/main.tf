@@ -29,17 +29,16 @@ resource "oci_core_vcn" "headend_vcn" {
     #Optional
     cidr_block = var.vcn_cidr_block
     display_name = var.vcn_display_name
-    dns_label = "versa-headend-vcn"
+    dns_label = "versaheadend"
     #is_ipv6enabled = var.vcn_is_ipv6enabled
 }
 
 #Create an Internet Gateway
 resource "oci_core_internet_gateway" "headend_internet_gateway" {
     #Required
-    
+    depends_on = [oci_core_vcn.headend_vcn]
     compartment_id = var.par_compartment_id
     vcn_id = oci_core_vcn.headend_vcn.id
-    depends_on = [oci_core_vcn.headend_vcn]
 
     #Optional
     enabled = "true"
@@ -48,6 +47,7 @@ resource "oci_core_internet_gateway" "headend_internet_gateway" {
 
 resource "oci_core_drg" "headend_drg" {
     #Required
+    depends_on = [oci_core_vcn.headend_vcn]
     compartment_id = var.par_compartment_id
 
     #Optional
@@ -56,6 +56,7 @@ resource "oci_core_drg" "headend_drg" {
 
 resource "oci_core_drg_attachment" "headend_drg_attachment" {
     #Required
+    depends_on = [oci_core_vcn.headend_vcn]
     drg_id = oci_core_drg.headend_drg.id
 
     #Optional
@@ -73,7 +74,7 @@ resource "oci_core_drg_attachment" "headend_drg_attachment" {
 
 resource "oci_core_route_table" "northbound_route_table" {
     #Required
-    
+    depends_on = [oci_core_vcn.headend_vcn]
     compartment_id = var.par_compartment_id
     vcn_id = oci_core_vcn.headend_vcn.id
 
@@ -91,7 +92,7 @@ resource "oci_core_route_table" "northbound_route_table" {
 
 resource "oci_core_route_table" "wan_route_table" {
     #Required
-    
+    depends_on = [oci_core_vcn.headend_vcn]
     compartment_id = var.par_compartment_id
     vcn_id = oci_core_vcn.headend_vcn.id
 
@@ -108,7 +109,7 @@ resource "oci_core_route_table" "wan_route_table" {
 }
 
 resource "oci_core_security_list" "WAN_security_list" {
-  
+  depends_on = [oci_core_vcn.headend_vcn]
   compartment_id = var.par_compartment_id
   vcn_id         = oci_core_vcn.headend_vcn.id
   display_name   = "WAN-security-list"
@@ -156,7 +157,7 @@ resource "oci_core_security_list" "WAN_security_list" {
 }
 
 resource "oci_core_security_list" "Internode_security_list" {
-  
+  depends_on = [oci_core_vcn.headend_vcn]
   compartment_id = var.par_compartment_id
   vcn_id         = oci_core_vcn.headend_vcn.id
   display_name   = "Internode-security-list"
@@ -178,7 +179,7 @@ resource "oci_core_security_list" "Internode_security_list" {
 }
 
 resource "oci_core_security_list" "Mgmt_security_list" {
-  
+  depends_on = [oci_core_vcn.headend_vcn]
   compartment_id = var.par_compartment_id
   vcn_id         = oci_core_vcn.headend_vcn.id
   display_name   = "Mgmt-security-list"
@@ -245,6 +246,7 @@ resource "oci_core_security_list" "Mgmt_security_list" {
 
 resource "oci_core_subnet" "northbound_subnet" {
     #Required
+    depends_on = [oci_core_vcn.headend_vcn]
     cidr_block = var.northbound_cidr_block
     compartment_id = var.par_compartment_id
     vcn_id = oci_core_vcn.headend_vcn.id
@@ -253,7 +255,7 @@ resource "oci_core_subnet" "northbound_subnet" {
     #availability_domain = var.subnet_availability_domain
     #dhcp_options_id = oci_core_dhcp_options.test_dhcp_options.id
     display_name = "headend-northbound-subnet"
-    dns_label = "northb-subnet"
+    dns_label = "northbsubnet"
     route_table_id = oci_core_route_table.northbound_route_table.id
     #ipv6cidr_block = var.subnet_ipv6cidr_block
     #prohibit_internet_ingress = var.subnet_prohibit_internet_ingress
@@ -263,6 +265,7 @@ resource "oci_core_subnet" "northbound_subnet" {
 
 resource "oci_core_subnet" "southbound_subnet" {
     #Required
+    depends_on = [oci_core_vcn.headend_vcn]
     cidr_block = var.southbound_cidr_block
     
     compartment_id = var.par_compartment_id
@@ -272,7 +275,7 @@ resource "oci_core_subnet" "southbound_subnet" {
     #availability_domain = var.subnet_availability_domain
     #dhcp_options_id = oci_core_dhcp_options.test_dhcp_options.id
     display_name = "headend-southbound-subnet"
-    dns_label = "southb-subnet"
+    dns_label = "southbsubnet"
     route_table_id = oci_core_route_table.northbound_route_table.id
     #ipv6cidr_block = var.subnet_ipv6cidr_block
     #prohibit_internet_ingress = var.subnet_prohibit_internet_ingress
@@ -283,6 +286,7 @@ resource "oci_core_subnet" "southbound_subnet" {
 
 resource "oci_core_subnet" "control_subnet" {
     #Required
+    depends_on = [oci_core_vcn.headend_vcn]
     cidr_block = var.control_cidr_block
     
     compartment_id = var.par_compartment_id
@@ -292,7 +296,7 @@ resource "oci_core_subnet" "control_subnet" {
     #availability_domain = var.subnet_availability_domain
     #dhcp_options_id = oci_core_dhcp_options.test_dhcp_options.id
     display_name = "headend-control-subnet"
-    dns_label = "control-subnet"
+    dns_label = "controlsubnet"
     route_table_id = oci_core_route_table.northbound_route_table.id
     #ipv6cidr_block = var.subnet_ipv6cidr_block
     #prohibit_internet_ingress = var.subnet_prohibit_internet_ingress
@@ -303,6 +307,7 @@ resource "oci_core_subnet" "control_subnet" {
 
 resource "oci_core_subnet" "wan_subnet" {
     #Required
+    depends_on = [oci_core_vcn.headend_vcn]
     cidr_block = var.wan_cidr_block
     
     compartment_id = var.par_compartment_id
@@ -312,7 +317,28 @@ resource "oci_core_subnet" "wan_subnet" {
     #availability_domain = var.subnet_availability_domain
     #dhcp_options_id = oci_core_dhcp_options.test_dhcp_options.id
     display_name = "headend-wan-subnet"
-    dns_label = "wan-subnet"
+    dns_label = "wansubnet"
+    route_table_id = oci_core_route_table.wan_route_table.id
+    #ipv6cidr_block = var.subnet_ipv6cidr_block
+    #prohibit_internet_ingress = var.subnet_prohibit_internet_ingress
+    #prohibit_public_ip_on_vnic = var.subnet_prohibit_public_ip_on_vnic
+    #route_table_id = oci_core_route_table.test_route_table.id
+    security_list_ids = [oci_core_security_list.WAN_security_list.id]
+}
+
+resource "oci_core_subnet" "router_subnet" {
+    #Required
+    depends_on = [oci_core_vcn.headend_vcn]
+    cidr_block = var.router_cidr_block
+    
+    compartment_id = var.par_compartment_id
+    vcn_id = oci_core_vcn.headend_vcn.id
+
+    #Optional
+    #availability_domain = var.subnet_availability_domain
+    #dhcp_options_id = oci_core_dhcp_options.test_dhcp_options.id
+    display_name = "headend-router-subnet"
+    dns_label = "routersubnet"
     route_table_id = oci_core_route_table.wan_route_table.id
     #ipv6cidr_block = var.subnet_ipv6cidr_block
     #prohibit_internet_ingress = var.subnet_prohibit_internet_ingress
@@ -332,7 +358,7 @@ resource "oci_core_subnet" "wan_subnet" {
 #Create the number of Analytics nodes specified in var.analytics_nodes_number
 resource "oci_core_instance" "versa_analytics" {
     #Required
-    depends_on = [oci_core_subnet.southbound_subnet]
+    depends_on = [oci_core_subnet.northbound_subnet]
     count = var.analytics_nodes_number
     availability_domain = var.availability_domain
     compartment_id = var.par_compartment_id
@@ -364,6 +390,7 @@ resource "oci_core_instance" "versa_analytics" {
 # Attach a southbound vnic to each Analytics Node
 resource "oci_core_vnic_attachment" "analytics_southbound_vnic_attachment" {
     #Required
+    depends_on = [oci_core_instance.versa_analytics]
     count = var.analytics_nodes_number
     create_vnic_details {
         #Optional
@@ -381,7 +408,7 @@ resource "oci_core_vnic_attachment" "analytics_southbound_vnic_attachment" {
 #Create the number of Search nodes specified in var.search_nodes_number
 resource "oci_core_instance" "versa_search" {
     #Required
-    depends_on = [oci_core_instance.versa_analytics]
+    depends_on = [oci_core_vnic_attachment.analytics_southbound_vnic_attachment]
     count = var.search_nodes_number
     availability_domain = var.availability_domain
     compartment_id = var.par_compartment_id
@@ -413,6 +440,7 @@ resource "oci_core_instance" "versa_search" {
 # Attach a southbound vnic to each Search Node
 resource "oci_core_vnic_attachment" "search_southbound_vnic_attachment" {
     #Required
+    depends_on = [oci_core_instance.versa_search]
     count = var.search_nodes_number
     create_vnic_details {
         #Optional
@@ -429,7 +457,7 @@ resource "oci_core_vnic_attachment" "search_southbound_vnic_attachment" {
 #Create the number of Log Forwarder nodes specified in var.logforwarder_nodes_number
 resource "oci_core_instance" "versa_logforwarder" {
     #Required
-    depends_on = [oci_core_instance.versa_search]
+    depends_on = [oci_core_vnic_attachment.search_southbound_vnic_attachment]
     count = var.logforwarder_nodes_number
     availability_domain = var.availability_domain
     compartment_id = var.par_compartment_id
@@ -461,6 +489,7 @@ resource "oci_core_instance" "versa_logforwarder" {
 # Attach a southbound vnic to each Log Forwarder Node
 resource "oci_core_vnic_attachment" "logforwarder_southbound_vnic_attachment" {
     #Required
+    depends_on = [oci_core_instance.versa_logforwarder]
     count = var.logforwarder_nodes_number
     create_vnic_details {
         #Optional
@@ -484,7 +513,7 @@ resource "oci_core_vnic_attachment" "logforwarder_southbound_vnic_attachment" {
 #Creates one instace of the Versa Director
 resource "oci_core_instance" "versa_director" {
     #Required
-    depends_on = [oci_core_instance.versa_logforwarder]
+    depends_on = [oci_core_vnic_attachment.logforwarder_southbound_vnic_attachment]
     availability_domain = var.availability_domain
     
     compartment_id = var.par_compartment_id
@@ -520,6 +549,7 @@ resource "oci_core_instance" "versa_director" {
 # Attach a southbound vnic to the Versa Director
 resource "oci_core_vnic_attachment" "dir_southbound_vnic_attachment" {
     #Required
+    depends_on = [oci_core_instance.versa_director]
     create_vnic_details {
         #Optional
         display_name = "${var.director_instance_name}_southbound_nic"
@@ -540,7 +570,7 @@ resource "oci_core_vnic_attachment" "dir_southbound_vnic_attachment" {
 
 resource "oci_core_instance" "versa_svnf" {
     #Required
-    depends_on = [oci_core_instance.versa_director]
+    depends_on = [oci_core_vnic_attachment.dir_southbound_vnic_attachment]
     availability_domain = var.availability_domain
     compartment_id = var.par_compartment_id
     shape = var.svnf_instance_shape
@@ -595,6 +625,21 @@ resource "oci_core_vnic_attachment" "svnf_control_vnic_attachment" {
     display_name = "${var.svnf_instance_name}_control_vnic"
 }
 
+resource "oci_core_vnic_attachment" "svnf_router_vnic_attachment" {
+    #Required
+    depends_on = [oci_core_instance.versa_svnf]
+    create_vnic_details {
+        #Optional
+        display_name = "${var.svnf_instance_name}_router_vnic"
+        skip_source_dest_check = "true"
+        subnet_id = oci_core_subnet.router_subnet.id
+    }
+    instance_id = oci_core_instance.versa_svnf.id
+
+    #Optional
+    display_name = "${var.svnf_instance_name}_router_vnic"
+}
+
 ###############################################
 # Instantiate the Versa Controller
 #
@@ -603,7 +648,7 @@ resource "oci_core_vnic_attachment" "svnf_control_vnic_attachment" {
 
 resource "oci_core_instance" "versa_controller" {
     #Required
-    depends_on = [oci_core_instance.versa_svnf]
+    depends_on = [oci_core_vnic_attachment.svnf_router_vnic_attachment]
     availability_domain = var.availability_domain
     compartment_id = var.par_compartment_id
     shape = var.controller_instance_shape

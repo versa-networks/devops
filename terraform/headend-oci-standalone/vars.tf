@@ -80,6 +80,10 @@ variable "wan_cidr_block" {
   description = "WAN Private CIDR Block. Needs to be included in the VCN block"
 }
 
+variable "router_cidr_block" {
+  description = "Router Private CIDR Block. Needs to be included in the VCN block"
+}
+
 ###########################
 # VAN Cluster Size Variables
 #
@@ -94,7 +98,7 @@ variable "search_nodes_number" {
   description = "number of Search nodes to be deployed"
 }
 
-variable "logforwarders_nodes_number" {
+variable "logforwarder_nodes_number" {
   description = "number of Log Forwarders nodes to be deployed"
 }
 ###########################
@@ -113,10 +117,6 @@ variable "analytics_instance_name" {
 
 variable "search_instance_name" {
   description = "Instance name for the Search Nodes"
-}
-
-variable "logforwarder_instance_name" {
-  description = "Instance name for the Log Forwarder Nodes"
 }
 
 variable "logforwarder_instance_name" {
@@ -171,6 +171,10 @@ variable "logforwarder_mem_in_gbs" {
 
 variable "logforwarder_ocpus" {
   description = "OCPUs for Log Forwarder"
+}
+
+variable "logforwarder_instance_shape" {
+  description = "Instance shape required for the Log Forwarder Nodes"
 }
 
 variable "director_instance_shape" {
