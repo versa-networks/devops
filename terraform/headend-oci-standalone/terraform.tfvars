@@ -3,13 +3,14 @@
 #
 # Information to access your tenancy
 ############################
-tenancy_ocid = " "
 user_ocid = " "
 fingerprint = " "
+tenancy_ocid = " "
+region = "us-sanjose-1"
 private_key_path = " "
 par_compartment_id = " "
-region = "us-sanjose-1"
 availability_domain = " "
+
 
 ###########################
 # Image IDS
@@ -27,11 +28,12 @@ vos_image_id = " "
 ############################
 
 vcn_display_name = "Versa-Headend-VCN"
-vcn_cidr_block = "10.140.0.0/16"
+vcn_cidr_block = "10.140.0.0/20"
 northbound_cidr_block = "10.140.0.0/24"
 southbound_cidr_block = "10.140.1.0/24"
 control_cidr_block = "10.140.2.0/24"
 wan_cidr_block = "10.140.3.0/24"
+router_cidr_block = "10.140.4.0/24"
 
 ###########################
 # VAN Cluster Size Variables
@@ -52,7 +54,7 @@ logforwarder_nodes_number = "1"
 director_instance_name = "Versa-Director"
 analytics_instance_name = "Versa-Analytics"
 search_instance_name = "Versa-Search"
-logforwarder_instance_name = "Versa-Search"
+logforwarder_instance_name = "Versa-LogForwarder"
 svnf_instance_name = "Versa-Service-Router"
 controller_instance_name = "Versa-Controller"
 
@@ -63,12 +65,14 @@ controller_instance_name = "Versa-Controller"
 # Size of the VM instances
 ############################
 ssh_public_key_file = " "
+director_instance_shape = "VM.Standard.E4.Flex"
 director_mem_in_gbs = "16"
 director_ocpus = "8"
+analytics_instance_shape = "VM.Standard.E4.Flex"
 analytics_mem_in_gbs = "16"
 analytics_ocpus = "8"
+logforwarder_instance_shape = "VM.Standard.E4.Flex"
 logforwarder_mem_in_gbs = "4"
 logforwarder_ocpus = "2"
-analytics_instance_shape = "VM.Standard.E4.Flex"
-director_instance_shape = "VM.Standard.E4.Flex"
+svnf_instance_shape = "VM.Standard2.4"
 controller_instance_shape = "VM.Standard2.4"
