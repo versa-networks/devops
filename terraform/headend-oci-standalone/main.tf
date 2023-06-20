@@ -371,6 +371,7 @@ resource "oci_core_instance" "versa_analytics" {
 
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.analytics_instance_name}.${1 + count.index}_northbound_vnic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.northbound_subnet.id
@@ -394,6 +395,7 @@ resource "oci_core_vnic_attachment" "analytics_southbound_vnic_attachment" {
     count = var.analytics_nodes_number
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.analytics_instance_name}.${1 + count.index}_southbound_nic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.southbound_subnet.id
@@ -421,6 +423,7 @@ resource "oci_core_instance" "versa_search" {
 
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.search_instance_name}.${1 + count.index}_northbound_vnic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.northbound_subnet.id
@@ -444,6 +447,7 @@ resource "oci_core_vnic_attachment" "search_southbound_vnic_attachment" {
     count = var.search_nodes_number
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.search_instance_name}.${1 + count.index}_southbound_nic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.southbound_subnet.id
@@ -470,6 +474,7 @@ resource "oci_core_instance" "versa_logforwarder" {
 
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.logforwarder_instance_name}.${1 + count.index}_northbound_vnic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.northbound_subnet.id
@@ -493,6 +498,7 @@ resource "oci_core_vnic_attachment" "logforwarder_southbound_vnic_attachment" {
     count = var.logforwarder_nodes_number
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.logforwarder_instance_name}.${1 + count.index}_southbound_nic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.southbound_subnet.id
@@ -552,6 +558,7 @@ resource "oci_core_vnic_attachment" "dir_southbound_vnic_attachment" {
     depends_on = [oci_core_instance.versa_director]
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.director_instance_name}_southbound_nic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.southbound_subnet.id
@@ -694,6 +701,7 @@ resource "oci_core_vnic_attachment" "controller_control_vnic_attachment" {
     depends_on = [oci_core_vnic_attachment.controller_wan_vnic_attachment]
     create_vnic_details {
         #Optional
+        assign_public_ip = "false"
         display_name = "${var.controller_instance_name}_control_nic"
         skip_source_dest_check = "true"
         subnet_id = oci_core_subnet.control_subnet.id
