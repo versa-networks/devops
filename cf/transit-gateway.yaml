@@ -1,0 +1,1172 @@
+#fix security group (conduit)
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  This template when run would create a stack that creates all the components of a vHub
+  Following are the main resources this creates.
+  Two EC2 instances for Versa Hubs in two different AZs
+  Three ENIs per EC2 instance. 1 - mgmt, 2 - tunnel, 3 - transport
+  Three subnets and route tables in each of the two AZs.
+  Routes. default route to IGW in mgmt and tunnel route tables and default to NGW in transport.
+  EIPs for mgmt and tunnel.
+  EIP for NAT GW which would be a part of Advance shield's protected resources
+
+Parameters:
+  VPCsubnet:
+    Type: String
+    Default: 172.16.1.0/24
+
+  AZ1mgmtsubnet:
+    Type: String
+    Default: 172.16.1.0/27
+
+  AZ1tunnelsubnet:
+    Type: String
+    Default: 172.16.1.32/27
+
+  AZ1transportsubnet:
+    Type: String
+    Default: 172.16.1.64/26
+
+  AZ2mgmtsubnet:
+    Type: String
+    Default: 172.16.1.128/27
+
+  AZ2tunnelsubnet:
+    Type: String
+    Default: 172.16.1.160/27
+
+  AZ2transportsubnet:
+    Type: String
+    Default: 172.16.1.192/26
+
+  # userdata:
+  #   Type: String
+
+# Mappings for AMI IDs
+
+Mappings:
+  AMImap:
+    us-east-1:
+      AMIID: ami-06c11c40e6cae166c
+    us-east-2:
+      AMIID: ami-0d097cbf8f178d27e
+    us-west-1:
+      AMIID: ami-082b055a4aa0cea91
+    us-west-2:
+      AMIID: ami-00af8c458967cf92f
+
+Resources:
+  # VPC
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VPCsubnet
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName # AWS::StackName is a pseudo parameter which is a predefined parameter with a value
+
+  # Subnets. AZs would be chosen automatically based on the region
+
+  AZ1mgmt:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      VpcId: !Ref VPC
+      CidrBlock:
+        Ref: AZ1mgmtsubnet
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-mgmt" #!Sub is the shortcut for Fn::sub
+
+  AZ1tunnel:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      VpcId: !Ref VPC
+      CidrBlock:
+        Ref: AZ1tunnelsubnet
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-tunnel"
+
+  AZ1transport:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      VpcId: !Ref VPC
+      CidrBlock:
+        Ref: AZ1transportsubnet
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-transport"
+
+  AZ2mgmt:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      VpcId: !Ref VPC
+      CidrBlock:
+        Ref: AZ2mgmtsubnet
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-mgmt"
+
+  AZ2tunnel:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      VpcId: !Ref VPC
+      CidrBlock:
+        Ref: AZ2tunnelsubnet
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-tunnel"
+
+  AZ2transport:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      VpcId: !Ref VPC
+      CidrBlock:
+        Ref: AZ2transportsubnet
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-transport"
+
+  # NAT EIP
+
+  NATEIPAZ1:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: vpc
+
+  NATEIPAZ2:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: vpc
+
+  # Internet gateway  and VPC association
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-IGW"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway
+
+  # Nat gateway
+
+  NatGatewayAZ1:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt "NATEIPAZ1.AllocationId"
+      SubnetId: !Ref AZ1transport
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-NATGW"
+
+  NatGatewayAZ2:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt "NATEIPAZ2.AllocationId"
+      SubnetId: !Ref AZ2transport
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-NATGW"
+
+  # Route table and subnet association
+
+  AZ1mgmtRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-mgmt"
+
+  AZ1mgmtRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AZ1mgmtRouteTable
+      SubnetId: !Ref AZ1mgmt
+
+  DefaultRouteAZ1mgmt:
+    Type: "AWS::EC2::Route"
+    DependsOn:
+      - InternetGateway
+      - AttachGateway
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref AZ1mgmtRouteTable
+
+  AZ2mgmtRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-mgmt"
+
+  AZ2mgmtRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AZ2mgmtRouteTable
+      SubnetId: !Ref AZ2mgmt
+
+  DefaultRouteAZ2mgmt:
+    Type: "AWS::EC2::Route"
+    DependsOn:
+      - InternetGateway
+      - AttachGateway
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref AZ2mgmtRouteTable
+
+  AZ1tunnelRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-tunnel"
+
+  AZ1tunnelRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AZ1tunnelRouteTable
+      SubnetId: !Ref AZ1tunnel
+
+  DefaultRouteAZ1tunnel:
+    Type: "AWS::EC2::Route"
+    DependsOn:
+      - InternetGateway
+      - AttachGateway
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref AZ1tunnelRouteTable
+
+  AZ2tunnelRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-tunnel"
+
+  AZ2tunnelRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AZ2tunnelRouteTable
+      SubnetId: !Ref AZ2tunnel
+
+  DefaultRouteAZ2tunnel:
+    Type: "AWS::EC2::Route"
+    DependsOn:
+      - InternetGateway
+      - AttachGateway
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref AZ2tunnelRouteTable
+
+  AZ1transportRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-transport"
+
+  AZ1transportRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AZ1transportRouteTable
+      SubnetId: !Ref AZ1transport
+
+  DefaultRouteAZ1transport:
+    Type: "AWS::EC2::Route"
+    DependsOn:
+      - NatGatewayAZ1
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NatGatewayAZ1
+      RouteTableId: !Ref AZ1transportRouteTable
+
+  AZ2transportRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-transport"
+
+  AZ2transportRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AZ2transportRouteTable
+      SubnetId: !Ref AZ2transport
+
+  DefaultRouteAZ2transport:
+    Type: "AWS::EC2::Route"
+    DependsOn:
+      - NatGatewayAZ2
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NatGatewayAZ2
+      RouteTableId: !Ref AZ2transportRouteTable
+
+  # Security group
+
+  TunnelSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow vpn ports and control connection ports
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 23456
+          ToPort: 24156
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 12346
+          ToPort: 13046
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 23456
+          ToPort: 24156
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: udp
+          FromPort: 12346
+          ToPort: 13046
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: udp
+          FromPort: 4500
+          ToPort: 4500
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: udp
+          FromPort: 500
+          ToPort: 500
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  TransportSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow vpn ports and control connection ports
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+        - IpProtocol: udp
+          FromPort: 500
+          ToPort: 500
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: udp
+          FromPort: 4500
+          ToPort: 4500
+          CidrIp: 0.0.0.0/0
+
+  mgmtSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow vpn ports and control connection ports
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourcePrefixListId: "pl-f8a64391"
+
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourcePrefixListId: "pl-f8a64391"
+
+  # ENIs
+
+  AZ1mgmtENI:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-mgmt"
+      SourceDestCheck: "false"
+      GroupSet:
+        - !Ref mgmtSecurityGroup
+      SubnetId: !Ref AZ1mgmt
+
+  AZ2mgmtENI:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-mgmt"
+      SourceDestCheck: "false"
+      GroupSet:
+        - !Ref mgmtSecurityGroup
+      SubnetId: !Ref AZ2mgmt
+
+  AZ1tunnelENI:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-tunnel"
+      SourceDestCheck: "false"
+      GroupSet:
+        - !Ref TunnelSecurityGroup
+      SubnetId: !Ref AZ1tunnel
+
+  AZ2tunnelENI:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-tunnel"
+      SourceDestCheck: "false"
+      GroupSet:
+        - !Ref TunnelSecurityGroup
+      SubnetId: !Ref AZ2tunnel
+
+  AZ1transportENI:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ1-transport"
+      SourceDestCheck: "false"
+      GroupSet:
+        - !Ref TransportSecurityGroup
+      SubnetId: !Ref AZ1transport
+
+  AZ2transportENI:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-AZ2-transport"
+      SourceDestCheck: "false"
+      GroupSet:
+        - !Ref TransportSecurityGroup
+      SubnetId: !Ref AZ2transport
+
+  #create EC2 instances
+
+  versahub1Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [AMImap, !Ref "AWS::Region", AMIID]
+      InstanceType: "c5.2xlarge"
+      KeyName: "forti-amz"
+      NetworkInterfaces:
+        - NetworkInterfaceId: !Ref AZ1mgmtENI
+          DeviceIndex: "0"
+        - NetworkInterfaceId: !Ref AZ1tunnelENI
+          DeviceIndex: "1"
+        - NetworkInterfaceId: !Ref AZ1transportENI
+          DeviceIndex: "2"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          log_path="/etc/bootLog.txt"
+          if [ -f "$log_path" ]
+          then
+              echo "Cloud Init script already ran earlier during first time boot.." >> $log_path
+          else
+              touch $log_path
+              sudo touch /home/admin/versa.sh
+              sudo echo '#!/bin/bash' >> /home/admin/versa.sh
+              sudo echo 'sudo /opt/versa/scripts/staging.py -l SDWAN-Branch@Provider.com -r dev-controller-staging@Provider.com -n versahub1 -d -c 3.12.150.12' >> /home/admin/versa.sh
+              sudo sed -i.bak "\$a\Match Address 172.31.1.101/32\n  PasswordAuthentication yes\nMatch all" /etc/ssh/sshd_config
+              sudo service ssh restart
+              sudo chmod +x /home/admin/versa.sh
+              crontab -l > /tmp/orig_crontab
+              echo "`date +%M --date='5 minutes'` `date +%H` `date +%d` `date +%m` * sudo bash /home/admin/versa.sh >> $log_path; sudo crontab -l | grep -v versa.sh | crontab " >>  /tmp/orig_crontab
+              sudo crontab /tmp/orig_crontab
+          fi
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-headend1"
+
+  versahub2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [AMImap, !Ref "AWS::Region", AMIID]
+      InstanceType: "c5.2xlarge"
+      KeyName: "forti-amz"
+      NetworkInterfaces:
+        - NetworkInterfaceId: !Ref AZ2mgmtENI
+          DeviceIndex: "0"
+        - NetworkInterfaceId: !Ref AZ2tunnelENI
+          DeviceIndex: "1"
+        - NetworkInterfaceId: !Ref AZ2transportENI
+          DeviceIndex: "2"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          log_path="/etc/bootLog.txt"
+          if [ -f "$log_path" ]
+          then
+              echo "Cloud Init script already ran earlier during first time boot.." >> $log_path
+          else
+              touch $log_path
+              sudo touch /home/admin/versa.sh
+              sudo echo '#!/bin/bash' >> /home/admin/versa.sh
+              sudo echo 'sudo /opt/versa/scripts/staging.py -l SDWAN-Branch@Provider.com -r dev-controller-staging@Provider.com -n versahub2 -d -c 3.12.150.12' >> /home/admin/versa.sh
+              sudo sed -i.bak "\$a\Match Address 172.31.1.101/32\n  PasswordAuthentication yes\nMatch all" /etc/ssh/sshd_config
+              sudo service ssh restart
+              sudo chmod +x /home/admin/versa.sh
+              crontab -l > /tmp/orig_crontab
+              echo "`date +%M --date='5 minutes'` `date +%H` `date +%d` `date +%m` * sudo bash /home/admin/versa.sh >> $log_path; sudo crontab -l | grep -v versa.sh | crontab " >>  /tmp/orig_crontab
+              sudo crontab /tmp/orig_crontab
+          fi
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-headend2"
+
+  #Create EIPs and Associate them to ENIs.
+  #Transport ENI does not need an EIP
+
+  AZ1mgmteip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AssociateAZ1mgmteip:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt AZ1mgmteip.AllocationId
+      NetworkInterfaceId: !Ref AZ1mgmtENI
+    DependsOn: versahub1Instance
+
+  AZ1tunneleip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AssociateAZ1tunneleip:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt AZ1tunneleip.AllocationId
+      NetworkInterfaceId: !Ref AZ1tunnelENI
+    DependsOn: versahub1Instance
+
+  AZ2mgmteip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AssociateAZ2mgmteip:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt AZ2mgmteip.AllocationId
+      NetworkInterfaceId: !Ref AZ2mgmtENI
+    DependsOn: versahub2Instance
+
+  AZ2tunneleip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AssociateAZ2tunneleip:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt AZ2tunneleip.AllocationId
+      NetworkInterfaceId: !Ref AZ2tunnelENI
+    DependsOn: versahub2Instance
+
+  # create TGW
+
+  TransitGateway:
+    Type: AWS::EC2::TransitGateway
+    Properties:
+      AmazonSideAsn: 64512
+      DefaultRouteTableAssociation: enable
+      DefaultRouteTablePropagation: enable
+      DnsSupport: enable
+      VpnEcmpSupport: enable
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  # Create AZ1 CGW
+
+  Cgwheadeand1:
+    Type: AWS::EC2::CustomerGateway
+    Properties:
+      BgpAsn: 65000
+      IpAddress: !Ref AZ1tunneleip
+      Type: ipsec.1
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-headend1"
+
+  # Create AZ2 CGW
+
+  Cgwheadeand2:
+    Type: AWS::EC2::CustomerGateway
+    Properties:
+      BgpAsn: 65000
+      IpAddress: !Ref AZ2tunneleip
+      Type: ipsec.1
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-headend2"
+
+  #create vpn connection - TGW <-> AZ1 CGW
+  tgwcgwAZ1:
+    Type: AWS::EC2::VPNConnection
+    Properties:
+      CustomerGatewayId: !Ref Cgwheadeand1
+      StaticRoutesOnly: False
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-TGW-to-AZ1"
+      TransitGatewayId: !Ref TransitGateway
+      Type: ipsec.1
+      VpnTunnelOptionsSpecifications:
+        - TunnelInsideCidr: 169.254.6.0/30
+        - TunnelInsideCidr: 169.254.6.4/30
+
+  #create vpn connection - TGW <-> AZ2 CGW
+  tgwcgwAZ2:
+    Type: AWS::EC2::VPNConnection
+    Properties:
+      CustomerGatewayId: !Ref Cgwheadeand2
+      StaticRoutesOnly: false
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-TGW-to-AZ2"
+      TransitGatewayId: !Ref TransitGateway
+      Type: ipsec.1
+      VpnTunnelOptionsSpecifications:
+        - TunnelInsideCidr: 169.254.6.8/30
+        - TunnelInsideCidr: 169.254.6.12/30
+
+  # Lambda to create shield protected resource
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: lambdalogtocloudwatch
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - shield:DeleteSubscription
+                  - shield:CreateProtection
+                  - shield:CreateSubscription
+                  - shield:DescribeProtection
+                  - shield:DescribeSubscription
+                  - shield:GetSubscriptionState
+                  - shield:DeleteProtection
+                  - ec2:DescribeAddresses
+                Resource: "*"
+  shieldLambda:
+    Type: Custom::LambdaCallout
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - LambdaFunction
+          - Arn
+      nat1eipallocid: !GetAtt "NATEIPAZ1.AllocationId"
+      nat2eipallocid: !GetAtt "NATEIPAZ2.AllocationId"
+      region: !Ref "AWS::Region"
+      accountid: !Ref AWS::AccountId
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: vhubcfn
+        S3Key: shieldcreate.zip
+      Handler: shieldcreate.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - LambdaExecutionRole
+          - Arn
+      Runtime: python3.7
+      Timeout: "30"
+
+  CloudwatchDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref AWS::StackName
+      DashboardBody: { "Fn::Join": [
+              "",
+              [
+                '{
+                "widgets": [{
+                "type": "metric",
+                "properties": {
+                "metrics": [
+                [
+                "AWS/EC2", "CPUUtilization", "InstanceId",
+                "',
+                { Ref: versahub1Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "CPUUtilization", "InstanceId",
+                "',
+                { Ref: versahub2Instance },
+                '"
+                ]
+                ],
+                "title": "EC2 CPU Utilization",
+                "stacked": true,
+                "stat": "Average",
+                "period": 60,
+                "region": "',
+                !Ref "AWS::Region",
+                '"
+                }
+                },
+                {
+                "type": "metric",
+                "properties": {
+                "metrics": [
+                [
+                "AWS/EC2", "NetworkPacketsIn", "InstanceId",
+                "',
+                { Ref: versahub1Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "NetworkPacketsIn", "InstanceId",
+                "',
+                { Ref: versahub2Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "NetworkPacketsOut", "InstanceId",
+                "',
+                { Ref: versahub1Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "NetworkPacketsOut", "InstanceId",
+                "',
+                { Ref: versahub2Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "NetworkIn", "InstanceId",
+                "',
+                { Ref: versahub1Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "NetworkIn", "InstanceId",
+                "',
+                { Ref: versahub2Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "NetworkOut", "InstanceId",
+                "',
+                { Ref: versahub1Instance },
+                '"
+                ],
+                [
+                "AWS/EC2", "NetworkOut", "InstanceId",
+                "',
+                { Ref: versahub2Instance },
+                '"
+                ]
+                ],
+                "title": "EC2 Network Packets/Bytes",
+                "stacked": true,
+                "stat": "Average",
+                "period": 60,
+                "region": "',
+                !Ref "AWS::Region",
+                '"
+                }
+                },
+                {
+                "type": "metric",
+                "properties": {
+                "metrics": [
+                [
+                "AWS/NATGateway", "PacketsInFromSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsInFromDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesInFromDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsDropCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesInFromSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsOutToDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesOutToSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsOutToSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesOutToDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ConnectionEstablishedCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ConnectionAttemptCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ErrorPortAllocation", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ActiveConnectionCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "IdleTimeoutCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ1 },
+                '"
+                ]
+                ],
+                "title": "NAT Gateway AZ1",
+                "stacked": true,
+                "stat": "Average",
+                "period": 60,
+                "region": "',
+                !Ref "AWS::Region",
+                '"
+                }
+                },
+                {
+                "type": "metric",
+                "properties": {
+                "metrics": [
+                [
+                "AWS/NATGateway", "PacketsInFromSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsInFromDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesInFromDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsDropCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesInFromSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsOutToDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesOutToSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "PacketsOutToSource", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "BytesOutToDestination", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ConnectionEstablishedCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ConnectionAttemptCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ErrorPortAllocation", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "ActiveConnectionCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ],
+                [
+                "AWS/NATGateway", "IdleTimeoutCount", "NatGatewayId",
+                "',
+                { Ref: NatGatewayAZ2 },
+                '"
+                ]
+                ],
+                "title": "NAT Gateway AZ2",
+                "stacked": true,
+                "stat": "Average",
+                "period": 60,
+                "region": "',
+                !Ref "AWS::Region",
+                '"
+                }
+                },
+                {
+                "type": "metric",
+                "properties": {
+                "metrics": [
+                [
+                "AWS/TransitGateway", "BytesIn", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ],
+                [
+                "AWS/TransitGateway", "PacketsIn", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ],
+                [
+                "AWS/TransitGateway", "PacketsOut", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ],
+                [
+                "AWS/TransitGateway", "BytesOut", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ],
+                [
+                "AWS/TransitGateway", "PacketDropCountBlackhole", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ],
+                [
+                "AWS/TransitGateway", "BytesDropCountBlackhole", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ],
+                [
+                "AWS/TransitGateway", "BytesDropCountNoRoute", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ],
+                [
+                "AWS/TransitGateway", "PacketDropCountNoRoute", "TransitGatewayId",
+                "',
+                { Ref: TransitGateway },
+                '"
+                ]
+                ],
+                "title": "Transit Gateway",
+                "stacked": true,
+                "stat": "Average",
+                "period": 60,
+                "region": "',
+                !Ref "AWS::Region",
+                '"
+                }
+                },
+                {
+                "type": "metric",
+                "properties": {
+                "metrics": [
+                [
+                "AWS/VPN", "TunnelDataIn", "VpnId",
+                "',
+                { Ref: tgwcgwAZ1 },
+                '"
+                ],
+                [
+                "AWS/VPN", "TunnelDataIn", "VpnId",
+                "',
+                { Ref: tgwcgwAZ2 },
+                '"
+                ],
+                [
+                "AWS/VPN", "TunnelDataOut", "VpnId",
+                "',
+                { Ref: tgwcgwAZ1 },
+                '"
+                ],
+                [
+                "AWS/VPN", "TunnelDataOut", "VpnId",
+                "',
+                { Ref: tgwcgwAZ2 },
+                '"
+                ]
+                ],
+                "title": "VPN Connections",
+                "stacked": true,
+                "stat": "Average",
+                "period": 60,
+                "region": "',
+                !Ref "AWS::Region",
+                '"
+                }
+                }
+                ]
+                }',
+              ],
+            ] }
+
+Outputs:
+  vpnconnectionidaz1:
+    Description: vpnconnectionaz1
+    Value: !Ref tgwcgwAZ1
+    Export:
+      Name: !Sub "${AWS::StackName}-vpnconnectionidaz1"
+
+  vpnconnectionidaz2:
+    Description: vpnconnectionaz2
+    Value: !Ref tgwcgwAZ2
+    Export:
+      Name: !Sub "${AWS::StackName}-vpnconnectionidaz2"
