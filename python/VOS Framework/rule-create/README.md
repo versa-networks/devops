@@ -3,19 +3,6 @@ The script creates security access rules on a device or device-template from a C
 You can use the CSV file provided on this page ( ```rules-create-10.csv``` ) and populate it with your own rules.
 Make sure the address, service and application objects already exist on Versa Director, the script won't create them for you.
 
-```
-RULE_NAME;SOURCE_ZONE;SOURCE_ADDRESS;DESTINATION_ZONE;DESTINATION_ADDRESS;SERVICES;APPLICATION;ACTION
-r1;Z_DC,Z_IOT1,Z_IOT2;192.168.1.0_24;Z_DC,Z_IOT1,Z_IOT2;192.168.2.0_24;http;HTTP,YOUTUBE,LINKEDIN;allow
-r3;Z_DC;192.168.1.0_24,192.168.2.0_24;Z_DATA;192.168.2.0_24;http;HTTP,YOUTUBE,LINKEDIN;deny
-r4;Z_DC;192.168.1.0_24;Z_DC,Z_IOT1,Z_IOT2;192.168.2.0_24;bgp,tftp;;allow
-r5;Z_DC;192.168.1.0_24,192.168.2.0_24,192.168.3.0_24;;192.168.2.0_24,192.168.1.0_24;bgp,http,https;;allow
-r6;Z_DC;192.168.1.0_24,192.168.2.0_24;Z_DATA;192.168.2.0_24;imap;;deny
-r7;Z_DC;192.168.1.0_24;;192.168.2.0_24,192.168.1.0_24;http;HTTP;allow
-r8;Z_DC;192.168.1.0_24,192.168.2.0_24,192.168.3.0_24;Z_DC,Z_IOT1,Z_IOT2;192.168.2.0_24;http,https;HTTP,YOUTUBE,LINKEDIN;allow
-r9;Z_DC;192.168.1.0_24,192.168.2.0_24;;192.168.2.0_24;http;HTTP,YOUTUBE,LINKEDIN;deny
-r10;Z_DC;192.168.1.0_24;Z_DATA;192.168.2.0_24;bgp,tftp;;allow
-...
-```
 
 ## Installation and Dependencies
 You will need python3 as well as differents python package. They can be installed locally with pip3
@@ -34,7 +21,7 @@ Before you get started make sure you have the following information:
 4) The name of the Template or CPE where your want to create those rules
 5) The name of your organization.
 6) The name of the Access Policy group where your want to install the new rules ( Default is Default-Policy )
-7) Optional: you can use the knob "--bulk yes" to upload all the rules in one go.
+7) Optional: you can use the knob ```--bulk yes``` to upload all the rules in one go.
 
 ![ALT](./rules-create.png)
 
