@@ -1,10 +1,9 @@
-{
-  "access-policy": {
+ {
     "name": "RULE_NAME",
     "rule-disable": "false",
     "match": {
       "source": {
-        "zone": {},
+        "zone": {RULE_SRC_ZONE},
         "address": {
           "address-list": [
             "RULE_SRC_LIST"
@@ -22,7 +21,7 @@
         }
       },
       "destination": {
-        "zone": {},
+        "zone": {RULE_DST_ZONE},
         "address": {
           "address-list": [
             "RULE_DST_LIST"
@@ -36,7 +35,7 @@
         ],
         "services-list": []
       },
-      "application": {},
+      "application": {RULE_APPLICATIONS},
       "url-reputation": {},
       "ttl": {}
     },
@@ -53,4 +52,3 @@
       "tcp-session-keepalive": "disabled"
     }
   }
-}
