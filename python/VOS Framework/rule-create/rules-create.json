@@ -6,7 +6,10 @@
         "zone": {RULE_SRC_ZONE},
         "address": {
           "address-list": [
-            "RULE_SRC_LIST"
+            "RULE_SRC_ADDRESS_LIST"
+          ],
+          "address-group-list": [
+            "RULE_SRC_GROUP_ADDRESS_LIST"
           ]
         },
         "site-name": [],
@@ -24,16 +27,19 @@
         "zone": {RULE_DST_ZONE},
         "address": {
           "address-list": [
-            "RULE_DST_LIST"
+            "RULE_DST_ADDRESS_LIST"
+          ],
+          "address-group-list": [
+            "RULE_DST_GROUP_ADDRESS_LIST"
           ]
         },
         "site-name": []
       },
       "services": {
         "predefined-services-list": [
-          "RULE_SERVICES"
+          "RULE_PREDEFINED_SERVICES"
         ],
-        "services-list": []
+        "services-list": ["RULE_CUSTOM_SERVICES"]
       },
       "application": {RULE_APPLICATIONS},
       "url-reputation": {},

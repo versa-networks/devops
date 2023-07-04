@@ -110,12 +110,12 @@ def post_access_rule(payload):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description='Script to load access policies from a CSV file')
-    parser.add_argument('--ip', default='cloud221.versa-networks.com', type=str,help='IP address of Director')
+    parser.add_argument('--ip', default='xxx.versa-networks.com', type=str,help='IP address of Director')
     parser.add_argument('--target', default='device:BRANCH-11', type=str,help='Device (device:XXX) or Device Template (template:XXX) where the rules must be applied.')
     parser.add_argument('--org', default='Versa', type=str,help='Organization name')
     parser.add_argument('--group', default='Default-Policy', type=str,help='Policy Group Name')
     parser.add_argument('--user', default='Administrator', type=str,help='GUI username of Director')
-    parser.add_argument('--password', default='...', type=str,help='GUI password of Director')
+    parser.add_argument('--password', default='xxxx', type=str,help='GUI password of Director')
     parser.add_argument('--csv_file', default='rules-create.csv', type=str,help='CSV File including the access policy rules')
     parser.add_argument('--bulk', default='no', type=str,help='Bulk the rules in a single API call for faster execution. !!! This mode only works with new Access Policy Group !!!')
 
@@ -132,22 +132,28 @@ if __name__ == '__main__':
     next(csv_reader)
     for row in csv_reader:
 
-        rule_name           = row[0]
-        rule_source_z       = row[1]
-        rule_source         = row[2]
-        rule_destination_z  = row[3]
-        rule_destination    = row[4]
-        rule_service        = row[5]
-        rule_application    = row[6]
-        rule_action         = row[7]
-        json_template       = open('./rules-create.json')
+        rule_name                      = row[0]
+        rule_source_z                  = row[1]
+        rule_source_address            = row[2]
+        rule_source_address_group      = row[3]
+        rule_destination_z             = row[4]
+        rule_destination_address       = row[5]
+        rule_destination_group         = row[6]
+        rule_predefined_service        = row[7]
+        rule_custom_service            = row[8]
+        rule_application               = row[9]
+        rule_action                    = row[10]
+        json_template                  = open('./rules-create.json')
         
         payload = json_template.read()
         payload = payload.replace('RULE_NAME',rule_name)
-        payload = payload.replace('RULE_SRC_LIST', rule_source.replace(',','", "'))
-        payload = payload.replace('RULE_DST_LIST', rule_destination.replace(',','", "'))
-        payload = payload.replace('RULE_SERVICES', rule_service.replace(',','", "'))
-
+        payload = payload.replace('RULE_SRC_ADDRESS_LIST', rule_source_address .replace(',','", "'))
+        payload = payload.replace('RULE_SRC_GROUP_ADDRESS_LIST', rule_source_address_group.replace(',','", "'))
+        payload = payload.replace('RULE_DST_ADDRESS_LIST', rule_destination_address  .replace(',','", "'))
+        payload = payload.replace('RULE_DST_GROUP_ADDRESS_LIST', rule_destination_group  .replace(',','", "'))
+        payload = payload.replace('RULE_PREDEFINED_SERVICES', rule_predefined_service.replace(',','", "'))
+        payload = payload.replace('RULE_CUSTOM_SERVICES', rule_custom_service.replace(',','", "'))
+ 
         if rule_application != "":
             payload = payload.replace('RULE_APPLICATIONS', PREDEF_APPLICATION_ENVELOPPE % (rule_application.replace(',','", "')))
         else:
