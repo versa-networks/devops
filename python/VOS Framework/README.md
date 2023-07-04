@@ -29,6 +29,6 @@ pip3 install argparse
 
 | SR No | Project                                                                                                                                | Description                                             |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1     | [VOS Rule Edit]     (https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/rule-edit)                          | Manipulate VOS rules like a pro                         |
-| 2     | [VOS Rule Create]   (https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/rule-create)                        | Create VOS rules at the speed of light                  |
-| 3     | [VOS Object Create] (https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/object-create)                      | Create VOS objects quicker than Usain Bolt              |
+| 1     | [VOS Rule Edit](https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/rule-edit).                              | Manipulate VOS rules like a pro                         |
+| 2     | [VOS Rule Create](https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/rule-create)                           | Create VOS rules at the speed of light                  |
+| 3     | [VOS Object Create](https://gitlab.com/versa-networks/devops/-/tree/master/python/VOS%20Framework/object-create)                       | Create VOS objects quicker than Usain Bolt              |
