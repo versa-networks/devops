@@ -1198,7 +1198,7 @@ def populate_predefined_subfamilies_map(subfamilies_csv, subfamilies_fh: Any, ve
     return versa_cfg, predef_subfamilies_map
 
 
-def load_rules_into_tenant(v, cur_tnt):
+def load_rules_into_tenant(v, cur_tnt, v_logger, predef_countries):
     # Process security rules
     cur_ngfw = NextGenFirewall(cur_tnt.name + "_policy", INPUT_LINE_NUM, False)
     cur_tnt.set_next_gen_firewall(cur_ngfw, INPUT_LINE_NUM)
@@ -1341,7 +1341,7 @@ def main(args_list: list) -> bool:
 
         # Load objects and rules into tenant
         load_objects_into_tenant(v, cur_tnt, predef_app_map, predef_subfamilies_map, predef_countries_map, v_logger)
-        load_rules_into_tenant(v, cur_tnt)        
+        load_rules_into_tenant(v, cur_tnt,v_logger, predef_countries_map)        
 
     # Replace address and service groups with their respective members
     versa_cfg.replace_address_by_address_group()
