@@ -16,8 +16,11 @@ Converts a Palo Alto configuration export to a Versa configuration.
    4. os
    5. csv
    6. logging
-   7. xml.dom.minidom
+   7. lxml.etree
    8. zoneinfo
+   9. sys
+   10. re
+   11. typing
 
 <!-- ### Installing-->
 

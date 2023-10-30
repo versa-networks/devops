@@ -1,9 +1,9 @@
 #This file is used to translate the Palo Alto Application or Application Group to the corresponding Versa Application or Application Group
 #More information about the Palo Alto Application or Application Group can be found at https://applipedia.paloaltonetworks.com/
 #A or G (Application or Application Group),Name,Versa Name
-G,ACTIVE-DIRECTORY,LDAP,kerberos,ms-ds-smb-base,ms-netlogon,netbios-dg,netbios-ns,netbios-ss ,tcp/1025-5000, tcp/135,138,139,389,445,464,636, tcp/49152-65535, tcp/5722,9389, udp/88,123,137,138,389,445,464,2535 	
-GAPT-GET,DEBIAN_UPDATE
-GROUP-ACTIVEDIRECTORY,LDAP
+G,ACTIVE-DIRECTORY,{LDAP,LDAPS}	
+A,APT-GET,{DEBIAN_UPDATE}
+GROUP-ACTIVEDIRECTORY,{LDAP,LDAPS}
 GROUP-MSRPC,RDP
 GROUP-NETLOGON
 GROUP-SMB,SMB
