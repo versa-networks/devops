@@ -258,7 +258,7 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
     try:
         with open(args.zone_file, "w", encoding="utf-8") as zone_fh:
             
-            print("3rd_Party_Interface,3rd_Party_Zone_Name,Versa_Zone_Name,Versa_Interface_Name,Versa_Paired_Interface_Name,Versa_VRF_Name,3rd_Party_Vsys_Name,Versa_Tenant_Name", file=zone_fh)
+            print("#3rd_Party_Interface,3rd_Party_Zone_Name,Versa_Zone_Name,Versa_Interface_Name,Versa_Paired_Interface_Name,Versa_VRF_Name,3rd_Party_Vsys_Name,Versa_Tenant_Name", file=zone_fh)
 
             zone_list: List[Dict[str, Union[str, int]]] = []
             count = 0
@@ -502,6 +502,8 @@ def populate_interfaces_networks_zones_map(versa_intf_zone_map: Dict[str, List[s
         Tuple[Dict[str, List[str]], logging.Logger, Any, Any]: A tuple containing the updated versa_intf_zone_map, v_logger, versa_cfg, and args objects.
     """
     for v_ifname, ifinfo in versa_intf_zone_map.items():
+        if "#" in v_ifname:
+            continue 
         tnt = ifinfo[7]
         cur_tnt = versa_cfg.get_tenant(tnt, "0")
         v_logger.info(f"{args.zone_file}:{ifinfo[8]}: adding versa interface {v_ifname} to tenant {tnt}; network {ifinfo[2]}; zone {ifinfo[1]}; pan interface {ifinfo[0]}")
@@ -1332,6 +1334,7 @@ def main(args_list: list) -> bool:
 
     # Process all tenants from the pan cfg file
     vsys_list = xml_root.findall("./devices/entry/vsys/entry")
+    print("Processing tenants...")
     for v in vsys_list:
         # Get current tenant
         src_tnt = v.attrib["name"].replace(" ", "_")
@@ -1344,11 +1347,13 @@ def main(args_list: list) -> bool:
         load_rules_into_tenant(v, cur_tnt,v_logger, predef_countries_map)        
 
     # Replace address and service groups with their respective members
+    print("Replacing address and service groups with their respective members...")
     versa_cfg.replace_address_by_address_group()
     versa_cfg.replace_service_group_by_service_members()
     
     # Check and write configuration
     versa_cfg.check_config(STRICT_CHECKS)
+    print(f"Writing configuration file {out_fh.name}")
     versa_cfg.write_config(tnt_xlate_map, args.template_file_name, args.device_name, out_fh, log_fh)
 
 
