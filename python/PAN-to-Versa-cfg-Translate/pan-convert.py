@@ -223,6 +223,27 @@ def create_output_dir(args: Namespace) -> bool:
         return False
 
 
+def get_template_name(template_file_name: str) -> Optional[str]:
+    """Extract template name from a file.
+
+    Args:
+        template_file_name (str): The name of the template file.
+
+    Returns:
+        Optional[str]: The name of the template, or None if not found.
+    """
+    try:
+        with open(template_file_name, "r", encoding="utf-8") as file:
+            content = file.read()
+            match = re.search(r'template\s+(\w+)\s+\{', content)
+            return match.group(1) if match else None
+    except FileNotFoundError:
+        print(f"Error: File {template_file_name} not found.")
+    except Exception as e:
+        print(f"Error: Unable to parse file {template_file_name}. Details: {e}")
+    return None
+
+
 def open_3rd_party_config_file(args: Namespace):
     """Open and parse an XML file.
 
@@ -426,7 +447,7 @@ def open_zone_interface_file(args: Namespace):
         return None, None
 
 
-def open_output_files(args: Namespace) -> Tuple[str, TextIO, TextIO, TextIO]:
+def open_output_files(args: Namespace) -> Tuple[str, TextIO, str, TextIO]:
     """
     Open output files for writing.
 
@@ -443,7 +464,8 @@ def open_output_files(args: Namespace) -> Tuple[str, TextIO, TextIO, TextIO]:
 
     try:
         out_fh = open(outfile, "w", encoding="utf-8")
-        csv_out_fh = open(csv_outfile, "w", encoding="utf-8")
+        csv_out_fh = ""
+        #csv_out_fh = open(csv_outfile, "w", encoding="utf-8")
         log_fh = open(logfile, "w", encoding="utf-8")
     except OSError as e:
         print(f"Error: unable to open output files for writing")
@@ -592,6 +614,11 @@ def populate_predefined_countries_map(countries_csv, countries_fh: Any, versa_cf
     versa_cfg.set_predef_countries_map(predef_countries_map)
     return versa_cfg, predef_countries_map
 
+def clean_string(input_string: str) -> str:
+    """remove any character that is not a-z, A-Z, 0-9, -, _ from a string.
+    
+    """
+    return re.sub(r'[^a-zA-Z0-9\-_]', '', input_string)
 
 def load_application_objects_into_tenant(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
     """Load application objects into a tenant.
@@ -611,7 +638,8 @@ def load_application_objects_into_tenant(tnt_xml, tnt: Any, v_logger: logging.Lo
         cur_app = Application(application_name, INPUT_LINE_NUM, False)
         desc = app.find("./description")
         if desc is not None and desc.text is not None:
-            cur_app.set_description(desc.text.encode("utf-8"), INPUT_LINE_NUM)
+            desc.text = clean_string(desc.text)
+            cur_app.set_description(desc.text, INPUT_LINE_NUM)
         v_logger.info(f"Tenant {tnt.name}: Adding Application {cur_app.name} to current tenant")
         tnt.add_application(cur_app, INPUT_LINE_NUM)
 
@@ -766,7 +794,8 @@ def load_url_category_objects_into_tenant(tnt_xml, tnt: Any, v_logger: logging.L
 
         desc = uc.find("./description")
         if desc is not None and desc.text is not None:
-            cur_uc.set_description(desc.text.encode("utf-8"), INPUT_LINE_NUM)
+            desc.text = clean_string(desc.text)
+            cur_uc.set_description(desc.text, INPUT_LINE_NUM)
 
         urls = uc.findall("./list/member")
         for url in urls:
@@ -800,7 +829,8 @@ def load_address_objects_into_tenant(tnt_xml, tnt: Any, v_logger: logging.Logger
         desc = addr.find("./description")
         ip_ra = addr.find("./ip-range")
         if desc is not None and desc.text is not None:
-            cur_addr.set_description(desc.text.encode("utf-8"), INPUT_LINE_NUM)
+            desc.text = clean_string(desc.text)
+            cur_addr.set_description(desc.text, INPUT_LINE_NUM)
         add_flag = False
         if ip_netmask is not None:
             cur_addr.set_addr_value(ip_netmask.text.replace(" ", "_"), INPUT_LINE_NUM)
@@ -844,7 +874,8 @@ def load_address_group_objects_into_tenant(tnt_xml, tnt: Any, v_logger: logging.
             tnt.add_address_group(cur_addr_grp, INPUT_LINE_NUM)
         desc = addr_group.find("./description")
         if desc is not None and desc.text is not None:
-            cur_addr_grp.set_description(desc.text.encode("utf-8"), INPUT_LINE_NUM)
+            desc.text = clean_string(desc.text)
+            cur_addr_grp.set_description(desc.text, INPUT_LINE_NUM)
 
         ag_members = addr_group.findall("./members/member")
         for m in ag_members:
@@ -877,7 +908,8 @@ def load_external_address_group_objects_into_tenant(tnt_xml, tnt: Any, v_logger:
 
             desc = ag.find("./description")
             if desc is not None and desc.text is not None:
-                cur_addr_grp.set_description(desc.text.encode("utf-8"), INPUT_LINE_NUM)
+                desc.text = clean_string(desc.text)
+                cur_addr_grp.set_description(desc.text, INPUT_LINE_NUM)
 
             url = entry.find("./url").text
             file_name = url.split("/")[-1]
@@ -903,7 +935,8 @@ def load_external_url_category_objects_into_tenant(tnt_xml, tnt: Any, v_logger: 
 
             desc = entry.find("./description")
             if desc is not None and desc.text is not None:
-                cur_url_cat.set_description(desc.text.encode("utf-8"), INPUT_LINE_NUM)
+                desc.text = clean_string(desc.text)
+                cur_url_cat.set_description(desc.text, INPUT_LINE_NUM)
 
             url = entry.find("./url").text
             ix = url.rfind("/")
@@ -930,7 +963,8 @@ def load_service_objects_into_tenant(tnt_xml, tnt: Any, v_logger: logging.Logger
 
         desc = svc.find("./description")
         if desc is not None and desc.text is not None:
-            cur_svc.set_description(desc.text.encode("utf-8"), INPUT_LINE_NUM)
+            desc.text = clean_string(desc.text)
+            cur_svc.set_description(desc.text, INPUT_LINE_NUM)
 
         proto = svc.find("./protocol/*")
         if proto is not None:
@@ -1267,96 +1301,7 @@ def load_rules_into_tenant(v, cur_tnt, v_logger, predef_countries):
             elif astr == "deny":
                 vr.set_action(FirewallRuleAction.DENY, INPUT_LINE_NUM)
 
-
-def main(args_list: list) -> bool:
-    """main _summary_
-
-    Args:
-        args (list): Command line arguments
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    tnt_xlate_map: Dict = {}
-    predef_apps: Dict = {}
-    predef_app_map: Dict = {}
-
-    print("")
-    print("Starting...")
-    print("--------------------------------")
-    print("Parsing commandline arguments...")
-    args = parse_args(args_list)
-    print("Setting up the logger...")
-    v_logger = the_logger(args)
-    
-    print("Creating output directory...")
-    if not create_output_dir(args):
-        return False
-    
-    print("Opening 3rd party config file...")
-    xml_root = open_3rd_party_config_file(args)
-    
-    if args.create_interface_list:
-        print("Creating zone to interface file")
-        create_zone_interface_file(args, xml_root)
-        print("!!!Created zone/interface file!!!")
-        print(f"!!!Edit {args.zone_file} then run script again without -cil!!!")
-        print("Exiting...")
-        return False
-    
-    print("Opening predefined files...")
-    app_csv, app_fh = open_predefined_applications(args)
-    url_root = open_predefined_URL_categories_XML(args)
-    countries_csv, countries_fh = open_predefined_countries_file(args)
-    subfamilies_csv, subfamilies_fh = open_predefined_subfamilies_file(args)
-    zone_csv, zone_fh = open_zone_interface_file(args)
-    pan_config_file_name, out_fh, csv_out_fh, log_fh = open_output_files(args)
-                
-    versa_cfg = VersaConfig("VersaCfg_From_PAN_" + pan_config_file_name)
-    versa_cfg.set_logger(v_logger)
-
-    print("Populating Maps...")
-    versa_cfg, tnt_xlate_map, versa_intf_zone_map = populate_zone_interface_map(zone_csv, zone_fh, versa_cfg, tnt_xlate_map)
-    versa_intf_zone_map, v_logger, versa_cfg, args = populate_interfaces_networks_zones_map(versa_intf_zone_map, v_logger, versa_cfg, args)
-    predef_apps, predef_app_map, versa_cfg = populate_predefined_applications_map(app_csv, app_fh, versa_cfg)
-    versa_cfg, predef_url_categories_map = populate_predefined_url_categories_map(url_root, predef_apps, versa_cfg)
-    versa_cfg, predef_countries_map = populate_predefined_countries_map(countries_csv, countries_fh, versa_cfg)
-    versa_cfg, predef_subfamilies_map = populate_predefined_subfamilies_map(subfamilies_csv, subfamilies_fh, versa_cfg)
-
-    # Load the shared vsys config into the Provider-DataStore tenant
-    print("Adding tenant to Versa configuration file...")
-    versa_cfg.add_tenant("Provider-DataStore", "0")
-    shared_tnt = versa_cfg.get_tenant("Provider-DataStore", "0")
-    shared_xml = xml_root.find("./shared")
-    tnt_xlate_map["shared"] = ["Provider-DataStore"]
-    versa_cfg.set_tenant_xlate_map(tnt_xlate_map)
-    load_shared_config(shared_xml, shared_tnt, v_logger, predef_app_map, predef_subfamilies_map)
-
-    # Process all tenants from the pan cfg file
-    vsys_list = xml_root.findall("./devices/entry/vsys/entry")
-    print("Processing tenants...")
-    for v in vsys_list:
-        # Get current tenant
-        src_tnt = v.attrib["name"].replace(" ", "_")
-        tnt, _ = tnt_xlate_map[src_tnt]
-        cur_tnt = versa_cfg.get_tenant(tnt, "0")
-        cur_tnt.set_shared_tenant(shared_tnt)
-
-        # Load objects and rules into tenant
-        load_objects_into_tenant(v, cur_tnt, predef_app_map, predef_subfamilies_map, predef_countries_map, v_logger)
-        load_rules_into_tenant(v, cur_tnt,v_logger, predef_countries_map)        
-
-    # Replace address and service groups with their respective members
-    print("Replacing address and service groups with their respective members...")
-    versa_cfg.replace_address_by_address_group()
-    versa_cfg.replace_service_group_by_service_members()
-    
-    # Check and write configuration
-    versa_cfg.check_config(STRICT_CHECKS)
-    print(f"Writing configuration file {out_fh.name}")
-    versa_cfg.write_config(tnt_xlate_map, args.template_file_name, args.device_name, out_fh, log_fh)
-
-
+def unused(xml_root,tnt_xlate_map,versa_cfg,csv_out_fh,shared_tnt,predef_app_map,predef_url_categories_map):
     # Define header row for CSV file
     header_row = "#Tenant,SerialNum,RuleName,SrcZone,SrcAddr,DstZone,DstAddr,Schedule,Services,Service Groups,Application,URL Category,User,Action"
 
@@ -1555,9 +1500,106 @@ def main(args_list: list) -> bool:
             # End of current rule
             print("", file=csv_out_fh)
 
+
+def main(args_list: list) -> bool:
+    """main _summary_
+
+    Args:
+        args (list): Command line arguments
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    tnt_xlate_map: Dict = {}
+    predef_apps: Dict = {}
+    predef_app_map: Dict = {}
+
+    print("")
+    print("Starting...")
+    print("--------------------------------")
+    print("Parsing commandline arguments...")
+    args = parse_args(args_list)
+    print("Setting up the logger...")
+    v_logger = the_logger(args)
+    
+    print("Creating output directory...")
+    if not create_output_dir(args):
+        return False
+    
+    print("Opening 3rd party config file...")
+    xml_root = open_3rd_party_config_file(args)
+    
+    if args.create_interface_list:
+        print("Creating zone to interface file")
+        create_zone_interface_file(args, xml_root)
+        print("!!!Created zone/interface file!!!")
+        print(f"!!!Edit {args.zone_file} then run script again without -cil!!!")
+        print("Exiting...")
+        return False
+    
+    if args.template_file_name != None:
+       print("Reading Versa Template File")
+       args.template_name = get_template_name(args.template_file_name)
+
+    
+    print("Opening predefined files...")
+    app_csv, app_fh = open_predefined_applications(args)
+    url_root = open_predefined_URL_categories_XML(args)
+    countries_csv, countries_fh = open_predefined_countries_file(args)
+    subfamilies_csv, subfamilies_fh = open_predefined_subfamilies_file(args)
+    zone_csv, zone_fh = open_zone_interface_file(args)
+    pan_config_file_name, out_fh, csv_out_fh, log_fh = open_output_files(args)
+                
+    versa_cfg = VersaConfig("VersaCfg_From_PAN_" + pan_config_file_name)
+    versa_cfg.set_logger(v_logger)
+
+    print("Populating Maps...")
+    versa_cfg, tnt_xlate_map, versa_intf_zone_map = populate_zone_interface_map(zone_csv, zone_fh, versa_cfg, tnt_xlate_map)
+    versa_intf_zone_map, v_logger, versa_cfg, args = populate_interfaces_networks_zones_map(versa_intf_zone_map, v_logger, versa_cfg, args)
+    predef_apps, predef_app_map, versa_cfg = populate_predefined_applications_map(app_csv, app_fh, versa_cfg)
+    versa_cfg, predef_url_categories_map = populate_predefined_url_categories_map(url_root, predef_apps, versa_cfg)
+    versa_cfg, predef_countries_map = populate_predefined_countries_map(countries_csv, countries_fh, versa_cfg)
+    versa_cfg, predef_subfamilies_map = populate_predefined_subfamilies_map(subfamilies_csv, subfamilies_fh, versa_cfg)
+
+    # Load the shared vsys config into the Provider-DataStore tenant
+    print("Adding tenant to Versa configuration file...")
+    versa_cfg.add_tenant(args.org_name, "0")
+    #versa_cfg.add_tenant("Provider-DataStore", "0")
+    shared_tnt = versa_cfg.get_tenant(args.org_name, "0")
+    #shared_tnt = versa_cfg.get_tenant("Provider-DataStore", "0")
+    shared_xml = xml_root.find("./shared")
+    tnt_xlate_map["shared"] = [args.org_name]
+    versa_cfg.set_tenant_xlate_map(tnt_xlate_map)
+    load_shared_config(shared_xml, shared_tnt, v_logger, predef_app_map, predef_subfamilies_map)
+
+    # Process all tenants from the pan cfg file
+    vsys_list = xml_root.findall("./devices/entry/vsys/entry")
+    print("Processing tenants...")
+    for v in vsys_list:
+        # Get current tenant
+        src_tnt = v.attrib["name"].replace(" ", "_")
+        tnt, _ = tnt_xlate_map[src_tnt]
+        cur_tnt = versa_cfg.get_tenant(tnt, "0")
+        cur_tnt.set_shared_tenant(shared_tnt)
+
+        # Load objects and rules into tenant
+        load_objects_into_tenant(v, cur_tnt, predef_app_map, predef_subfamilies_map, predef_countries_map, v_logger)
+        load_rules_into_tenant(v, cur_tnt,v_logger, predef_countries_map)        
+
+    # Replace address and service groups with their respective members
+    print("Replacing address group with their respective members...")
+    versa_cfg.replace_address_by_address_group()
+    print("Replacing service group with their respective members...")
+    versa_cfg.replace_service_group_by_service_members()
+    
+    # Check and write configuration
+    versa_cfg.check_config(STRICT_CHECKS)
+    print(f"Writing configuration file {out_fh.name}")
+    versa_cfg.write_config(tnt_xlate_map, args.template_name, args.device_name, out_fh, log_fh)
+
     app_fh.close()
     out_fh.close()
-    csv_out_fh.close()
+    #csv_out_fh.close()
     log_fh.close()
     return True
 

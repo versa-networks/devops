@@ -50,38 +50,40 @@ Converts a Palo Alto configuration export to a Versa configuration.
 ### Command line arguments
 
 ```text
-usage: pan-convert.py [-h] -pc PANCONFIGFILE [-z ZONEFILE] [-a APPFILE] [-s SUBFAMILIESFILE] [-u URLFILE]
-                      [-c COUNTRIESFILE] (-T TEMPLATE | -D DEVICE) [-o OUTDIR] [-v VPATHSFILE] [-org ORGNAME]
-                      -n TEMPLATENAME [-cil]
+usage: pan-convert.py [-h] -pc PAN_CONFIG_FILE [-z ZONE_FILE] [-a APP_FILE]
+                      [-s SUBFAMILIES_FILE] [-u URL_FILE] [-c COUNTRIES_FILE]
+                      [-T TEMPLATE_FILE_NAME] [-D DEVICE_NAME] [-o OUTPUT_DIR]
+                      [-v VERSA_PATHS_FILE] [-org ORG_NAME] [-n TEMPLATE_NAME] [-cil]
 
 Convert Palo Alto config to Versa config
 
 options:
   -h, --help            show this help message and exit
-  -pc PANCONFIGFILE, --panconfigfile PANCONFIGFILE
+  -pc PAN_CONFIG_FILE, --pan_config_file PAN_CONFIG_FILE
                         Path to Palo Alto config file in XML format
-  -z ZONEFILE, --zonefile ZONEFILE
+  -z ZONE_FILE, --zone_file ZONE_FILE
                         Path to zone/interface CSV file
-  -a APPFILE, --appfile APPFILE
+  -a APP_FILE, --app_file APP_FILE
                         Path to Versa predefined applications CSV file
-  -s SUBFAMILIESFILE, --subfamiliesfile SUBFAMILIESFILE
-                        Path to Versa application subfamiles CSV file
-  -u URLFILE, --urlfile URLFILE
+  -s SUBFAMILIES_FILE, --subfamilies_file SUBFAMILIES_FILE
+                        Path to Versa application subfamilies CSV file
+  -u URL_FILE, --url_file URL_FILE
                         Path to Versa predefined URL categories XML file
-  -c COUNTRIESFILE, --countriesfile COUNTRIESFILE
+  -c COUNTRIES_FILE, --countries_file COUNTRIES_FILE
                         Path to Versa predefined countries XML file
-  -T TEMPLATE, --template TEMPLATE
+  -T TEMPLATE_FILE_NAME, --template_file_name TEMPLATE_FILE_NAME
                         Template name
-  -D DEVICE, --device DEVICE
+  -D DEVICE_NAME, --device_name DEVICE_NAME
                         Device name
-  -o OUTDIR, --outputdir OUTDIR
+  -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Path to output directory
-  -v VPATHSFILE, --versa-paths-file VPATHSFILE
+  -v VERSA_PATHS_FILE, --versa_paths_file VERSA_PATHS_FILE
                         Path to Versa path segments file
-  -org ORGNAME, --org ORGNAME
+  -org ORG_NAME, --org_name ORG_NAME
                         Organization name
-  -cil, --createinterfacelist
-                        Create Interface List File
+  -n TEMPLATE_NAME, --template_name TEMPLATE_NAME
+                        Versa Template name
+  -cil, --create_interface_list
 ```
 
 ### Walkthrough
@@ -98,13 +100,13 @@ options:
 3. Run Script with -cil
    - This creates interface-list.csv file in ./Source_Files
    - example:\
-     - `python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_Files/PAN-merged-running-config.xml -T ./Source_Files/NGFW-Test.cfg -org RobK-Demo-1 -n NGFW-TEST -cil`
+     - `python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_Files/PAN-merged-running-config.xml -n NGFW-Test -org RobK-Demo-1 -cil`
 4. Edit interface-list.csv as needed.
    - Example would be that the PAN interface ids to Versa vni ids may need to be edited
 5. (Optional) Update all the files in ./Predefined
 6. Run script but DO NOT include -cil
    - example:\
-     - `python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_Files/PAN-merged-running-config.xml -T ./Source_Files/NGFW-TEST.cfg -org RobK-Demo-1 -n NGFW-TEST`
+     - `python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_Files/PAN-merged-running-config.xml  -n NGFW-TEST -org RobK-Demo-1`
 7. Import .cfg file from the Output_Files directory, into Versa Director.
    - The .cfg file will most likely need to be edited before it will import correctly. If you import using the API you will get exact line numbers that are causing the import to fail.
    - Example:\

@@ -46,9 +46,9 @@ class Application(ConfigObject):
         else:
             vd_str = ""
 
-        print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
+        #print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
         print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
         if self.desc is not None:
-            print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
+            #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
             print(f'{_indent}        description "{self.desc}";', file=_cfg_fh)
         print(f"{_indent}    }}", file=_cfg_fh)

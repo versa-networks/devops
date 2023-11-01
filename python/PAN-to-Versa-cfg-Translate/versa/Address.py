@@ -91,39 +91,39 @@ class Address(ConfigObject):
             vd_str = "address "
         else:
             vd_str = ""
-        print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
+        #print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
         if self.addr_type == AddressType.IP_V4_RANGE:
             print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
-            print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
+            #print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
             print(f"{_indent}        ipv4-range {self.addr_value};", file=_cfg_fh)
             if self.desc is not None:
-                print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
+                #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
                 print(f"{_indent}        description {self.desc};", file=_cfg_fh)
             print(f"{_indent}    }}", file=_cfg_fh)
         elif self.addr_type == AddressType.FQDN:
             print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
-            print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
+            #print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
             print(f"{_indent}        fqdn {self.addr_value};", file=_cfg_fh)
             if self.desc is not None:
-                print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
+                #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
                 print(f'{_indent}        description "{self.desc}";', file=_cfg_fh)
             print(f"{_indent}    }}", file=_cfg_fh)
         elif self.addr_type == AddressType.IP_V4_PREFIX:
             print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
-            print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
+            #print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
             if "/" not in self.addr_value:
                 print(f"{_indent}        ipv4-prefix {self.addr_value}/32;", file=_cfg_fh)
             else:
                 print(f"{_indent}        ipv4-prefix {self.addr_value};", file=_cfg_fh)
             if self.desc is not None:
-                print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
+                #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
                 print(f'{_indent}        description "{self.desc}";', file=_cfg_fh)
             print(f"{_indent}    }}", file=_cfg_fh)
         elif self.addr_type == AddressType.WILDCARD:
             print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
-            print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
+            #print(f"{_indent}        # src line number {self.addr_value_src_line}", file=_cfg_fh)
             print(f"{_indent}        ipv4-wildcard-mask {self.addr_value};", file=_cfg_fh)
             if self.desc is not None:
-                print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
+                #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
                 print(f'{_indent}        description "{self.desc}";', file=_cfg_fh)
             print(f"{_indent}    }}", file=_cfg_fh)

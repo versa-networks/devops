@@ -56,7 +56,7 @@ class ApplicationGroup(ConfigObject):
         else:
             vd_str = ""
 
-        print("%s    # src line number %d" % (_indent, self.name_src_line), file=_cfg_fh)
+        #print("%s    # src line number %d" % (_indent, self.name_src_line), file=_cfg_fh)
         print("%s    %s%s {" % (_indent, vd_str, self.name), file=_cfg_fh)
 
         predef_app_list = []

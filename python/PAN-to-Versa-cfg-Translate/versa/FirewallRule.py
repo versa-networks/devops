@@ -309,7 +309,7 @@ class FirewallRule(ConfigObject):
             vd_str = "access-policy "
         else:
             vd_str = ""
-        print("%s    # src line %d" % (_indent, self.name_src_line), file=_cfg_fh)
+        #print("%s    # src line %d" % (_indent, self.name_src_line), file=_cfg_fh)
         print("%s    %s%s {" % (_indent, vd_str, self.name), file=_cfg_fh)
         if len(self.desc) > 0:
             print("%s    # %d" % (_indent, self.desc_src_line), file=_cfg_fh)
@@ -343,7 +343,7 @@ class FirewallRule(ConfigObject):
         if len(self.service_map) > 0:
             print("%s            services {" % (_indent), file=_cfg_fh)
 
-            print("%s                # src lines:" % (_indent), end="", file=_cfg_fh)
+            #print("%s                # src lines:" % (_indent), end="", file=_cfg_fh)
             for svc, svc_line in self.service_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(svc_line, end="", file=_cfg_fh)
@@ -366,7 +366,7 @@ class FirewallRule(ConfigObject):
         if len(self.src_zone_map) > 0:
             print("%s                zone {" % (_indent), file=_cfg_fh)
 
-            print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
+            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for zone, zone_line in self.src_zone_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(zone_line, end="", file=_cfg_fh)
@@ -386,7 +386,7 @@ class FirewallRule(ConfigObject):
 
         if len(self.src_addr_map) > 0:
             print("", file=_cfg_fh)
-            print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
+            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr, addr_line in self.src_addr_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(addr_line, end="", file=_cfg_fh)
@@ -403,7 +403,7 @@ class FirewallRule(ConfigObject):
 
         if len(self.src_addr_grp_map) > 0:
             print("", file=_cfg_fh)
-            print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
+            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr_grp, addr_grp_line in self.src_addr_grp_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(addr_grp_line, end="", file=_cfg_fh)
@@ -442,7 +442,7 @@ class FirewallRule(ConfigObject):
         if len(self.dst_zone_map) > 0:
             print("%s                zone {" % (_indent), file=_cfg_fh)
 
-            print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
+            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for zone, zone_line in self.dst_zone_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(zone_line, end="", file=_cfg_fh)
@@ -462,7 +462,7 @@ class FirewallRule(ConfigObject):
 
         if len(self.dst_addr_map) > 0:
             print("", file=_cfg_fh)
-            print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
+            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr, addr_line in self.dst_addr_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(addr_line, end="", file=_cfg_fh)
@@ -479,7 +479,7 @@ class FirewallRule(ConfigObject):
 
         if len(self.dst_addr_grp_map) > 0:
             print("", file=_cfg_fh)
-            print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
+            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr_grp, addr_grp_line in self.dst_addr_grp_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(addr_grp_line, end="", file=_cfg_fh)

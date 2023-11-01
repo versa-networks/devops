@@ -57,7 +57,7 @@ class ApplicationFilter(ConfigObject):
         else:
             vd_str = ""
 
-        print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
+        #print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
         print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
 
         for fn, fv in self.application_filter_map.items():

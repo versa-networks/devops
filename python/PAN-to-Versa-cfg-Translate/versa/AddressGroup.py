@@ -121,16 +121,16 @@ class AddressGroup(ConfigObject):
             vd_str = "group "
         else:
             vd_str = ""
-        print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
+        #print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
         print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
         if self.desc is not None:
-            print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
+            #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
             print(f'{_indent}        description "{self.desc}";', file=_cfg_fh)
         if len(self.address_map) > 0:
-            print(f"{_indent}        # src lines:", end="", file=_cfg_fh)
+            #print(f"{_indent}        # src lines:", end="", file=_cfg_fh)
             for addr, addr_line in self.address_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(addr_line, end="", file=_cfg_fh)
+                #print(addr_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print(f"{_indent}        address-list [", end="", file=_cfg_fh)
@@ -142,10 +142,10 @@ class AddressGroup(ConfigObject):
             print(" ];", file=_cfg_fh)
 
         if len(self.address_group_map) > 0:
-            print(f"{_indent}        # src lines:", end="", file=_cfg_fh)
+            #print(f"{_indent}        # src lines:", end="", file=_cfg_fh)
             for addr_grp, addr_grp_line in self.address_group_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(addr_grp_line, end="", file=_cfg_fh)
+                #print(addr_grp_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print(f"{_indent}        address-group-list [", end="", file=_cfg_fh)
@@ -157,7 +157,7 @@ class AddressGroup(ConfigObject):
             print(" ];", file=_cfg_fh)
 
         if len(self.filename_map) > 0:
-            print(f"{_indent}        # src lines:", end="", file=_cfg_fh)
+            #print(f"{_indent}        # src lines:", end="", file=_cfg_fh)
             for addr, addr_line in self.filename_map.items():
                 print(" ", end="", file=_cfg_fh)
                 print(addr_line, end="", file=_cfg_fh)

@@ -269,13 +269,13 @@ class VersaConfig(object):
         for tnt_name, tnt in self.tenant_map.items():
             tnt.check_config(strict_checks)
 
-    def write_config(self, tnt_xlate_map, tmpl, device, _cfg_fh, _log_fh):
+    def write_config(self, tnt_xlate_map, tmpl_name, device_name, _cfg_fh, _log_fh):
         """write_config _summary_
 
         Args:
             tnt_xlate_map (_type_): _description_
-            tmpl (_type_): _description_
-            device (_type_): _description_
+            tmpl_name (_type_): _description_
+            device_name (_type_): _description_
             _cfg_fh (_type_): _description_
             _log_fh (_type_): _description_
         """
@@ -286,12 +286,13 @@ class VersaConfig(object):
         tnt_nm_map = {}
         for src_tname, dst_tnt_info in tnt_xlate_map.items():
             dst_tname = dst_tnt_info[0]
+            #dst_tname = dst_tnt_info
             # print("src_tname %s; dst_tname %s" % (src_tname, dst_tname))
             if dst_tname in list(tnt_nm_map):
                 tnt_nm_map[dst_tname].extend([src_tname])
             else:
                 tnt_nm_map[dst_tname] = [src_tname]
-
+        
         # If generating for Versa Director, use the approriate template/device
         indent1 = "    "
         indent2 = indent1 + indent1
@@ -303,18 +304,18 @@ class VersaConfig(object):
         indent8 = indent7 + indent1
 
         output_vd_cfg = False
-        if tmpl is not None:
+        if tmpl_name is not None:
             print("# Based on CLI argument for template, the config", file=_cfg_fh)
-            print(f"# generated will belong to the config template {tmpl}", file=_cfg_fh)
+            print(f"# generated will belong to the config template {tmpl_name}", file=_cfg_fh)
             print("devices {", file=_cfg_fh)
-            print(f"{indent1}template {dst_tname}{{", file=_cfg_fh)
+            print(f"{indent1}template {tmpl_name}{{", file=_cfg_fh)
             print(f"{indent2}config {{", file=_cfg_fh)
             # print("", file=_cfg_fh)
             indent = indent1
             output_vd_cfg = True
-        elif device is not None:
+        elif device_name is not None:
             print("# Based on CLI argument for template, the config", file=_cfg_fh)
-            print(f"# generated will belong to the device {tmpl}", file=_cfg_fh)
+            print(f"# generated will belong to the device {device_name}", file=_cfg_fh)
             print("devices {", file=_cfg_fh)
             print(f"{indent1}device {{", file=_cfg_fh)
             print(f"{indent2}config {{", file=_cfg_fh)
@@ -353,7 +354,7 @@ class VersaConfig(object):
             vdi_str = ""
             if output_vd_cfg:
                 vdi_str = intf.split("-")[0] + " "
-            print(f"{indent4}# Interface config from zone/interface CSV file", file=_cfg_fh)
+            #print(f"{indent4}# Interface config from zone/interface CSV file", file=_cfg_fh)
             print(f"{indent4}{vdi_str}{intf} {{", file=_cfg_fh)
 
             for unit in units:
@@ -377,7 +378,7 @@ class VersaConfig(object):
             vdi_str = ""
             if output_vd_cfg:
                 vdi_str = "network "
-            print(f"{indent4}# Network config from zone/interface CSV file", file=_cfg_fh)
+            #print(f"{indent4}# Network config from zone/interface CSV file", file=_cfg_fh)
             print(f"{indent4}{vdi_str}{nw} {{", file=_cfg_fh)
 
             print(f"{indent5}interfaces [ ", end="", file=_cfg_fh)
@@ -407,7 +408,7 @@ class VersaConfig(object):
             # print("%s        # src lines: " % (indent), end="", file=_cfg_fh)
             for sn in src_tnames:
                 dst_tnt_info = tnt_xlate_map[sn]
-                dst_tname = dst_tnt_info[0]
+                dst_tname = dst_tnt_info
                 if dst_tname not in list(self.tenant_map):
                     # debug_print("Skipping VDOM %s; tenant %s, as tenant is not defined" % (sn, dst_tname))
                     continue
@@ -477,7 +478,8 @@ class VersaConfig(object):
                     for src_tnm_rep in src_tnames:
                         ix = ix + 1
                         if not src_tnm_rep == src_tnm:
-                            tnt_rep = self.tenant_map[src_tnm_rep]
+                            tnt_rep = self.tenant_map[dst_tname]
+                            #tnt_rep = self.tenant_map[src_tnm_rep]
                             if aname in list(tnt_rep.address_map.keys()):
                                 a_obj_1 = tnt.get_address(aname)
                                 a_obj_2 = tnt_rep.get_address(aname)
@@ -494,7 +496,8 @@ class VersaConfig(object):
                     for src_tnm_rep in src_tnames:
                         ix = ix + 1
                         if not src_tnm_rep == src_tnm:
-                            tnt_rep = self.tenant_map[src_tnm_rep]
+                            tnt_rep = self.tenant_map[dst_tname]
+                            #tnt_rep = self.tenant_map[src_tnm_rep]
                             if agname in list(tnt_rep.address_group_map.keys()):
                                 ag_obj_1 = tnt.get_address_group(agname)
                                 ag_obj_2 = tnt_rep.get_address_group(agname)
@@ -511,7 +514,8 @@ class VersaConfig(object):
                     for src_tnm_rep in src_tnames:
                         ix = ix + 1
                         if not src_tnm_rep == src_tnm:
-                            tnt_rep = self.tenant_map[src_tnm_rep]
+                            tnt_rep = self.tenant_map[dst_tname]
+                            #tnt_rep = self.tenant_map[src_tnm_rep]
                             if sname in list(tnt_rep.schedule_map.keys()):
                                 s_obj_1 = tnt.get_schedule(sname)
                                 s_obj_2 = tnt_rep.get_schedule(sname)
@@ -528,7 +532,8 @@ class VersaConfig(object):
                     for src_tnm_rep in src_tnames:
                         ix = ix + 1
                         if not src_tnm_rep == src_tnm:
-                            tnt_rep = self.tenant_map[src_tnm_rep]
+                            tnt_rep = self.tenant_map[dst_tname]
+                            #tnt_rep = self.tenant_map[src_tnm_rep]
                             if sname in list(tnt_rep.service_map.keys()):
                                 s_obj_1 = tnt.get_service(sname)
                                 s_obj_2 = tnt_rep.get_service(sname)
@@ -575,7 +580,7 @@ class VersaConfig(object):
             print(f"{indent6}}}", file=_cfg_fh)
 
             # write configuration for tenant zone objects
-            print(f"{indent6}# Interface config from zone/interface CSV file", file=_cfg_fh)
+            #print(f"{indent6}# Interface config from zone/interface CSV file", file=_cfg_fh)
             print(f"{indent6}zones {{", file=_cfg_fh)
             incl_zlist = []
             tnt = self.tenant_map[tnt_nm]
