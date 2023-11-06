@@ -49,7 +49,7 @@ class URLCategory(ConfigObject):
     def add_pattern(self, _pattern):
         self.pattern_list.append(_pattern)
 
-    def write_config(self, output_vd_cfg, _cfg_fh, _log_fh, _indent):
+    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
         """write_config _summary_
 
         Args:

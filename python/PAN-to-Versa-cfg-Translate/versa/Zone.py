@@ -44,7 +44,7 @@ class Zone(ConfigObject):
     def get_network_map(self):
         return self.network_map
 
-    def write_config(self, _cfg_fh, _log_fh, _indent, _print_name=True):
+    def write_config(self, _cfg_fh,  _indent, _print_name=True):
         """write_config _summary_
 
         Args:

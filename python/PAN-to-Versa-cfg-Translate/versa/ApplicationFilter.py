@@ -43,13 +43,12 @@ class ApplicationFilter(ConfigObject):
     def set_application_filter_map(self, _application_filter_map):
         self.application_filter_map = _application_filter_map
 
-    def write_config(self, output_vd_cfg, _cfg_fh, _log_fh, _indent):
+    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
         """write_config _summary_
 
         Args:
             output_vd_cfg (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
         if output_vd_cfg:

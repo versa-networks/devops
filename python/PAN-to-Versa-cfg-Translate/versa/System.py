@@ -59,12 +59,11 @@ class System(ConfigObject):
         self.name_servers.append(_ns)
         self.name_servers_lines.append(_line)
 
-    def write_config(self, _cfg_fh, _log_fh, _indent):
+    def write_config(self, _cfg_fh,  _indent):
         """write_config _summary_
 
         Args:
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
         if len(self.interface_map) > 0:

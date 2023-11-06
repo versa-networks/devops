@@ -72,8 +72,8 @@ class NextGenFirewallRule(FirewallRule):
         self.ips_profile = _ips_profile
         self.ips_profile_line = _ips_profile_line
 
-    def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh, _log_fh, _indent):
-        super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _log_fh, _indent)
+    def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
+        super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
         if (self.get_av_profile() is not None) or (self.get_ips_profile() is not None):
             print(f"{_indent}            security-profile {{", file=_cfg_fh)
 
@@ -93,11 +93,11 @@ class NextGenFirewallRule(FirewallRule):
         if (self.get_av_profile() is not None) or (self.get_ips_profile() is not None):
             print(f"{_indent}            }}", file=_cfg_fh)
 
-    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent):
+    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
         if self.has_devices():
             return
 
-        self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent)
+        self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
         match_printed = False
         if (
             (len(list(self.src_zone_map.keys())) > 0)
@@ -107,7 +107,7 @@ class NextGenFirewallRule(FirewallRule):
             print(f"{_indent}        match {{", file=_cfg_fh)
             match_printed = True
             super(NextGenFirewallRule, self).write_src_match_no_closing_brace(
-                output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent
+                output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent
             )
             print(f"{_indent}            }}", file=_cfg_fh)
 
@@ -119,7 +119,7 @@ class NextGenFirewallRule(FirewallRule):
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            super(NextGenFirewallRule, self).write_dst_match_no_closing_brace(output_vd_cfg, _cfg_fh, _log_fh, _indent)
+            super(NextGenFirewallRule, self).write_dst_match_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
             print(f"{_indent}            }}", file=_cfg_fh)
 
         if len(self.match_ip_version) > 0:
@@ -235,7 +235,7 @@ class NextGenFirewallRule(FirewallRule):
         if match_printed:
             print(f"{_indent}        }}", file=_cfg_fh)
 
-        self.write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _log_fh, _indent)
+        self.write_set_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
         print(f"{_indent}        }}", file=_cfg_fh)
 
         print(f"{_indent}    }}", file=_cfg_fh)

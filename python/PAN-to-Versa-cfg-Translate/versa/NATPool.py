@@ -65,13 +65,12 @@ class NATPool(ConfigObject):
     def equals(self, _other):
         return (self.addr_type == _other.addr_type) and (self.addr_value == _other.addr_value)
 
-    def write_config(self, output_vd_cfg, _cfg_fh, _log_fh, _indent):
+    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
         """write_config _summary_
 
         Args:
             output_vd_cfg (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
         if output_vd_cfg:

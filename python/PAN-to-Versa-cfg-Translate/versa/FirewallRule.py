@@ -294,7 +294,7 @@ class FirewallRule(ConfigObject):
         if _sname == self.schedule:
             self.schedule = _sname
 
-    def write_rule_open(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent):
+    def write_rule_open(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
         """write_rule_open _summary_
 
         Args:
@@ -302,7 +302,7 @@ class FirewallRule(ConfigObject):
             _vcfg (_type_): _description_
             _tnt (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
+
             _indent (_type_): _description_
         """
         if output_vd_cfg:
@@ -319,7 +319,7 @@ class FirewallRule(ConfigObject):
         if len(self.tag) > 0:
             print('%s   tag "%s";' % (_indent, self.tag), file=_cfg_fh)
 
-    def write_src_match_no_closing_brace(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent):
+    def write_src_match_no_closing_brace(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
         """write_src_match_no_closing_brace _summary_
 
         Args:
@@ -327,7 +327,7 @@ class FirewallRule(ConfigObject):
             _vcfg (_type_): _description_
             _tnt (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
+
             _indent (_type_): _description_
         """
         if self.schedule is not None:
@@ -346,7 +346,7 @@ class FirewallRule(ConfigObject):
             #print("%s                # src lines:" % (_indent), end="", file=_cfg_fh)
             for svc, svc_line in self.service_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(svc_line, end="", file=_cfg_fh)
+                #print(svc_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print("%s                services-list [" % (_indent), end="", file=_cfg_fh)
@@ -369,7 +369,7 @@ class FirewallRule(ConfigObject):
             #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for zone, zone_line in self.src_zone_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(zone_line, end="", file=_cfg_fh)
+                #print(zone_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print("%s                    zone-list [" % (_indent), end="", file=_cfg_fh)
@@ -389,7 +389,7 @@ class FirewallRule(ConfigObject):
             #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr, addr_line in self.src_addr_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(addr_line, end="", file=_cfg_fh)
+                #print(addr_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print("%s                    address-list [" % (_indent), end="", file=_cfg_fh)
@@ -406,7 +406,7 @@ class FirewallRule(ConfigObject):
             #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr_grp, addr_grp_line in self.src_addr_grp_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(addr_grp_line, end="", file=_cfg_fh)
+                #print(addr_grp_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print("%s                    address-group-list [" % (_indent), end="", file=_cfg_fh)
@@ -429,13 +429,12 @@ class FirewallRule(ConfigObject):
             print(" ];", file=_cfg_fh)
             print("", file=_cfg_fh)
 
-    def write_dst_match_no_closing_brace(self, output_vd_cfg, _cfg_fh, _log_fh, _indent):
+    def write_dst_match_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
         """write_dst_match_no_closing_brace _summary_
 
         Args:
             output_vd_cfg (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
         print("%s            destination {" % (_indent), file=_cfg_fh)
@@ -445,7 +444,7 @@ class FirewallRule(ConfigObject):
             #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for zone, zone_line in self.dst_zone_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(zone_line, end="", file=_cfg_fh)
+                #print(zone_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print("%s                    zone-list [" % (_indent), end="", file=_cfg_fh)
@@ -465,7 +464,7 @@ class FirewallRule(ConfigObject):
             #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr, addr_line in self.dst_addr_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(addr_line, end="", file=_cfg_fh)
+               #print(addr_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print("%s                    address-list [" % (_indent), end="", file=_cfg_fh)
@@ -482,7 +481,7 @@ class FirewallRule(ConfigObject):
             #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
             for addr_grp, addr_grp_line in self.dst_addr_grp_map.items():
                 print(" ", end="", file=_cfg_fh)
-                print(addr_grp_line, end="", file=_cfg_fh)
+                #print(addr_grp_line, end="", file=_cfg_fh)
             print("", file=_cfg_fh)
 
             print("%s                    address-group-list [" % (_indent), end="", file=_cfg_fh)
@@ -505,21 +504,20 @@ class FirewallRule(ConfigObject):
             print(" ];", file=_cfg_fh)
             print("", file=_cfg_fh)
 
-    def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh, _log_fh, _indent):
+    def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
         """write_set_no_closing_brace _summary_
 
         Args:
             output_vd_cfg (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
         print("%s        set {" % (_indent), file=_cfg_fh)
 
-        if self.action_line > 0:
-            print("%s            # src line: %d;" % (_indent, self.action_line), file=_cfg_fh)
-        else:
-            print("%s            # src line: none (implicit)" % (_indent), file=_cfg_fh)
+        #if self.action_line > 0:
+        #    print("%s            # src line: %d;" % (_indent, self.action_line), file=_cfg_fh)
+        #else:
+        #    print("%s            # src line: none (implicit)" % (_indent), file=_cfg_fh)
 
         print(
             "%s            action %s;" % (_indent, FirewallRuleAction.get_action_string(self.action)),
@@ -532,7 +530,7 @@ class FirewallRule(ConfigObject):
         #      file=_cfg_fh)
         print("%s            }" % (_indent), file=_cfg_fh)
 
-    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent):
+    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
         """write_config _summary_
 
         Args:
@@ -540,10 +538,9 @@ class FirewallRule(ConfigObject):
             _vcfg (_type_): _description_
             _tnt (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
-        write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent)
+        write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
         match_printed = False
 
         if (
@@ -553,7 +550,7 @@ class FirewallRule(ConfigObject):
         ):
             print("%s        match {" % (_indent), file=_cfg_fh)
             match_printed = True
-            write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _log_fh, _indent)
+            write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
             print("%s            }" % (_indent), file=_cfg_fh)
 
         if (
@@ -564,7 +561,7 @@ class FirewallRule(ConfigObject):
             if not match_printed:
                 print("%s        match {" % (_indent), file=_cfg_fh)
                 match_printed = True
-            write_dst_match_no_closing_braceoutput_vd_cfg, (_cfg_fh, _log_fh, _indent)
+            write_dst_match_no_closing_braceoutput_vd_cfg, (_cfg_fh,  _indent)
             print("%s            }" % (_indent), file=_cfg_fh)
 
         if len(self.match_ip_version) > 0:
@@ -577,7 +574,7 @@ class FirewallRule(ConfigObject):
         if match_printed:
             print("%s        }" % (_indent), file=_cfg_fh)
 
-        write_set_no_closing_braceoutput_vd_cfg, (_cfg_fh, _log_fh, _indent)
+        write_set_no_closing_braceoutput_vd_cfg, (_cfg_fh,  _indent)
         print("%s        }" % (_indent), file=_cfg_fh)
 
         print("%s    }" % (_indent), file=_cfg_fh)

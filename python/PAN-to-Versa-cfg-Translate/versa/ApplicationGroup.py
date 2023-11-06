@@ -50,7 +50,7 @@ class ApplicationGroup(ConfigObject):
         for child_app_grp, child_app_grp_line in app_grp.application_group_map.items():
             self.get_all_app_list(child_app_grp, predef_app_list, user_def_app_list)
 
-    def write_config(self, output_vd_cfg, _cfg_fh, _log_fh, _indent):
+    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
         if output_vd_cfg:
             vd_str = "application-group "
         else:

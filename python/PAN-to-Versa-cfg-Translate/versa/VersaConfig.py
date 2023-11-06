@@ -269,7 +269,7 @@ class VersaConfig(object):
         for tnt_name, tnt in self.tenant_map.items():
             tnt.check_config(strict_checks)
 
-    def write_config(self, tnt_xlate_map, tmpl_name, device_name, _cfg_fh, _log_fh):
+    def write_config(self, tnt_xlate_map, tmpl_name, device_name, _cfg_fh):
         """write_config _summary_
 
         Args:
@@ -277,7 +277,6 @@ class VersaConfig(object):
             tmpl_name (_type_): _description_
             device_name (_type_): _description_
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
         """
 
         # Populate the tenant name map, so we can translate old tenant names
@@ -421,7 +420,7 @@ class VersaConfig(object):
             # print('%s            using [' % ( indent ), end='', file=_cfg_fh)
             # for src_tnm in src_tnames:
             #     tnt = self.tenant_map[src_tnm]
-            #     tnt.write_interfaces(self, _cfg_fh, _log_fh, '')
+            #     tnt.write_interfaces(self, _cfg_fh, '')
             # print(' ];', file=_cfg_fh)
 
             pflag = True
@@ -550,33 +549,32 @@ class VersaConfig(object):
 
             # start of configuration for tenant objects
             print(f"{indent5}objects {{", file=_cfg_fh)
-
             # write configuration for tenant address objects
             dup_addr_list = []
             print(f"{indent6}addresses {{", file=_cfg_fh)
             tnt = self.tenant_map[tnt_nm]
-            tnt.write_addresses(output_vd_cfg, dup_addr_list, _cfg_fh, _log_fh, indent2 + "    ")
+            tnt.write_addresses(output_vd_cfg, dup_addr_list, _cfg_fh, indent2 + "    ")
             print(f"{indent6}}}", file=_cfg_fh)
 
             # write configuration for tenant address-group objects
             dup_addr_grp_list = []
             print(f"{indent6}address-groups {{", file=_cfg_fh)
             tnt = self.tenant_map[tnt_nm]
-            tnt.write_address_groups(output_vd_cfg, dup_addr_grp_list, _cfg_fh, _log_fh, indent2 + "    ")
+            tnt.write_address_groups(output_vd_cfg, dup_addr_grp_list, _cfg_fh, indent2 + "    ")
             print(f"{indent6}}}", file=_cfg_fh)
 
             # write configuration for tenant schedule objects
             incl_schedules = []
             print(f"{indent6}schedules {{", file=_cfg_fh)
             tnt = self.tenant_map[tnt_nm]
-            tnt.write_schedules(output_vd_cfg, incl_schedules, _cfg_fh, _log_fh, indent2)
+            tnt.write_schedules(output_vd_cfg, incl_schedules, _cfg_fh, indent2)
             print(f"{indent6}}}", file=_cfg_fh)
 
             # write configuration for tenant service objects
             incl_services = []
             print(f"{indent6}services {{", file=_cfg_fh)
             tnt = self.tenant_map[tnt_nm]
-            tnt.write_services(output_vd_cfg, incl_services, _cfg_fh, _log_fh, indent2 + "    ")
+            tnt.write_services(output_vd_cfg, incl_services, _cfg_fh, indent2 + "    ")
             print(f"{indent6}}}", file=_cfg_fh)
 
             # write configuration for tenant zone objects
@@ -595,7 +593,7 @@ class VersaConfig(object):
                 else:
                     vd_str = ""
                 print(f"{indent7}{vd_str}{zone.name}{{", file=_cfg_fh)
-                zone.write_config(_cfg_fh, _log_fh, indent5 + "    ", False)
+                zone.write_config(_cfg_fh, indent5 + "    ", False)
                 print(f"{indent7}}}", file=_cfg_fh)
 
             print(f"{indent6}}}", file=_cfg_fh)
@@ -615,7 +613,7 @@ class VersaConfig(object):
             if list(tnt.get_application_map().keys()):
                 dup_app_list = []
                 print(f"{indent6}user-defined-applications {{", file=_cfg_fh)
-                tnt.write_applications(output_vd_cfg, dup_app_list, _cfg_fh, _log_fh, indent6 + "")
+                tnt.write_applications(output_vd_cfg, dup_app_list, _cfg_fh, indent6 + "")
                 print(f"{indent6}}}", file=_cfg_fh)
 
             # write configuration for tenant application-group objects
@@ -623,7 +621,7 @@ class VersaConfig(object):
                 dup_app_grp_list = []
                 print(f"{indent6}application-groups {{", file=_cfg_fh)
                 tnt = self.tenant_map[tnt_nm]
-                tnt.write_application_groups(output_vd_cfg, dup_app_grp_list, _cfg_fh, _log_fh, indent6 + "")
+                tnt.write_application_groups(output_vd_cfg, dup_app_grp_list, _cfg_fh, indent6 + "")
                 print(f"{indent6}}}", file=_cfg_fh)
 
             # write configuration for tenant application-filter objects
@@ -631,7 +629,7 @@ class VersaConfig(object):
                 dup_app_fltr_list = []
                 print(f"{indent6}application-filters {{", file=_cfg_fh)
                 tnt = self.tenant_map[tnt_nm]
-                tnt.write_application_filters(output_vd_cfg, dup_app_fltr_list, _cfg_fh, _log_fh, indent6 + "")
+                tnt.write_application_filters(output_vd_cfg, dup_app_fltr_list, _cfg_fh, indent6 + "")
                 print(f"{indent6}}}", file=_cfg_fh)
 
             if (
@@ -646,7 +644,7 @@ class VersaConfig(object):
                 dup_uc_list = []
                 print(f"{indent5}url-filtering {{", file=_cfg_fh)
                 print(f"{indent6}user-defined-url-categories {{", file=_cfg_fh)
-                tnt.write_url_categories(output_vd_cfg, dup_uc_list, _cfg_fh, _log_fh, indent6 + "")
+                tnt.write_url_categories(output_vd_cfg, dup_uc_list, _cfg_fh, indent6 + "")
                 print(f"{indent6}}}", file=_cfg_fh)
                 print(f"{indent5}}}", file=_cfg_fh)
 
@@ -668,7 +666,7 @@ class VersaConfig(object):
                 dst_tname = dst_tnt_info[0]
                 tnt = self.tenant_map[dst_tname]
                 if tnt.ngfw is not None:
-                    tnt.ngfw.write_rules(output_vd_cfg, self, src_tnm, _cfg_fh, _log_fh, indent3 + "            ")
+                    tnt.ngfw.write_rules(output_vd_cfg, self, src_tnm, _cfg_fh, indent3 + "            ")
             # end of access policies for tenant
             print(f"{indent8}}}", file=_cfg_fh)
             print(f"{indent7}}}", file=_cfg_fh)

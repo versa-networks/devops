@@ -43,12 +43,11 @@ class ServiceGroup(ConfigObject):
             self.service_group_map[_service_group] = addr_grp_line
             # print('Service Group %s: changing member %s from service to service group' % (self.name, _service_group))
 
-    def write_config(self, _cfg_fh, _log_fh, _indent):
+    def write_config(self, _cfg_fh,  _indent):
         """write_config _summary_
 
         Args:
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
         print(f"{_indent}    {self.name} {{", file=_cfg_fh)

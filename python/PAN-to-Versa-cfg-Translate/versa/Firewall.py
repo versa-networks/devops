@@ -57,16 +57,15 @@ class Firewall(NetworkFunction):
         for rule in self.rules:
             rule.replace_service_group_by_service_members(_service_group)
 
-    def write_rules(self, output_vd_cfg, _vfcg, _tnt, _cfg_fh, _log_fh, _indent):
+    def write_rules(self, output_vd_cfg, _vfcg, _tnt, _cfg_fh,  _indent):
         for r in self.rules:
-            r.write_config(output_vd_cfg, _vfcg, _tnt, _cfg_fh, _log_fh, _indent + "        ")
+            r.write_config(output_vd_cfg, _vfcg, _tnt, _cfg_fh,  _indent + "        ")
 
-    def write_config(self, _cfg_fh, _log_fh, _indent):
+    def write_config(self, _cfg_fh,  _indent):
         """write_config _summary_
 
         Args:
             _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
             _indent (_type_): _description_
         """
         print(f"{_indent}access-policies {{", file=_cfg_fh)
@@ -74,7 +73,7 @@ class Firewall(NetworkFunction):
         print(f"{_indent}        rules {{", file=_cfg_fh)
 
         for r in self.rules:
-            r.write_config(_cfg_fh, _log_fh, _indent + "                ")
+            r.write_config(_cfg_fh,  _indent + "                ")
 
         print(f"{_indent}        }}", file=_cfg_fh)
         print(f"{_indent}    }}", file=_cfg_fh)
