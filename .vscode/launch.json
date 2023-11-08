@@ -12,7 +12,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-z", ".\\Source_Files\\interface-list.csv", "-pc", ".\\Source_Files\\Panorama_Config_8-30-23.xml", "-T", ".\\Source_Files\\NGFW-TEST.cfg"],
+            "args": ["-z", ".\\Source_Files\\anyod1-pfwm1-m500-interface-list.csv", "-pc", ".\\Source_Files\\anyod1-pfwm1-m500_11-2-2023-Copy.xml", "-T", ".\\Source_Files\\PAN-NGFW-TEMPL.cfg"],
             "env": {
                 "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "5000",
             },
