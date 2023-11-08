@@ -4,23 +4,26 @@
 #  This file has the definition of a service group object, that can be used
 #  in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name
+
 
 from versa.ConfigObject import ConfigObject
 
 
 class ServiceGroup(ConfigObject):
-    """ServiceGroup _summary_
+    """
+    Represents a service group configuration.
+
+    This class inherits from ConfigObject and adds additional attributes specific to service group configurations, such as service map and service group map.
 
     Args:
-        ConfigObject (_type_): _description_
+        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, source line, and predefined flag.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
-        super().__init__(_name, _name_src_line, _is_predefined)
+    def __init__(self, name, name_src_line, is_predefined):
+        super().__init__(name, name_src_line, is_predefined)
         self.service_map = {}
         self.service_group_map = {}
 
@@ -36,50 +39,38 @@ class ServiceGroup(ConfigObject):
     def set_service_group_map(self, _service_group_map):
         self.service_group_map = _service_group_map
 
-    def replace_service_by_service_group(self, _service_group):
-        if _service_group in self.service_map:
-            addr_grp_line = self.service_map[_service_group]
-            self.service_map.pop(_service_group, None)
-            self.service_group_map[_service_group] = addr_grp_line
-            # print('Service Group %s: changing member %s from service to service group' % (self.name, _service_group))
-
-    def write_config(self, _cfg_fh,  _indent):
-        """write_config _summary_
+    def replace_service_by_service_group(self, service_group):
+        """
+        Replaces a service with a service group in the service_map if the service group exists.
+        Then adds the service group to the service_group_map.
 
         Args:
-            _cfg_fh (_type_): _description_
-            _indent (_type_): _description_
+            service_group (str): The service group to replace the service with.
         """
-        print(f"{_indent}    {self.name} {{", file=_cfg_fh)
+        if service_group in self.service_map:
+            addr_grp_line = self.service_map.pop(service_group)
+            self.service_group_map[service_group] = addr_grp_line
 
-        if len(self.service_map) > 0:
-            print(f"{_indent}         # src lines:", end="", file=_cfg_fh)
-            for addr, addr_line in self.service_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
 
-            print(f"{_indent}         service-list [", end="", file=_cfg_fh)
+    def write_config(self, cfg_fh, indent):
+        """
+        Writes the configuration of the service group to a file.
 
-            for addr, addr_line in self.service_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr, end="", file=_cfg_fh)
+        Args:
+            cfg_fh (file): The file handle where the configuration will be written.
+            indent (str): The indentation to use in the output.
+        """
+        print(f"{indent}    {self.name} {{", file=cfg_fh)
 
-            print(" ];", file=_cfg_fh)
+        if self.service_map:
+            print("", file=cfg_fh)
+            print(f"{indent}         service-list [", end="", file=cfg_fh)
+            print(" ".join(self.service_map.keys()), end="", file=cfg_fh)
+            print(" ];", file=cfg_fh)
 
-        if len(self.service_group_map) > 0:
-            print(f"{_indent}         # src lines:", end="", file=_cfg_fh)
-            for addr_grp, addr_grp_line in self.service_group_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr_grp_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
+        if self.service_group_map:
+            print(f"{indent}         service-group-list [", end="", file=cfg_fh)
+            print(" ".join(self.service_group_map.keys()), end="", file=cfg_fh)
+            print(" ];", file=cfg_fh)
 
-            print(f"{_indent}         service-group-list [", end="", file=_cfg_fh)
-
-            for addr_grp, addr_grp_line in self.service_group_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr_grp, end="", file=_cfg_fh)
-
-            print(" ];", file=_cfg_fh)
-
-        print(f"{_indent}     }}", file=_cfg_fh)
+        print(f"{indent}     }}", file=cfg_fh)

@@ -5,25 +5,22 @@
 #
 #  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
-#  pylint: disable=invalid-name,unused-import,too-many-lines,line-too-long,attribute-defined-outside-init
+
 
 import argparse
 import csv
-import _csv
-import io
 import logging
 import os
 import re
 import sys
-import versa
+from argparse import Namespace
+from csv import reader
+from datetime import datetime
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import lxml.etree as ET
 
-from csv import reader
-
-from argparse import Namespace
-from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
-
+import versa
 from versa.Address import Address, AddressType
 from versa.AddressGroup import AddressGroup
 from versa.Application import Application
@@ -38,8 +35,6 @@ from versa.Service import Service
 from versa.ServiceGroup import ServiceGroup
 from versa.URLCategory import URLCategory
 from versa.VersaConfig import VersaConfig
-from datetime import datetime
-
 
 # Constants
 LOG_FILENAME = "versa-cfg-translate.log"
@@ -48,7 +43,7 @@ LOG_FILENAME = "versa-cfg-translate.log"
 STRICT_CHECKS = False
 """bool: Enable strict checks."""
 
-INPUT_LINE_NUM = 0
+INPUT_LINE_NUM = 0 #This is unused and should be removed in the future
 """int: Input line number."""
 
 
@@ -173,20 +168,6 @@ def parse_args(args_list: list) -> Namespace:
         dest="versa_paths_file",
         action="store",
         help="Path to Versa path segments file",
-    )
-    parser.add_argument(
-        "-org",
-        "--org_name",
-        dest="org_name",
-        action="store",
-        help="Organization name",
-    )
-    group.add_argument(
-        "-n",
-        "--template_name",
-        dest="template_name",
-        action="store",
-        help="Versa Template name",
     )
     parser.add_argument(
         "-cil",
@@ -343,8 +324,8 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
         sys.exit(1)
 
 
-def get_template_name(template_file_name: str) -> Optional[str]:
-    """Extract template name from a file.
+def get_versa_template_data(template_file_name: str) -> Optional[Tuple[str, str, str, str]]:
+    """Extract template, organization names, services, and service node groups from a file.
 
     Args:
         template_file_name (str): The name of the template file.
@@ -354,16 +335,27 @@ def get_template_name(template_file_name: str) -> Optional[str]:
         ValueError: If unable to parse the template file.
 
     Returns:
-        Optional[str]: The name of the template, or None if not found.
+        Optional[Tuple[str, str, str, str]]: The names of the template, organization, services, and service node groups, or None if not found.
     """
     try:
         with open(template_file_name, "r", encoding="utf-8") as file:
             content = file.read()
-            match = re.search(r'template\s+(\w+)\s+\{', content)
-            if match:
-                return match.group(1)
-            else:
-                raise ValueError(f"Unable to find template name in file {template_file_name}")
+
+        template_match = re.search(r'template\s+(.*?)\s+\{', content)
+        org_name_match = re.search(r'org\s+(.*?)\s+\{', content)
+        org_services_match = re.search(r'services\s+\[\s+(.*?)\s+\]', content)
+        service_node_groups_match = re.search(r'(service-node-groups\s+\{.*?\})', content, re.DOTALL)
+
+        template_name = template_match.group(1) if template_match else None
+        org_name = org_name_match.group(1) if org_name_match else None
+        org_services = org_services_match.group(1) if org_services_match else None
+        service_node_groups = service_node_groups_match.group(1) if service_node_groups_match else None
+
+        if not template_name or not org_name or not org_services or not service_node_groups:
+            raise ValueError(f"Unable to parse the file {template_file_name}")
+
+        return template_name, org_name, org_services, service_node_groups
+
     except FileNotFoundError:
         raise FileNotFoundError(f"File {template_file_name} not found.")
 
@@ -1348,18 +1340,11 @@ def main(args_list: list) -> bool:
     print("Opening 3rd party config file...")
     xml_root = open_3rd_party_config_file(args)
     
-    if args.create_interface_list:
-        print("Creating zone to interface file")
-        create_zone_interface_file(args, xml_root)
-        print("!!!Created zone/interface file!!!")
-        print(f"!!!Edit {args.zone_file} then run script again without -cil!!!")
-        print("Exiting")
-        return False
-    
-    if args.template_file_name != None:
-       print("Reading Versa Template File")
-       args.template_name = get_template_name(args.template_file_name)
-
+    if args.template_file_name:
+        print("Reading Versa Template File")
+        template_data = get_versa_template_data(args.template_file_name)
+        if template_data:
+            args.template_name, args.org_name, args.org_services, args.service_node_groups = template_data
     
     print("Importing predefined files...")
     app_csv, app_fh = open_predefined_applications(args)
@@ -1397,9 +1382,9 @@ def main(args_list: list) -> bool:
     cur_tnt = versa_cfg.get_tenant(args.org_name, "0")
     cur_tnt.set_shared_tenant(shared_tnt)
     devices_xml = xml_root.find("./devices")
-    # Load objects and rules into tenant
-    load_config(devices_xml, cur_tnt, v_logger, predef_app_map, predef_subfamilies_map, predef_countries_map,predef_url_categories_map)
-    #load_rules_into_tenant(devices_xml, cur_tnt,v_logger, predef_countries_map)        
+    
+    # Load objects into tenant
+    load_config(devices_xml, cur_tnt, v_logger, predef_app_map, predef_subfamilies_map, predef_countries_map,predef_url_categories_map)      
 
     # Replace address and service groups with their respective members
     print("Replacing address group with their respective members...")
@@ -1410,7 +1395,7 @@ def main(args_list: list) -> bool:
     # Check and write configuration
     versa_cfg.check_config(STRICT_CHECKS)
     print(f"Writing configuration file {out_fh.name}")
-    versa_cfg.write_config(tnt_xlate_map, args.template_name, args.device_name, out_fh)
+    versa_cfg.write_config(tnt_xlate_map, args.template_name, args.device_name, out_fh, args)
 
     out_fh.close()
     return True
@@ -1420,5 +1405,5 @@ if __name__ == "__main__":
     try:
         main(sys.argv[1:])
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"An error occurred: {e}", file=sys.stderr)
         sys.exit(1)

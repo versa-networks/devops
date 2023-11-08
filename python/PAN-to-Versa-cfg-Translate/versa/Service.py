@@ -4,10 +4,9 @@
 #  This file has the definition of a network service object, that can be used
 #  in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name,attribute-defined-outside-init
 
 from enum import Enum
 from versa.ConfigObject import ConfigObject
@@ -25,14 +24,26 @@ class ProtoMatchType(Enum):
 
 
 class Service(ConfigObject):
-    """Service _summary_
+    """
+    Represents a network service with various properties such as source port, destination port, protocol, etc.
+    Inherits from the ConfigObject class.
 
     Args:
-        ConfigObject (_type_): _description_
+        name (str): The name of the service.
+        name_src_line (int): The source line of the name.
+        is_predefined (bool): A flag indicating whether the service is predefined.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
-        super().__init__(_name, _name_src_line, _is_predefined)
+    def __init__(self, name: str, name_src_line: int, is_predefined: bool):
+        """
+        Initializes the instance variables.
+
+        Args:
+            name (str): The name of the service.
+            name_src_line (int): The source line of the name.
+            is_predefined (bool): A flag indicating whether the service is predefined.
+        """
+        super().__init__(name, name_src_line, is_predefined)
         self.src_port = None
         self.dst_port = None
         self.port = None
@@ -40,7 +51,6 @@ class Service(ConfigObject):
         self.proto = None
         self.proto_value = None
         self.proto_match_type = ProtoMatchType.NONE
-        self.proto_match_type = None
         self.desc = None
         self.desc_line = None
 
@@ -63,88 +73,79 @@ class Service(ConfigObject):
         self.port_src_line = _port_src_line
         self.port_match_type = PortMatchType.ANY_PORT_MATCH
 
-    def set_proto(self, _proto, _proto_src_line):
-        """set_proto _summary_
+    def set_proto(self, proto, proto_src_line: int):
+        """
+        Sets the protocol and the source line of the protocol.
 
         Args:
-            _proto (_type_): _description_
-            _proto_src_line (_type_): _description_
+            proto (str): The protocol to set.
+            proto_src_line (int): The source line of the protocol.
         """
-        if not _proto.lower() == "ip":
-            if _proto.lower() == "icmp6":
-                self.set_proto_value(58, _proto_src_line)
+        proto_lower = proto.lower()
+        if proto_lower != "ip":
+            if proto_lower == "icmp6":
+                self.set_proto_value(58, proto_src_line)
             else:
-                self.proto = _proto
-                self.proto_src_line = _proto_src_line
+                self.proto = proto
+                self.proto_src_line = proto_src_line
                 self.proto_match_type = ProtoMatchType.ENUM_PROTO_MATCH
 
-    def set_proto_value(self, _proto_value, _proto_value_src_line):
-        self.proto_value = _proto_value
-        self.proto_value_src_line = _proto_value_src_line
+    def set_proto_value(self, proto_value, proto_value_src_line: int):
+        """
+        Sets the protocol value and the source line of the protocol value.
+
+        Args:
+            proto_value (int): The protocol value to set.
+            proto_value_src_line (int): The source line of the protocol value.
+        """
+        self.proto_value = proto_value
+        self.proto_value_src_line = proto_value_src_line
         self.proto_match_type = ProtoMatchType.PROTO_VALUE_MATCH
 
-    def equals(self, _other):
-        """equals _summary_
+    def equals(self, other: 'Service') -> bool:
+        """
+        Checks if the current instance is equal to another instance.
 
         Args:
-            _other (_type_): _description_
+            other (Service): The other instance to compare with.
 
         Returns:
-            _type_: _description_
+            bool: True if the instances are equal, False otherwise.
         """
-        if not self.proto_match_type == _other.proto_match_type:
+        if self.proto_match_type != other.proto_match_type:
             return False
-        if self.port_match_type == PortMatchType.ANY_PORT_MATCH:
-            if not self.port == _other.port:
-                return False
-        elif self.port_match_type == PortMatchType.SRC_DST_PORT_MATCH:
-            if not self.src_port == _other.src_port:
-                return False
-            if not self.dst_port == _other.dst_port:
-                return False
-        if self.proto_match_type == ProtoMatchType.ENUM_PROTO_MATCH:
-            if not self.proto == _other.proto:
-                return False
-        elif self.proto_match_type == ProtoMatchType.PROTO_VALUE_MATCH:
-            if not self.proto_value == _other.proto_value:
-                return False
+        if self.port_match_type == PortMatchType.ANY_PORT_MATCH and self.port != other.port:
+            return False
+        if self.port_match_type == PortMatchType.SRC_DST_PORT_MATCH and (self.src_port != other.src_port or self.dst_port != other.dst_port):
+            return False
+        if self.proto_match_type == ProtoMatchType.ENUM_PROTO_MATCH and self.proto != other.proto:
+            return False
+        if self.proto_match_type == ProtoMatchType.PROTO_VALUE_MATCH and self.proto_value != other.proto_value:
+            return False
         return True
 
-    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
-        """write_config _summary_
+    def write_config(self, output_vd_cfg: bool, cfg_fh, indent: str):
+        """
+        Writes the configuration of the service to a file.
 
         Args:
-            output_vd_cfg (_type_): _description_
-            _cfg_fh (_type_): _description_
-            _indent (_type_): _description_
+            output_vd_cfg (bool): A flag indicating whether to output the VD configuration.
+            cfg_fh (file): The file handle of the configuration file.
+            indent (str): The indentation to use when writing to the file.
         """
-        if output_vd_cfg:
-            vd_str = "service "
-        else:
-            vd_str = ""
-        if not self.proto_match_type == ProtoMatchType.NONE:
-            #print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
-            print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
-            if self.desc is not None:
-                #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
-                print(f'{_indent}        description "{self.desc}";', file=_cfg_fh)
-            if self.port_match_type == PortMatchType.ANY_PORT_MATCH:
-                if self.port is not None:
-                    #print(f"{_indent}        # src line number {self.port_src_line}",file=_cfg_fh,)
-                    print(f"{_indent}        port {self.port};", file=_cfg_fh)
+        vd_str = "service " if output_vd_cfg else ""
+        
+        if self.proto_match_type != ProtoMatchType.NONE:
+            print(f'{indent}{vd_str}{self.name} {{', file=cfg_fh)
+            if self.port_match_type == PortMatchType.ANY_PORT_MATCH and self.port is not None:
+                print(f'{indent}    port {self.port};', file=cfg_fh)
             elif self.port_match_type == PortMatchType.SRC_DST_PORT_MATCH:
                 if self.src_port is not None:
-                    #print(f"{_indent}        # src line number {self.src_port_src_line}",file=_cfg_fh,)
-                    print(f"{_indent}        source-port {self.src_port};", file=_cfg_fh)
+                    print(f'{indent}    source-port {self.src_port};', file=cfg_fh)
                 if self.dst_port is not None:
-                    #print(f"{_indent}        # src line number {self.port_src_line}",file=_cfg_fh,)
-                    print(f"{_indent}        destination-port {self.dst_port};", file=_cfg_fh)
-            if self.proto_match_type == ProtoMatchType.ENUM_PROTO_MATCH:
-                if self.proto is not None:
-                    #print(f"{_indent}        # src line number {self.proto_src_line}",file=_cfg_fh,)
-                    print(f"{_indent}        protocol {self.proto};", file=_cfg_fh)
-            elif self.proto_match_type == ProtoMatchType.PROTO_VALUE_MATCH:
-                if self.proto_value is not None:
-                    #print(f"{_indent}        # src line number {self.proto_value_src_line}",file=_cfg_fh,)
-                    print(f"{_indent}         protocol-value {self.proto_value};", file=_cfg_fh)
-            print(f"{_indent}     }}", file=_cfg_fh)
+                    print(f'{indent}    destination-port {self.dst_port};', file=cfg_fh)
+            if self.proto_match_type == ProtoMatchType.ENUM_PROTO_MATCH and self.proto is not None:
+                print(f'{indent}    protocol {self.proto};', file=cfg_fh)
+            elif self.proto_match_type == ProtoMatchType.PROTO_VALUE_MATCH and self.proto_value is not None:
+                print(f'{indent}    protocol-value {self.proto_value};', file=cfg_fh)
+            print(f'{indent}}}', file=cfg_fh)

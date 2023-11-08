@@ -62,11 +62,14 @@ class Firewall(NetworkFunction):
             r.write_config(output_vd_cfg, _vfcg, _tnt, _cfg_fh,  _indent + "        ")
 
     def write_config(self, _cfg_fh,  _indent):
-        """write_config _summary_
+        """
+        Writes the firewall configuration to a file.
+
+        This method writes the firewall configuration to a file. The configuration is indented by a specified amount.
 
         Args:
-            _cfg_fh (_type_): _description_
-            _indent (_type_): _description_
+            _cfg_fh (TextIO): The file handle to write the configuration to.
+            _indent (str): The string to use for indentation.
         """
         print(f"{_indent}access-policies {{", file=_cfg_fh)
         print(f"{_indent}    {self.name} {{", file=_cfg_fh)

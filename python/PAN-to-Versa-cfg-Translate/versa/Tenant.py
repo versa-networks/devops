@@ -212,16 +212,15 @@ class Tenant(object):
     def set_next_gen_firewall(self, _ngfw, _ngfw_src_line):
         self.ngfw = _ngfw
         self.ngfw_src_line = _ngfw_src_line
-        # print('setting ngfw for tnt: ' + self.name +
-        #       ' ngfw name: ' + self.ngfw.name)
 
     def replace_address_by_address_group(self):
         """replace_address_by_address_group _summary_"""
         for agname, [ag, ag_line] in self.address_group_map.items():
-            for agn, [addr_grp, addr_grp_line] in self.address_group_map.items():
-                addr_grp.replace_address_by_address_group(agname)
             if self.ngfw is not None:
                 self.ngfw.replace_address_by_address_group(agname)
+            for agn, [addr_grp, addr_grp_line] in self.address_group_map.items():
+                if agn != agname:
+                    addr_grp.replace_address_by_address_group(agname)
 
     def replace_address(self, _aname, _new_aname):
         """replace_address _summary_
@@ -313,15 +312,9 @@ class Tenant(object):
         Raises:
             Exception: _description_
         """
-        # print('')
-        # print('Printing addresses for tenant: %s' % (self.name))
-        # print('')
-        # for aname, [addr, addr_line] in self.address_map.iteritems():
-        #     print(aname)
 
         for agname, [addr_grp, addr_grp_line] in self.address_group_map.items():
             for addr in list(addr_grp.address_map.keys()):
-                # print('checking address group %s ; addr %s' % (agname, addr))
                 addr_found = False
                 if addr in list(self.address_map.keys()):
                     addr_found = True
@@ -342,7 +335,7 @@ class Tenant(object):
 
     def replace_service_group_by_service_members(self):
         if self.ngfw is not None:
-            for sgname, [sg, sg_line] in self.service_group_map.items():
+            for sg, _ in self.service_group_map.values():
                 self.ngfw.replace_service_group_by_service_members(sg)
 
     def get_addresses_for_natpool(self, _natpool):
@@ -358,11 +351,7 @@ class Tenant(object):
         if len(self.address_map) > 0:
             for aname, [addr, addr_line] in self.address_map.items():
                 if addr.addr_type == AddressType.IP_V4_RANGE:
-                    # print('Tenant %s: Comparing Address %s (%s-%s) '
-                    #       'for matching natpool %s (%s-%s))' % (self.name, aname, addr.start_ip, addr.end_ip, _natpool.name, _natpool.start_ip, _natpool.end_ip))
-                    if (addr.start_ip == _natpool.start_ip) and (addr.end_ip == _natpool.end_ip):
-                        # print('Tenant %s: Returning Address %s '
-                        #       'for matching natpool %s)' % (self.name, aname, _natpool.name))
+                     if (addr.start_ip == _natpool.start_ip) and (addr.end_ip == _natpool.end_ip):
                         addr_list.extend([addr])
         return addr_list
 
@@ -397,7 +386,7 @@ class Tenant(object):
         if len(self.address_map) > 0:
             for aname, [addr, addr_line] in self.address_map.items():
                 if not aname in dup_addr_list:
-                    addr.write_config(output_vd_cfg, _cfg_fh, _indent + "            ")
+                    addr.write_config(output_vd_cfg, _cfg_fh, _indent)
                     dup_addr_list.extend([aname])
 
     def write_address_groups(self, output_vd_cfg, dup_addr_grp_list, _cfg_fh, _indent):
@@ -425,12 +414,8 @@ class Tenant(object):
                     ordered_list.extend([agname])
                     dup_addr_grp_list.extend([agname])
 
-            # for agname, [addr_grp, addr_grp_line] in self.address_group_map.iteritems():
-            #     addr_grp.write_config(_cfg_fh, 
-            #                           _indent + '            ')
-
             for agname in ordered_list:
-                self.get_address_group(agname).write_config(output_vd_cfg, _cfg_fh, _indent + "            ")
+                self.get_address_group(agname).write_config(output_vd_cfg, _cfg_fh, _indent)
 
     def write_applications(self, output_vd_cfg, dup_app_list, _cfg_fh,  _indent):
         """write_applications _summary_
@@ -445,16 +430,16 @@ class Tenant(object):
         if len(list(self.application_map.keys())) > 0:
             for aname, [app, app_line] in self.application_map.items():
                 if not aname in dup_app_list:
-                    app.write_config(output_vd_cfg, _cfg_fh, _indent + "")
+                    app.write_config(output_vd_cfg, _cfg_fh, _indent)
                     dup_app_list.extend([aname])
 
     def write_application_groups(self, output_vd_cfg, dup_app_grp_list, _cfg_fh, _indent):
         for agname in list(self.get_application_group_map().keys()):
-            self.get_application_group(agname).write_config(output_vd_cfg, _cfg_fh, _indent + "            ")
+            self.get_application_group(agname).write_config(output_vd_cfg, _cfg_fh, _indent)
 
     def write_application_filters(self, output_vd_cfg, dup_app_fltr_list, _cfg_fh, _indent):
         for afname in list(self.get_application_filter_map().keys()):
-            self.get_application_filter(afname).write_config(output_vd_cfg, _cfg_fh, _indent + "            ")
+            self.get_application_filter(afname).write_config(output_vd_cfg, _cfg_fh, _indent)
 
     def write_url_categories(self, output_vd_cfg, dup_uc_list, _cfg_fh, _indent):
         """write_url_categories _summary_
@@ -469,7 +454,7 @@ class Tenant(object):
         if len(list(self.url_category_map.keys())) > 0:
             for uc_name, [uc, uc_line] in self.url_category_map.items():
                 if not uc_name in dup_uc_list:
-                    uc.write_config(output_vd_cfg, _cfg_fh, _indent + "            ")
+                    uc.write_config(output_vd_cfg, _cfg_fh, _indent)
                     dup_uc_list.extend([uc_name])
 
     def write_schedules(self, output_vd_cfg, incl_schedules, _cfg_fh, _indent):
@@ -485,29 +470,42 @@ class Tenant(object):
         if len(self.schedule_map) > 0:
             for sname, [sched, sched_line] in self.schedule_map.items():
                 if not sname in incl_schedules:
-                    sched.write_config(output_vd_cfg, _cfg_fh, _indent + "            ")
+                    sched.write_config(output_vd_cfg, _cfg_fh, _indent)
                     incl_schedules.extend([sname])
 
     def write_services(self, output_vd_cfg, incl_services, _cfg_fh, _indent):
-        """write_services _summary_
+        """
+        Writes the configuration of each service in the service_map to a file, if the service is not already included in incl_services.
 
-        Args:
-            output_vd_cfg (_type_): _description_
-            incl_services (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
+        Parameters:
+        output_vd_cfg (_type_): _description_
+        incl_services (list): A list of service names that have already been included.
+        _cfg_fh (file): The file handle where the service configurations will be written.
+        _indent (str): The indentation to be used for the written configurations.
+
+        Returns:
+        None
         """
         if len(self.service_map) > 0:
             for sname, [svc, svc_line] in self.service_map.items():
                 if not sname in incl_services:
-                    svc.write_config(output_vd_cfg, _cfg_fh, _indent + "            ")
+                    svc.write_config(output_vd_cfg, _cfg_fh, _indent)
                     incl_services.extend([sname])
 
     def write_zones(self, _cfg_fh, _indent):
-        if len(self.zone_map) > 0:
-            for zname, zone in self.zone_map.items():
-                zone.write_config(_cfg_fh, _indent + "            ")
+        """
+        Writes the configuration of each zone in the zone_map to a file.
+
+        Parameters:
+        _cfg_fh (file): The file handle where the zone configurations will be written.
+        _indent (str): The indentation to be used for the written configurations.
+
+        Returns:
+        None
+        """
+        if self.zone_map:
+            configs = [zone.write_config(_indent) for zname, zone in self.zone_map.items()]
+            _cfg_fh.write('\n'.join(configs))
 
     def write_services_config(self, _tnt_nm, _cfg_fh, _indent):
         """write_services_config _summary_
@@ -547,12 +545,8 @@ class Tenant(object):
                 if agname not in ordered_list:
                     ordered_list.extend([agname])
 
-            # for agname, [addr_grp, addr_grp_line] in self.address_group_map.iteritems():
-            #     addr_grp.write_config(_cfg_fh, 
-            #                           _indent + '            ')
-
             for agname in ordered_list:
-                self.get_address_group(agname).write_config(_cfg_fh, _indent + "            ")
+                self.get_address_group(agname).write_config(_cfg_fh, _indent)
 
             print(f"{_indent}            }}", file=_cfg_fh)
 
@@ -560,7 +554,7 @@ class Tenant(object):
             print(f"{_indent}            schedules {{", file=_cfg_fh)
 
             for sname, [sched, sched_line] in self.schedule_map.items():
-                sched.write_config(_cfg_fh, _indent + "            ")
+                sched.write_config(_cfg_fh, _indent)
 
             print(f"{_indent}            }}", file=_cfg_fh)
 
@@ -568,7 +562,7 @@ class Tenant(object):
             print(f"{_indent}            services {{", file=_cfg_fh)
 
             for sname, [svc, svc_line] in self.service_map.items():
-                svc.write_config(_cfg_fh, _indent + "            ")
+                svc.write_config(_cfg_fh, _indent)
 
             print(f"{_indent}            }}", file=_cfg_fh)
 
@@ -576,7 +570,7 @@ class Tenant(object):
             print(f"{_indent}            zones {{", file=_cfg_fh)
 
             for zname, zone in self.zone_map.items():
-                zone.write_config(_cfg_fh, _indent + "            ")
+                zone.write_config(_cfg_fh, _indent)
 
             print(f"{_indent}            }}", file=_cfg_fh)
 
@@ -586,16 +580,13 @@ class Tenant(object):
             print(f"{_indent}        application-identification {{", file=_cfg_fh)
 
         if len(self.application_map) > 0:
-
             print(f"{_indent}            user-defined-applications {{", file=_cfg_fh)
             for aname, [app, app_line] in self.application_map.items():
                 app.write_config(_cfg_fh, _indent + "            ")
-
             print(f"{_indent}            }}", file=_cfg_fh)
 
         if len(self.application_group_map) > 0:
             print(f"{_indent}            application-groups {{", file=_cfg_fh)
-
             ordered_list = []
             for agname, [app_grp, app_grp_line] in self.application_group_map.items():
                 if len(app_grp.application_group_map) == 0:
@@ -608,26 +599,21 @@ class Tenant(object):
                 if agname not in ordered_list:
                     ordered_list.extend([agname])
 
-            # for agname, [app_grp, app_grp_line] in self.application_group_map.iteritems():
-            #     app_grp.write_config(_cfg_fh, 
-            #                           _indent + '            ')
-
             for agname in ordered_list:
-                self.get_application_group(agname).write_config(_cfg_fh, _indent + "        ")
+                self.get_application_group(agname).write_config(_cfg_fh, _indent)
+                                                                                               
 
             for agname, [ag, ag_line] in self.application_group_map.items():
-                ag.write_config(_cfg_fh, _indent + "            ")
+                ag.write_config(_cfg_fh, _indent)
 
             print(f"{_indent}        }}", file=_cfg_fh)
 
         if len(self.application_filter_map) > 0:
             print(f"{_indent}            application-filters {{", file=_cfg_fh)
-
             for afname, [af, af_line] in self.application_filter_map.items():
-                af.write_config(_cfg_fh, _indent + "            ")
+                af.write_config(_cfg_fh, _indent)
 
             print(f"{_indent}            }}", file=_cfg_fh)
-
             print(f"{_indent}        }}", file=_cfg_fh)
 
         if len(self.application_map) > 0 or len(self.application_group_map) or len(self.application_filter_map) > 0:
@@ -638,17 +624,15 @@ class Tenant(object):
             print(f"{_indent}            user-defined-url-categories {{", file=_cfg_fh)
 
             for uc_name, [uc, uc_line] in self.url_category_map.items():
-                uc.write_config(_cfg_fh, _indent + "        ")
+                uc.write_config(_cfg_fh, _indent)
 
             print(f"{_indent}            }}", file=_cfg_fh)
             print(f"{_indent}        }}", file=_cfg_fh)
 
         print(f"{_indent}        security {{", file=_cfg_fh)
-        # if (tnt.ngfw is None):
-        #     print('ngfw for tnt ' + tnt.name + ' is None')
-        if self.ngfw is not None:
-            self.ngfw.write_config(_cfg_fh, _indent + "            ")
-        print(f"{_indent}        }}", file=_cfg_fh)
 
+        if self.ngfw is not None:
+            self.ngfw.write_config(_cfg_fh, _indent)
+        print(f"{_indent}        }}", file=_cfg_fh)
         print(f"{_indent}    }}", file=_cfg_fh)
         print("", file=_cfg_fh)

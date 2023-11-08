@@ -4,22 +4,21 @@
 #  This file has the definition of a network address object, that can be used
 #  in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name, no-member
 
 from versa.ConfigObject import ConfigObject
 
 
 class System(ConfigObject):
-    """System _summary_
+    """
+    Represents a system configuration.
+
+    This class inherits from ConfigObject and adds additional attributes specific to system configurations, such as hostname, domain search, and name servers.
 
     Args:
-        ConfigObject (_type_): _description_
-
-    Returns:
-        _type_: _description_
+        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, source line, and predefined flag.
     """
 
     SYSTEM_NAME = "system"
@@ -48,11 +47,6 @@ class System(ConfigObject):
         self.domain_search_line = _line
 
     def get_name_servers(self):
-        """get_name_servers _summary_
-
-        Returns:
-            _type_: _description_
-        """
         return self.name_servers
 
     def add_name_server(self, _ns, _line):
@@ -60,15 +54,21 @@ class System(ConfigObject):
         self.name_servers_lines.append(_line)
 
     def write_config(self, _cfg_fh,  _indent):
-        """write_config _summary_
+        """
+        Writes the system configuration to a file.
+
+        This method writes the system configuration to a file. The configuration is indented by a specified amount.
 
         Args:
-            _cfg_fh (_type_): _description_
-            _indent (_type_): _description_
+            _cfg_fh (TextIO): The file handle to write the configuration to.
+            _indent (str): The string to use for indentation.
         """
         if len(self.interface_map) > 0:
-            print(f"{_indent}    system {{", file=_cfg_fh)
-            print(f"{_indent}        identification {{", file=_cfg_fh)
-            print(f"{_indent}            name {self.get_hostname()}", file=_cfg_fh)
-            print(f"{_indent}        }}", file=_cfg_fh)
-            print(f"{_indent}    }}", file=_cfg_fh)
+            print(
+                f"""{_indent}    system {{
+        {_indent}        identification {{
+        {_indent}            name {self.get_hostname()}
+        {_indent}        }}
+        {_indent}    }}""",
+                file=_cfg_fh,
+            )

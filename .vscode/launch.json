@@ -6,13 +6,13 @@
     "configurations": [
         {
             "name": "Python: Current File",
-            "cwd": "C:\\Users\\RobertKauffman\\GitLab-Devops\\devops\\python\\PAN-to-Versa-cfg-Translate"
+            "cwd": "C:\\Users\\RobertKauffman\\GitLab-Devops\\devops\\python\\PAN-to-Versa-cfg-Translate",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-z", ".\\Source_Files\\interface-list.csv", "-pc", ".\\Source_Files\\Panorama_Config_8-30-23.xml", "-n", "NGFW-TEST", "--org", "RobK-Demo-1"],
+            "args": ["-z", ".\\Source_Files\\interface-list.csv", "-pc", ".\\Source_Files\\Panorama_Config_8-30-23.xml", "-T", ".\\Source_Files\\NGFW-TEST.cfg"],
             "env": {
                 "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "5000",
             },

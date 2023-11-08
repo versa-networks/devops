@@ -7,47 +7,73 @@
 #  Copyright (c) 2019, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name
 
+from typing import Optional, TextIO
 from versa.ConfigObject import ConfigObject
 
 
 class Application(ConfigObject):
-    """Application _summary_
+    """
+    Represents an application object that can be used in any policy configuration on the Versa FlexVNF.
 
-    Args:
-        ConfigObject (_type_): _description_
+    The Application class inherits from the ConfigObject class and adds additional attributes and methods related to 
+    the specific needs of an application object.
+
+    Attributes:
+        name (str): The name of the Application object.
+        name_src_line (int): The source line of the Application object's name.
+        is_predefined (bool): Whether the Application object is predefined or not.
+        desc (Optional[str]): The description of the Application object, defaults to None.
+        desc_line (Optional[str]): The source line of the Application object's description, defaults to None.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
-        super().__init__(_name, _name_src_line, _is_predefined)
-        self.desc = None
-        self.desc_line = None
-
-    def get_description(self):
-        return self.desc
-
-    def set_description(self, _desc, _desc_line):
-        self.desc = _desc
-        self.desc_line = _desc_line
-
-    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
-        """write_config
-        _summary_
+    def __init__(self, _name: str, _name_src_line: int, _is_predefined: bool) -> None:
+        """
+        Initialize an Application object.
 
         Args:
-            output_vd_cfg (_type_): _description_
-            _cfg_fh (_type_): _description_
-            _indent (_type_): _description_
-        """
-        if output_vd_cfg:
-            vd_str = "user-defined-application "
-        else:
-            vd_str = ""
+            _name (str): The name of the Application object.
+            _name_src_line (int): The source line of the Application object's name.
+            _is_predefined (bool): Whether the Application object is predefined or not.
 
-        #print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
-        print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
-        if self.desc is not None:
-            #print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
-            print(f'{_indent}        description "{self.desc}";', file=_cfg_fh)
-        print(f"{_indent}    }}", file=_cfg_fh)
+        Attributes:
+            desc (Optional[str]): The description of the Application object, defaults to None.
+            desc_line (Optional[str]): The source line of the Application object's description, defaults to None.
+        """
+        super().__init__(_name, _name_src_line, _is_predefined)
+        self.desc: Optional[str] = None
+        self.desc_line: Optional[int] = None
+
+    def get_description(self) -> str:
+        """Returns the description of the Application object."""
+        return self.desc if self.desc is not None else ""
+
+    def set_description(self, _desc: str, _desc_line: int) -> None:
+        """
+        Sets the description and its source line for the Application object.
+
+        Args:
+            _desc (str): The description to be set.
+            _desc_line (int): The source line of the description.
+        """
+        if _desc is not None:
+            self.desc = _desc
+        if _desc_line is not None:
+            self.desc_line = _desc_line
+
+
+    def write_config(self, output_vd_cfg: bool, _cfg_fh: TextIO,  _indent: str) -> None:
+        """Writes the configuration of the Application object to a file.
+
+        Args:
+            output_vd_cfg (bool): Whether to output the vd_cfg or not.
+            _cfg_fh (TextIO): The file handler to write the configuration to.
+            _indent (str): The indentation to use when writing the configuration.
+        """
+        vd_str = "user-defined-application " if output_vd_cfg else ""
+                
+        print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
+        if (self.desc is not None):
+            print(f'{_indent}    description "{self.desc}";', file=_cfg_fh)
+        print(f"{_indent}}}", file=_cfg_fh)
+

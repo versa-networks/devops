@@ -3,9 +3,8 @@
 #
 #  This file has the definition of the Next Generation Firewall.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
-# pylint: disable=invalid-name
 
 
 from versa.Firewall import Firewall
@@ -13,13 +12,11 @@ from versa.NetworkFunction import NetworkFunctionType
 
 
 class NextGenFirewall(Firewall):
-    """NextGenFirewall
-    This file has the definition of the Next Generation Firewall.
-
-    Args:
-        Firewall (_type_): _description_
+    """
+    This class represents a Next Generation Firewall. It inherits from the Firewall class
+    and sets the network function type to NEXT_GEN_FIREWALL.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
+    def __init__(self, _name: str, _name_src_line: int, _is_predefined: bool):
         super().__init__(_name, _name_src_line, _is_predefined)
         self.vnf_type = NetworkFunctionType.NEXT_GEN_FIREWALL

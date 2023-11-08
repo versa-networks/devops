@@ -13,15 +13,43 @@ from versa.FirewallRule import FirewallRule
 
 
 class NextGenFirewallRule(FirewallRule):
-    """NextGenFirewallRule
-    _summary_
+    """
+    A class representing a next-generation firewall rule.
+
+    This class extends the `FirewallRule` class and adds additional functionality for handling
+    next-generation firewall features such as application maps, URL category maps, and device maps.
+    It also provides methods for setting and getting AV and IPS profiles.
+
+    Attributes:
+        application_map (dict): A map of applications.
+        url_category_map (dict): A map of URL categories.
+        devices_map (dict): A map of devices.
+        av_profile (str): The AV profile.
+        av_profile_line (int): The line number where the AV profile is defined.
+        ips_profile (str): The IPS profile.
+        ips_profile_line (int): The line number where the IPS profile is defined.
+        print_cnt (int): A counter for print operations.
 
     Args:
-        FirewallRule (_type_): _description_
+        _name (str): The name of the firewall rule.
+        _name_src_line (int): The line number where the name is defined.
+        _is_predefined (bool): A flag indicating whether the rule is predefined.
     """
 
     def __init__(self, _name, _name_src_line, _is_predefined):
-        super(NextGenFirewallRule, self).__init__(_name, _name_src_line, _is_predefined)
+        """
+        Initializes a new instance of the NextGenFirewallRule class.
+
+        This method extends the `__init__` method from the superclass and initializes additional 
+        attributes specific to next-generation firewall rules, such as application maps, URL 
+        category maps, device maps, AV and IPS profiles, and a print counter.
+
+        Args:
+            _name (str): The name of the firewall rule.
+            _name_src_line (int): The line number where the name is defined.
+            _is_predefined (bool): A flag indicating whether the rule is predefined.
+        """
+        super().__init__(_name, _name_src_line, _is_predefined)
         self.application_map = {}
         self.url_category_map = {}
         self.devices_map = {}
@@ -73,162 +101,121 @@ class NextGenFirewallRule(FirewallRule):
         self.ips_profile_line = _ips_profile_line
 
     def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
+        """
+        Writes the security profile configuration to a file if AV or IPS profile is set.
+
+        This method extends the `write_set_no_closing_brace` method from the superclass.
+        It checks if the AV profile or the IPS profile is set, and if either is, it writes
+        the corresponding security profile configuration to the file.
+
+        Args:
+            output_vd_cfg (bool): A flag indicating whether to output the VD configuration.
+            _cfg_fh (file): The file handle of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
+
+        """
         super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
-        if (self.get_av_profile() is not None) or (self.get_ips_profile() is not None):
+        if self.get_av_profile() or self.get_ips_profile():
             print(f"{_indent}            security-profile {{", file=_cfg_fh)
 
-        # if (self.get_av_profile() is not None):
-        #     print('%s                antivirus {' % (_indent), file=_cfg_fh)
-        #     print('%s                    predefined-av-profile "Scan Web and Email Traffic";' % (_indent), file=_cfg_fh)
-        #     print('%s                }' % (_indent), file=_cfg_fh)
-
-        if self.get_ips_profile() is not None:
+        if self.get_ips_profile():
             print(f"{_indent}                ips {{", file=_cfg_fh)
-            print(
-                f'{_indent}                    predefined-ips-profile "Versa Recommended Profile";',
-                file=_cfg_fh,
-            )
+            print(f'{_indent}                    predefined-ips-profile "Versa Recommended Profile";', file=_cfg_fh)
             print(f"{_indent}                }}", file=_cfg_fh)
 
-        if (self.get_av_profile() is not None) or (self.get_ips_profile() is not None):
+        if self.get_av_profile() or self.get_ips_profile():
             print(f"{_indent}            }}", file=_cfg_fh)
 
     def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
+        """
+        Writes the configuration of the next-generation firewall rule to a file.
+
+        This method checks various conditions (e.g., whether the rule has devices, whether the source
+        and destination zone maps are not empty, etc.) and writes the corresponding configuration to
+        the file. It also handles the printing of the match block and the set block.
+
+        Args:
+            output_vd_cfg (bool): A flag indicating whether to output the VD configuration.
+            _vcfg (VCfg): The VCfg object containing the configuration.
+            _tnt (str): The tenant.
+            _cfg_fh (file): The file handle of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
+        """
+        
         if self.has_devices():
             return
 
         self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
         match_printed = False
-        if (
-            (len(list(self.src_zone_map.keys())) > 0)
-            or (len(list(self.src_addr_map.keys())) > 0)
-            or (len(list(self.src_addr_grp_map.keys())) > 0)
-        ):
+
+        src_conditions = [
+            self.src_zone_map,
+            self.src_addr_map,
+            self.src_addr_grp_map
+        ]
+
+        if any(src_conditions):
             print(f"{_indent}        match {{", file=_cfg_fh)
             match_printed = True
-            super(NextGenFirewallRule, self).write_src_match_no_closing_brace(
-                output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent
-            )
+            super().write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
             print(f"{_indent}            }}", file=_cfg_fh)
 
-        if (
-            (len(list(self.dst_zone_map.keys())) > 0)
-            or (len(list(self.dst_addr_map.keys())) > 0)
-            or (len(list(self.dst_addr_grp_map.keys())) > 0)
-        ):
+        dst_conditions = [
+            self.dst_zone_map,
+            self.dst_addr_map,
+            self.dst_addr_grp_map
+        ]
+
+        if any(dst_conditions):
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            super(NextGenFirewallRule, self).write_dst_match_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
+            super().write_dst_match_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
             print(f"{_indent}            }}", file=_cfg_fh)
 
-        if len(self.match_ip_version) > 0:
+        if self.match_ip_version:
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            print(
-                f"{_indent}            # src line {self.match_ip_version_src_line}",
-                file=_cfg_fh,
-            )
             print(f"{_indent}            ip-version {self.match_ip_version}", file=_cfg_fh)
 
         cur_tnt = _vcfg.get_target_tenant(_tnt)
         sh_tnt = cur_tnt.get_shared_tenant()
         predef_app_map = _vcfg.get_predef_app_map()
         predef_uc_map = _vcfg.get_predef_url_cat_map()
-        if len(list(self.application_map.keys())) > 0:
+
+        if self.application_map:
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            print(
-                f"{_indent}            # src line {self.match_ip_version_src_line}",
-                file=_cfg_fh,
-            )
             print(f"{_indent}            application {{", file=_cfg_fh)
 
-            predef_app_list = []
-            user_def_app_list = []
-            user_def_app_grp_list = []
-            for app in list(self.application_map.keys()):
-                if app in list(cur_tnt.application_map.keys()) or (
-                    sh_tnt is not None and app in list(sh_tnt.application_map.keys())
-                ):
-                    user_def_app_list.append(app)
-                elif app in list(cur_tnt.application_group_map.keys()) or (
-                    sh_tnt is not None and app in list(sh_tnt.application_group_map.keys())
-                ):
-                    user_def_app_grp_list.append(app)
-                elif app in list(predef_app_map.keys()):
-                    predef_app_list.append(app)
-                else:
-                    _vcfg.get_logger().error(
-                        f"tenant {_tnt}: while adding application match for rule '{self.name}', no application, group or filter found with name '{app}' in predefined or user-defined "
-                    )
+            predef_app_list = [app for app in self.application_map if app in predef_app_map]
+            user_def_app_list = [app for app in self.application_map if app in cur_tnt.application_map or (sh_tnt is not None and app in sh_tnt.application_map)]
+            user_def_app_grp_list = [app for app in self.application_map if app in cur_tnt.application_group_map or (sh_tnt is not None and app in sh_tnt.application_group_map)]
 
-            if len(predef_app_list) > 0:
-                print(
-                    f"{_indent}                predefined-application-list [ ",
-                    end="",
-                    file=_cfg_fh,
-                )
-                for app in predef_app_list:
-                    print(f" {app.upper()}", end="", file=_cfg_fh)
-                print(" ];", file=_cfg_fh)
-
-            if len(user_def_app_list) > 0:
-                print(
-                    f"{_indent}                user-defined-application-list [ ",
-                    end="",
-                    file=_cfg_fh,
-                )
-                for app in user_def_app_list:
-                    print(f" {app}", end="", file=_cfg_fh)
-                print(" ];", file=_cfg_fh)
-
-            if len(user_def_app_grp_list) > 0:
-                print(f"{_indent}                group-list [ ", end="", file=_cfg_fh)
-                for app in user_def_app_grp_list:
-                    print(f" {app}", end="", file=_cfg_fh)
-                print(" ];", file=_cfg_fh)
+            if predef_app_list:
+                print(f"{_indent}                predefined-application-list [ {' '.join(predef_app_list)} ];", file=_cfg_fh)
+            if user_def_app_list:
+                print(f"{_indent}                user-defined-application-list [ {' '.join(user_def_app_list)} ];", file=_cfg_fh)
+            if user_def_app_grp_list:
+                print(f"{_indent}                group-list [ {' '.join(user_def_app_grp_list)} ];", file=_cfg_fh)
 
             print(f"{_indent}            }}", file=_cfg_fh)
 
-        if len(list(self.url_category_map.keys())) > 0:
+        if self.url_category_map:
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            print(
-                f"{_indent}            # src line {self.match_ip_version_src_line}",
-                file=_cfg_fh,
-            )
             print(f"{_indent}            url-category {{", file=_cfg_fh)
 
-            predef_uc_list = []
-            user_def_uc_list = []
-            for uc in list(self.url_category_map.keys()):
-                uc_convert = uc.replace("-", "_")
-                if uc in list(cur_tnt.url_category_map.keys()) or (
-                    sh_tnt is not None and uc in list(sh_tnt.url_category_map.keys())
-                ):
-                    user_def_uc_list.append(uc)
-                elif uc_convert in list(predef_uc_map.keys()):
-                    predef_uc_list.append(uc_convert)
-                else:
-                    _vcfg.get_logger().error(
-                        f"tenant {_tnt}: while adding url-category match for rule '{self.name}', no url-category, found with name '{uc}' in predefined or user-defined "
-                    )
+            predef_uc_list = [uc.replace("-", "_") for uc in self.url_category_map if uc.replace("-", "_") in predef_uc_map]
+            user_def_uc_list = [uc for uc in self.url_category_map if uc in cur_tnt.url_category_map or (sh_tnt is not None and uc in sh_tnt.url_category_map)]
 
-            if len(predef_uc_list) > 0:
-                print(f"{_indent}                predefined [ ", end="", file=_cfg_fh)
-                for uc in predef_uc_list:
-                    print(f" {uc}", end="", file=_cfg_fh)
-                print(" ];", file=_cfg_fh)
-
-            if len(user_def_uc_list) > 0:
-                print(f"{_indent}                user-defined [ ", end="", file=_cfg_fh)
-                for uc in user_def_uc_list:
-                    print(f" {uc}", end="", file=_cfg_fh)
-                print(" ];", file=_cfg_fh)
+            if predef_uc_list:
+                print(f"{_indent}                predefined [ {' '.join(predef_uc_list)} ];", file=_cfg_fh)
+            if user_def_uc_list:
+                print(f"{_indent}                user-defined [ {' '.join(user_def_uc_list)} ];", file=_cfg_fh)
 
             print(f"{_indent}            }}", file=_cfg_fh)
 

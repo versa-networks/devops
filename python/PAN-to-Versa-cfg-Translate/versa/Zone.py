@@ -4,23 +4,36 @@
 #  This file has the definition of a network address object, that can be used
 #  in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
-#  pylint: disable=invalid-name
 
 from versa.ConfigObject import ConfigObject
 
 
 class Zone(ConfigObject):
-    """Zone
-    the definition of a network address object, that can be used in any policy configuration on the Versa FlexVNF.
+    """
+    Represents a network address object that can be used in any policy configuration on the Versa FlexVNF.
 
-    Args:
-        ConfigObject (_type_): _description_
+    Inherits from ConfigObject.
+
+    Attributes:
+    name (str): The name of the zone.
+    name_src_line (int): The source line where the name was defined.
+    is_predefined (bool): Whether the zone is predefined or not.
+    interface_map (dict): A map of interfaces in the zone.
+    network_map (dict): A map of networks in the zone.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
-        super().__init__(_name, _name_src_line, _is_predefined)
+    def __init__(self, name, name_src_line, is_predefined):
+        """
+        Initialize a Zone instance.
+
+        Parameters:
+        name (str): The name of the zone.
+        name_src_line (int): The source line where the name was defined.
+        is_predefined (bool): Whether the zone is predefined or not.
+        """
+        super().__init__(name, name_src_line, is_predefined)
         self.interface_map = {}
         self.network_map = {}
 
@@ -44,36 +57,24 @@ class Zone(ConfigObject):
     def get_network_map(self):
         return self.network_map
 
-    def write_config(self, _cfg_fh,  _indent, _print_name=True):
-        """write_config _summary_
-
-        Args:
-            _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
-            _indent (_type_): _description_
-            _print_name (bool, optional): _description_. Defaults to True.
+    def write_config(self, cfg_fh, indent, print_name=True):
         """
-        pnflag = _print_name
-        if len(self.interface_map) > 0:
-            if pnflag:
-                print(f"{_indent}    {self.name} {{", file=_cfg_fh)
-            print(f"{_indent}        interface-list [ ", end="", file=_cfg_fh)
-            for k, v in self.interface_map.items():
-                print(f" {k}", end="", file=_cfg_fh)
+        Writes the configuration of the zone to a file.
 
-            print(" ];", file=_cfg_fh)
-            if pnflag:
-                print(f"{_indent}    }}", file=_cfg_fh)
-                pnflag = False
+        Parameters:
+        cfg_fh (file): File handler where the configuration will be written.
+        indent (str): String of spaces for indentation.
+        print_name (bool, optional): If True, print the name of the zone. Defaults to True.
+        """
+        if self.interface_map or self.network_map:
+            if print_name:
+                print(f"{indent}    {self.name} {{", file=cfg_fh)
+                print_name = False
 
-        if len(self.network_map) > 0:
-            if pnflag:
-                print(f"{_indent}    {self.name} {{", file=_cfg_fh)
-            print(f"{_indent}        networks [ ", end="", file=_cfg_fh)
-            for k, v in self.network_map.items():
-                print(f" {k}", end="", file=_cfg_fh)
+            for map_name, map_data in [('interface-list', self.interface_map), ('networks', self.network_map)]:
+                if map_data:
+                    print(f"{indent}        {map_name} [ ", end="", file=cfg_fh)
+                    print(" ".join(map_data.keys()), end="", file=cfg_fh)
+                    print(" ];", file=cfg_fh)
 
-            print(" ];", file=_cfg_fh)
-            if pnflag:
-                print(f"{_indent}    }}", file=_cfg_fh)
-                pnflag = False
+            print(f"{indent}    }}", file=cfg_fh)

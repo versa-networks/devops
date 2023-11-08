@@ -4,24 +4,42 @@
 #  This file has the definition of an application object, that can be used
 #  in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2019, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name
 
 
 from versa.ConfigObject import ConfigObject
 
 
 class URLCategory(ConfigObject):
-    """URLCategory _summary_
+    """
+    Represents a URL category that can be used in any policy configuration on the Versa FlexVNF.
 
-    Args:
-        ConfigObject (_type_): _description_
+    Inherits from ConfigObject.
+
+    Attributes:
+    name (str): The name of the URL category.
+    name_src_line (int): The source line where the name was defined.
+    is_predefined (bool): Whether the URL category is predefined or not.
+    desc (str): The description of the URL category.
+    desc_line (int): The source line where the description was defined.
+    filename (str): The filename of the URL category.
+    filename_line (int): The source line where the filename was defined.
+    host_list (list): A list of hosts in the URL category.
+    pattern_list (list): A list of patterns in the URL category.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
-        super().__init__(_name, _name_src_line, _is_predefined)
+    def __init__(self, name, name_src_line, is_predefined):
+        """
+        Initialize a URLCategory instance.
+
+        Parameters:
+        name (str): The name of the URL category.
+        name_src_line (int): The source line where the name was defined.
+        is_predefined (bool): Whether the URL category is predefined or not.
+        """
+        super().__init__(name, name_src_line, is_predefined)
         self.desc = None
         self.desc_line = None
         self.filename = None
@@ -49,41 +67,34 @@ class URLCategory(ConfigObject):
     def add_pattern(self, _pattern):
         self.pattern_list.append(_pattern)
 
-    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
-        """write_config _summary_
-
-        Args:
-            output_vd_cfg (_type_): _description_
-            _cfg_fh (_type_): _description_
-            _log_fh (_type_): _description_
-            _indent (_type_): _description_
+    def write_config(self, output_vd_cfg, cfg_fh, indent):
         """
-        if output_vd_cfg:
-            vd_str = "url-category "
-        else:
-            vd_str = ""
+        Writes the configuration of the URL category to a file.
 
-        print(f"{_indent}    # src line number {self.name_src_line}", file=_cfg_fh)
-        print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
+        Parameters:
+        output_vd_cfg (bool): If True, prepend "url-category" to the output.
+        cfg_fh (file): File handler where the configuration will be written.
+        indent (str): String of spaces for indentation.
+        """
+        vd_str = "url-category " if output_vd_cfg else ""
+
+        print(f"{indent}    {vd_str}{self.name} {{", file=cfg_fh)
+
         if self.desc is not None:
-            print(f"{_indent}        # src line number {self.desc_line}", file=_cfg_fh)
-            print(f'{_indent}        category-description "{self.desc}";', file=_cfg_fh)
+            print(f'{indent}        category-description "{self.desc}";', file=cfg_fh)
+
         if self.filename is not None:
-            print(f"{_indent}        # src line number {self.filename_line}", file=_cfg_fh)
-            print(f'{_indent}        url-file "{self.filename}";', file=_cfg_fh)
+            print(f'{indent}        url-file "{self.filename}";', file=cfg_fh)
 
-        if len(self.host_list) > 0 or len(self.pattern_list) > 0:
-            print(f"{_indent}        urls {{", file=_cfg_fh)
+        if self.host_list or self.pattern_list:
+            print(f"{indent}        urls {{", file=cfg_fh)
 
-        if len(self.host_list) > 0:
             for h in self.host_list:
-                print(f"{_indent}            strings {h};", file=_cfg_fh)
+                print(f"{indent}            strings {h};", file=cfg_fh)
 
-        if len(self.pattern_list) > 0:
             for p in self.pattern_list:
-                print(f"{_indent}            patterns {p}.*;", file=_cfg_fh)
+                print(f"{indent}            patterns {p}.*;", file=cfg_fh)
 
-        if len(self.host_list) > 0 or len(self.pattern_list) > 0:
-            print(f"{_indent}        }}", file=_cfg_fh)
+            print(f"{indent}        }}", file=cfg_fh)
 
-        print(f"{_indent}    }}", file=_cfg_fh)
+        print(f"{indent}    }}", file=cfg_fh)

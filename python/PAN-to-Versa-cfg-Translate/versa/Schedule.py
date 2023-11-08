@@ -19,18 +19,27 @@ class ScheduleObjectType(Enum):
 
 
 class Schedule(ConfigObject):
-    """Schedule _summary_
+    """
+    Represents a schedule in the configuration.
+
+    This class inherits from ConfigObject and adds additional attributes specific to schedules.
 
     Args:
-        ConfigObject (_type_): _description_
+        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, source line, and predefined flag.
     """
 
     def __init__(self, _name, _name_src_line, _is_predefined, _is_recurring):
+        """
+        Initializes a new instance of the Schedule class.
+
+        Args:
+            _name (str): The name of the schedule.
+            _name_src_line (int): The source line where the name is defined.
+            _is_predefined (bool): A flag indicating whether the schedule is predefined.
+            _is_recurring (bool): A flag indicating whether the schedule is recurring.
+        """
         super().__init__(_name, _name_src_line, _is_predefined)
-        if _is_recurring:
-            self.schedule_type = ScheduleObjectType.RECURRING
-        else:
-            self.schedule_type = ScheduleObjectType.NON_RECURRING
+        self.schedule_type = ScheduleObjectType.RECURRING if _is_recurring else ScheduleObjectType.NON_RECURRING
         self.non_recur_days_times = []
         self.recur_map = {}
 
@@ -47,15 +56,18 @@ class Schedule(ConfigObject):
         self.recur_map = _recur_map
         self.recur_map_src_line = _recur_map_src_line
 
-    def listsAreEqual(self, a, b):
-        """listsAreEqual _summary_
+    def listsAreEqual(self, a, b) -> bool:
+        """
+        Checks if two lists are equal.
+
+        This method checks if two lists are equal by comparing if each element of one list is present in the other.
 
         Args:
-            a (_type_): _description_
-            b (_type_): _description_
+            a (List[Any]): The first list to compare.
+            b (List[Any]): The second list to compare.
 
         Returns:
-            _type_: _description_
+            bool: True if the lists are equal, False otherwise.
         """
         for x in a:
             if x not in b:
@@ -65,80 +77,68 @@ class Schedule(ConfigObject):
                 return False
         return True
 
-    def equals(self, _other):
-        """equals _summary_
+
+    def equals(self, _other: 'Schedule') -> bool:
+        """
+        Checks if the current instance is equal to another instance of the Schedule class.
+
+        This method checks if the current instance is equal to another instance by comparing their schedule types and the keys of their recurring maps or their non-recurring days and times.
 
         Args:
-            _other (_type_): _description_
+            _other (Schedule): The other instance to compare with.
 
         Returns:
-            _type_: _description_
+            bool: True if the instances are equal, False otherwise.
         """
-        if self.schedule_type != _other.schedule_type:
+        if (self.schedule_type != _other.schedule_type):
             return False
-        if self.schedule_type == ScheduleObjectType.RECURRING:
-            if not self.listsAreEqual(list(self.recur_map.keys()), list(_other.recur_map.keys())):
+        if (self.schedule_type == ScheduleObjectType.RECURRING):
+            if (not self.listsAreEqual(self.recur_map.keys(),
+                                       _other.recur_map.keys())):
                 return False
             # XXX-TODO: compare the time stamps of the recurring days
-        elif self.schedule_type == ScheduleObjectType.NON_RECURRING:
-            if not self.listsAreEqual(self.non_recur_days_times, _other.non_recur_days_times):
+        elif (self.schedule_type == ScheduleObjectType.NON_RECURRING):
+            if (not self.listsAreEqual(self.non_recur_days_times,
+                                       _other.non_recur_days_times)):
                 return False
         return True
 
+
     def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
-        """write_config _summary_
+        """
+        Writes the configuration of the schedule to a file.
+
+        This method writes the configuration of the schedule to a file. The configuration is indented by a specified amount and may include a "schedule" prefix depending on the value of `output_vd_cfg`.
 
         Args:
-            output_vd_cfg (_type_): _description_
-            _cfg_fh (_type_): _description_
-            _indent (_type_): _description_
+            output_vd_cfg (bool): If True, a "schedule" prefix is included in the output.
+            _cfg_fh (TextIO): The file handle to write the configuration to.
+            _indent (str): The string to use for indentation.
+
         """
-        if output_vd_cfg:
-            vd_str = "schedule "
-        else:
-            vd_str = ""
-        print(f"{_indent}        {vd_str}{self.name} {{", file=_cfg_fh)
-        if self.schedule_type == ScheduleObjectType.NON_RECURRING:
-            if len(self.non_recur_days_times) > 0:
-                print(f"{_indent}            non-recurring ", end="", file=_cfg_fh)
-                first = True
-                for [nrtime, nrdt_src_line] in self.non_recur_days_times:
-                    if first:
-                        first = False
-                    else:
-                        print(",", end="", file=_cfg_fh)
-                    print(f"{nrtime}", end="", file=_cfg_fh)
-                print(";", file=_cfg_fh)
-        elif self.schedule_type == ScheduleObjectType.RECURRING:
-            if len(self.recur_map) > 0:
-                for rday, rtimes in self.recur_map.items():
-                    print(f"{_indent}            recurring {rday} {{", file=_cfg_fh)
+        vd_str = "schedule " if output_vd_cfg else ""
+        
+        print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
+                                     
+        if self.schedule_type == ScheduleObjectType.NON_RECURRING and self.non_recur_days_times:
+            print(f"{_indent}    non-recurring ", end="", file=_cfg_fh)
+            print(",".join(nrtime for nrtime, _ in self.non_recur_days_times), end="", file=_cfg_fh)
+            print(";", file=_cfg_fh)
 
-                    print(f"{_indent}                # src lines: ", end="", file=_cfg_fh)
-                    for [rtime, rdt_src_line] in rtimes:
-                        print(f"{rdt_src_line} ", end="", file=_cfg_fh)
-                    print("", file=_cfg_fh)
+        elif self.schedule_type == ScheduleObjectType.RECURRING and self.recur_map:
+            for rday, rtimes in self.recur_map.items():
+                print(f"{_indent}    recurring {rday} {{", file=_cfg_fh)
+                print("\n".join(f"{rdt_src_line} " for rtime, rdt_src_line in rtimes if rtime), file=_cfg_fh)
 
-                    if len(rtimes) > 0:
-                        first = True
-                        write_sc = False
-                        for [rtime, rdt_src_line] in rtimes:
-                            if len(rtime) == 0:
-                                continue
-                            write_sc = True
-                            if first:
-                                print(
-                                    f"{_indent}                time-of-day ",
-                                    end="",
-                                    file=_cfg_fh,
-                                )
-                                first = False
-                            else:
-                                print(",", end="", file=_cfg_fh)
-                            print(f"{rtime}", end="", file=_cfg_fh)
-                        if write_sc:
-                            print(";", file=_cfg_fh)
+                if rtimes:
+                    print(
+                        f"{_indent}    time-of-day ",
+                        ",".join(rtime for rtime, _ in rtimes if rtime),
+                        ";",
+                        sep="",
+                        file=_cfg_fh,
+                    )
 
-                    print(f"{_indent}            }}", file=_cfg_fh)
+                print(f"{_indent}    }}", file=_cfg_fh)
 
-        print(f"{_indent}        }}", file=_cfg_fh)
+        print(f"{_indent}}}", file=_cfg_fh)

@@ -3,24 +3,18 @@
 #
 #  This file has the definition of a firewall rule.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
-#
-#  pylint: disable=invalid-name
-
 
 from enum import Enum
 from versa.ConfigObject import ConfigObject
 
 
 class FirewallRuleAction(Enum):
-    """FirewallRuleAction _summary_
+    """
+    Enumeration for firewall rule actions.
 
-    Args:
-        Enum (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    This enumeration defines the possible actions that a firewall rule can take: ALLOW, DENY, and REJECT.
     """
 
     ALLOW = 1
@@ -28,14 +22,15 @@ class FirewallRuleAction(Enum):
     REJECT = 3
 
     @staticmethod
-    def get_action_string(_action):
-        """get_action_string _summary_
+    def get_action_string(_action: 'FirewallRuleAction') -> str:
+        """
+        Returns the string representation of a firewall rule action.
 
         Args:
-            _action (_type_): _description_
+            _action (FirewallRuleAction): The firewall rule action.
 
         Returns:
-            _type_: _description_
+            str: The string representation of the firewall rule action. If the action is not ALLOW or REJECT, it returns "deny".
         """
         if _action == FirewallRuleAction.ALLOW:
             return "allow"
@@ -46,13 +41,24 @@ class FirewallRuleAction(Enum):
 
 
 class FirewallRule(ConfigObject):
-    """FirewallRule _summary_
+    """
+    Represents a firewall rule in the configuration.
+
+    This class inherits from ConfigObject and adds additional attributes specific to firewall rules, such as source and destination zones, addresses, address groups, and services, as well as the action to be taken when the rule matches.
 
     Args:
-        ConfigObject (_type_): _description_
+        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, source line, and predefined flag.
     """
 
     def __init__(self, _name, _name_src_line, _is_predefined):
+        """
+        Initializes a new instance of the FirewallRule class.
+
+        Args:
+            _name (str): The name of the firewall rule.
+            _name_src_line (int): The source line where the name is defined.
+            _is_predefined (bool): A flag indicating whether the rule is predefined.
+        """
         super().__init__(_name, _name_src_line, _is_predefined)
         self.src_zone_map = {}
         self.dst_zone_map = {}
@@ -73,7 +79,6 @@ class FirewallRule(ConfigObject):
         self.desc_src_line = 0
         self.match_ip_version = ""
         self.match_ip_version_src_line = 0
-        # changes below
         self.tag = ""
 
     def set_tenant(self, _tnt):
@@ -82,7 +87,6 @@ class FirewallRule(ConfigObject):
     def get_tenant(self):
         return self.tenant
 
-    # changes below
     def set_tag(self, _tag):
         self.tag = _tag
 
@@ -106,11 +110,14 @@ class FirewallRule(ConfigObject):
         else:
             self.src_zone_map[_src_zone] = [_src_zone_src_line]
 
-    def add_dst_zone(self, _dst_zone, _dst_zone_src_line):
-        if _dst_zone in self.dst_zone_map:
-            self.dst_zone_map[_dst_zone].extend([_dst_zone_src_line])
-        else:
-            self.dst_zone_map[_dst_zone] = [_dst_zone_src_line]
+    def add_dst_zone(self, _dst_zone: str, _dst_zone_src_line) -> None:
+        """Adds a destination zone to the destination zone map.
+
+        Args:
+            _dst_zone (str): The name of the destination zone.
+            _dst_zone_src_line (int): The source line where the destination zone is defined.
+        """
+        self.dst_zone_map.setdefault(_dst_zone, []).append(_dst_zone_src_line)
 
     def get_src_zone_map(self):
         return self.src_zone_map
@@ -178,64 +185,55 @@ class FirewallRule(ConfigObject):
     def set_dst_addr_region_map(self, _dst_addr_region_map):
         self.dst_addr_region_map = _dst_addr_region_map
 
-    def replace_address_by_address_group(self, _address_group):
-        """replace_address_by_address_group _summary_
+    def replace_address_by_address_group(self, _address_group: str) -> None:
+        """Replaces an address in the source and destination address maps with an address group.
 
         Args:
-            _address_group (_type_): _description_
+            _address_group (str): The name of the address group.
         """
         if _address_group in self.src_addr_map:
-            addr_grp_line = self.src_addr_map[_address_group]
-            del self.src_addr_map[_address_group]
-            self.src_addr_grp_map[_address_group] = addr_grp_line
+            self.src_addr_grp_map[_address_group] = self.src_addr_map.pop(_address_group)
         if _address_group in self.dst_addr_map:
-            addr_grp_line = self.dst_addr_map[_address_group]
-            del self.dst_addr_map[_address_group]
-            self.dst_addr_grp_map[_address_group] = addr_grp_line
+            self.dst_addr_grp_map[_address_group] = self.dst_addr_map.pop(_address_group)
 
-    def replace_address(self, _aname, _new_aname):
-        """replace_address _summary_
+    def replace_address(self, _aname: str, _new_aname: str) -> None:
+        """Replaces an address in the source and destination address maps with a new address.
 
         Args:
-            _aname (_type_): _description_
-            _new_aname (_type_): _description_
+            _aname (str): The name of the address to be replaced.
+            _new_aname (str): The name of the new address.
         """
         if _aname in self.src_addr_map:
-            aline = self.src_addr_map[_aname]
-            del self.src_addr_map[_aname]
-            self.src_addr_map[_new_aname] = aline
+            self.src_addr_map[_new_aname] = self.src_addr_map.pop(_aname)
         if _aname in self.dst_addr_map:
-            aline = self.dst_addr_map[_aname]
-            del self.dst_addr_map[_aname]
-            self.dst_addr_map[_new_aname] = aline
+            self.dst_addr_map[_new_aname] = self.dst_addr_map.pop(_aname)
 
     def replace_address_group(self, _agname, _new_agname):
-        """replace_address_group _summary_
+        """
+        Replaces an address group in the source and destination address group maps with a new address group.
 
         Args:
-            _agname (_type_): _description_
-            _new_agname (_type_): _description_
+            _agname (str): The name of the address group to be replaced.
+            _new_agname (str): The name of the new address group.
+
+        This method checks if the address group to be replaced is in the source and destination address group maps. If it is, the method deletes it from the map and adds the new address group with the same line number.
         """
-        if _agname in self.src_addr_map:
-            aline = self.src_addr_grp_map[_agname]
-            del self.src_addr_grp_map[_agname]
-            self.src_addr_grp_map[_new_agname] = aline
+        if _agname in self.src_addr_grp_map:
+            self.src_addr_grp_map[_new_agname] = self.src_addr_grp_map.pop(_agname)
         if _agname in self.dst_addr_grp_map:
-            aline = self.dst_addr_grp_map[_agname]
-            del self.dst_addr_grp_map[_agname]
-            self.dst_addr_grp_map[_new_agname] = aline
+            self.dst_addr_grp_map[_new_agname] = self.dst_addr_grp_map.pop(_agname)
 
     def add_service(self, _service, _service_src_line):
-        """add_service _summary_
+        """
+        Adds a service to the service map.
 
         Args:
-            _service (_type_): _description_
-            _service_src_line (_type_): _description_
+            _service (str): The service to be added. If it's a string, it's used directly. If it's a Service object, its name is used.
+            _service_src_line (int): The source line where the service is defined.
+
+        This method checks the type of the _service parameter. If it's a string, it uses it directly. If it's a Service object, it uses its name. Then it adds the service to the service map with the source line as the value.
         """
-        if type(_service) == type(""):
-            _svc = _service
-        else:
-            _svc = _service.name
+        _svc = _service if isinstance(_service, str) else _service.name
         self.service_map[_svc] = _service_src_line
 
     def get_service_map(self):
@@ -245,17 +243,14 @@ class FirewallRule(ConfigObject):
         self.service_map = _service_map
 
     def replace_service_group_by_service_members(self, _service_group):
-        """replace_service_group_by_service_members _summary_
+        """Replaces a service group in the service map with its service members.
 
         Args:
-            _service_group (_type_): _description_
+            _service_group (ServiceGroup): The service group to be replaced.
         """
         if _service_group.name in self.service_map:
-            svc_grp_line = self.service_map[_service_group.name]
-            del self.service_map[_service_group.name]
-            for svc in list(_service_group.service_map.keys()):
-                print(f"Firewall rule {self.name}: Replacing service group {_service_group.name} with member {svc}")
-                self.service_map[svc] = svc_grp_line
+            svc_grp_line = self.service_map.pop(_service_group.name)
+            self.service_map.update({svc: svc_grp_line for svc in _service_group.service_map.keys()})
 
     def replace_service(self, _sname, _new_sname):
         if _sname in self.service_map:
@@ -295,139 +290,76 @@ class FirewallRule(ConfigObject):
             self.schedule = _sname
 
     def write_rule_open(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
-        """write_rule_open _summary_
+        """
+        Writes the opening of a firewall rule to a file.
 
         Args:
-            output_vd_cfg (_type_): _description_
-            _vcfg (_type_): _description_
-            _tnt (_type_): _description_
-            _cfg_fh (_type_): _description_
+            output_vd_cfg (bool): A flag indicating whether the output virtual directory configuration is present.
+            _vcfg (dict): The configuration of the virtual circuit.
+            _tnt (str): The tenant name.
+            _cfg_fh (file object): The file handler where the rule opening will be written.
+            _indent (str): The indentation to be used in the output file.
 
-            _indent (_type_): _description_
+        This method writes the name, description, and tag of a firewall rule to a file. Each of these elements is written only 
+        if it is not empty. The output is formatted with the provided indentation. If the output virtual directory configuration 
+        is present, an "access-policy" prefix is added to the rule name.
         """
-        if output_vd_cfg:
-            vd_str = "access-policy "
-        else:
-            vd_str = ""
-        #print("%s    # src line %d" % (_indent, self.name_src_line), file=_cfg_fh)
-        print("%s    %s%s {" % (_indent, vd_str, self.name), file=_cfg_fh)
+        vd_str = "access-policy " if output_vd_cfg else ""
+        print(f"{_indent}    {vd_str}{self.name} {{", file=_cfg_fh)
         if len(self.desc) > 0:
-            print("%s    # %d" % (_indent, self.desc_src_line), file=_cfg_fh)
-            print('%s    description "%s";' % (_indent, self.desc), file=_cfg_fh)
-
-        # Changes Below
+            print(f'{_indent}    description "{self.desc}";', file=_cfg_fh)
         if len(self.tag) > 0:
-            print('%s   tag "%s";' % (_indent, self.tag), file=_cfg_fh)
+            print(f'{_indent}   tag "{self.tag}";', file=_cfg_fh)
 
     def write_src_match_no_closing_brace(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
-        """write_src_match_no_closing_brace _summary_
+        """
+        Writes the source match of a firewall rule to a file without a closing brace.
 
         Args:
-            output_vd_cfg (_type_): _description_
-            _vcfg (_type_): _description_
-            _tnt (_type_): _description_
-            _cfg_fh (_type_): _description_
+            output_vd_cfg (dict): The configuration of the output virtual directory.
+            _vcfg (dict): The configuration of the virtual circuit.
+            _tnt (str): The tenant name.
+            _cfg_fh (file object): The file handler where the source match will be written.
+            _indent (str): The indentation to be used in the output file.
 
-            _indent (_type_): _description_
+        This method writes the schedule, services, source zone, source addresses, source address groups, 
+        and source address regions of a firewall rule to a file. Each of these elements is written only 
+        if it is not empty. The output is formatted with the provided indentation.
         """
         if self.schedule is not None:
-            print("", file=_cfg_fh)
-            if self.schedule_line > 0:
-                print("%s            # src line: %d;" % (_indent, self.schedule_line), file=_cfg_fh)
-            else:
-                print("%s            # src line: none (implicit)" % (_indent), file=_cfg_fh)
-
-            print("%s            schedule %s;" % (_indent, self.schedule), file=_cfg_fh)
-            print("", file=_cfg_fh)
+            schedule = f"{_indent}            schedule {self.schedule};"
+            print(f"\n{schedule}\n\n",file=_cfg_fh)
 
         if len(self.service_map) > 0:
-            print("%s            services {" % (_indent), file=_cfg_fh)
+            services = [svc if isinstance(svc, str) else svc.name for svc, svc_line in self.service_map.items()]
+            print(f"{_indent}            services {{", file=_cfg_fh)
+            print(f"{_indent}                services-list [ {' '.join(services)} ];", file=_cfg_fh)
+            print(f"{_indent}            }}", file=_cfg_fh)
 
-            #print("%s                # src lines:" % (_indent), end="", file=_cfg_fh)
-            for svc, svc_line in self.service_map.items():
-                print(" ", end="", file=_cfg_fh)
-                #print(svc_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
-
-            print("%s                services-list [" % (_indent), end="", file=_cfg_fh)
-
-            for svc, svc_line in self.service_map.items():
-                print(" ", end="", file=_cfg_fh)
-                if type(svc) == type(""):
-                    print(svc, end="", file=_cfg_fh)
-                else:
-                    print(svc.name, end="", file=_cfg_fh)
-
-            print(" ];", file=_cfg_fh)
-
-            print("%s            }" % (_indent), file=_cfg_fh)
-
-        print("%s            source {" % (_indent), file=_cfg_fh)
+        print(f"{_indent}            source {{", file=_cfg_fh)
         if len(self.src_zone_map) > 0:
-            print("%s                zone {" % (_indent), file=_cfg_fh)
-
-            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
-            for zone, zone_line in self.src_zone_map.items():
-                print(" ", end="", file=_cfg_fh)
-                #print(zone_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
-
-            print("%s                    zone-list [" % (_indent), end="", file=_cfg_fh)
-
-            for zone, zone_line in self.src_zone_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(zone, end="", file=_cfg_fh)
-
-            print(" ];", file=_cfg_fh)
-            print("%s                }" % (_indent), file=_cfg_fh)
+            zones = ' '.join(zone for zone, zone_line in self.src_zone_map.items())
+            print(f"{_indent}                zone {{", file=_cfg_fh)
+            print(f"{_indent}                    zone-list [ {zones} ];", file=_cfg_fh)
+            print(f"{_indent}                }}", file=_cfg_fh)
 
         if len(self.src_addr_map) > 0 or len(self.src_addr_grp_map) > 0:
-            print("%s                address {" % (_indent), file=_cfg_fh)
+            print(f"{_indent}                address {{", file=_cfg_fh)
 
         if len(self.src_addr_map) > 0:
-            print("", file=_cfg_fh)
-            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
-            for addr, addr_line in self.src_addr_map.items():
-                print(" ", end="", file=_cfg_fh)
-                #print(addr_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
-
-            print("%s                    address-list [" % (_indent), end="", file=_cfg_fh)
-
-            for addr, addr_line in self.src_addr_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr, end="", file=_cfg_fh)
-
-            print(" ];", file=_cfg_fh)
-            print("", file=_cfg_fh)
+            addresses = ' '.join(addr for addr, addr_line in self.src_addr_map.items())
+            print(f"{_indent}                    address-list [ {addresses} ];", file=_cfg_fh)
 
         if len(self.src_addr_grp_map) > 0:
-            print("", file=_cfg_fh)
-            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
-            for addr_grp, addr_grp_line in self.src_addr_grp_map.items():
-                print(" ", end="", file=_cfg_fh)
-                #print(addr_grp_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
-
-            print("%s                    address-group-list [" % (_indent), end="", file=_cfg_fh)
-
-            for addr_grp, addr_grp_line in self.src_addr_grp_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr_grp, end="", file=_cfg_fh)
-
-            print(" ];", file=_cfg_fh)
-            print("", file=_cfg_fh)
+            addr_groups = ' '.join(addr_grp for addr_grp, addr_grp_line in self.src_addr_grp_map.items())
+            print(f"{_indent}                    address-group-list [ {addr_groups} ];", file=_cfg_fh)
 
         if len(self.src_addr_map) > 0 or len(self.src_addr_grp_map) > 0:
-            print("%s                }" % (_indent), file=_cfg_fh)
+            print(f"{_indent}                }}", file=_cfg_fh)
 
         if len(self.src_addr_region_map) > 0:
-            print("%s                region [" % (_indent), end="", file=_cfg_fh)
-            for r, r_line in self.src_addr_region_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(r, end="", file=_cfg_fh)
-            print(" ];", file=_cfg_fh)
-            print("", file=_cfg_fh)
+            regions = ' '.join(region for region, region_line in self.src_addr_region_map.items())
+            print(f"{_indent}                region [ {regions} ];", file=_cfg_fh)
 
     def write_dst_match_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
         """write_dst_match_no_closing_brace _summary_
@@ -437,98 +369,64 @@ class FirewallRule(ConfigObject):
             _cfg_fh (_type_): _description_
             _indent (_type_): _description_
         """
-        print("%s            destination {" % (_indent), file=_cfg_fh)
+        print(f"{_indent}            destination {{", file=_cfg_fh)
         if len(self.dst_zone_map) > 0:
-            print("%s                zone {" % (_indent), file=_cfg_fh)
+            print(f"{_indent}                zone {{", file=_cfg_fh)
 
-            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
-            for zone, zone_line in self.dst_zone_map.items():
-                print(" ", end="", file=_cfg_fh)
-                #print(zone_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
-
-            print("%s                    zone-list [" % (_indent), end="", file=_cfg_fh)
+            print(f"{_indent}                    zone-list [", end="", file=_cfg_fh)
 
             for zone, zone_line in self.dst_zone_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(zone, end="", file=_cfg_fh)
+                print(f" {zone}", end="", file=_cfg_fh)
 
-            print(" ];", file=_cfg_fh)
-            print("%s                }" % (_indent), file=_cfg_fh)
+            print(f" ];", file=_cfg_fh)
+            print(f"{_indent}                }}", file=_cfg_fh)
 
-        if len(self.dst_addr_map) > 0 or len(self.dst_addr_grp_map) > 0:
-            print("%s                address {" % (_indent), file=_cfg_fh)
+        if self.dst_addr_map or self.dst_addr_grp_map:
+            print(f"{_indent}                address {{", file=_cfg_fh)
 
         if len(self.dst_addr_map) > 0:
-            print("", file=_cfg_fh)
-            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
-            for addr, addr_line in self.dst_addr_map.items():
-                print(" ", end="", file=_cfg_fh)
-               #print(addr_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
-
-            print("%s                    address-list [" % (_indent), end="", file=_cfg_fh)
+            print(f"{_indent}                    address-list [", end="", file=_cfg_fh)
 
             for addr, addr_line in self.dst_addr_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr, end="", file=_cfg_fh)
+                print(f" {addr}", end="", file=_cfg_fh)
 
-            print(" ];", file=_cfg_fh)
-            print("", file=_cfg_fh)
+            print(f" ];", file=_cfg_fh)
+
 
         if len(self.dst_addr_grp_map) > 0:
-            print("", file=_cfg_fh)
-            #print("%s                    # src lines:" % (_indent), end="", file=_cfg_fh)
-            for addr_grp, addr_grp_line in self.dst_addr_grp_map.items():
-                print(" ", end="", file=_cfg_fh)
-                #print(addr_grp_line, end="", file=_cfg_fh)
-            print("", file=_cfg_fh)
-
-            print("%s                    address-group-list [" % (_indent), end="", file=_cfg_fh)
+            print(f"{_indent}                    address-group-list [", end="", file=_cfg_fh)
 
             for addr_grp, addr_grp_line in self.dst_addr_grp_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(addr_grp, end="", file=_cfg_fh)
+                print(f" {addr_grp}", end="", file=_cfg_fh)
 
             print(" ];", file=_cfg_fh)
-            print("", file=_cfg_fh)
 
-        if len(self.dst_addr_map) > 0 or len(self.dst_addr_grp_map) > 0:
-            print("%s                }" % (_indent), file=_cfg_fh)
+        if self.dst_addr_map or self.dst_addr_grp_map:
+            print(f"{_indent}                }}", file=_cfg_fh)
 
-        if len(self.dst_addr_region_map) > 0:
-            print("%s                region [" % (_indent), end="", file=_cfg_fh)
-            for r, r_line in self.dst_addr_region_map.items():
-                print(" ", end="", file=_cfg_fh)
-                print(r, end="", file=_cfg_fh)
+        if self.dst_addr_region_map:
+            print(f"{_indent}                region [", end="", file=_cfg_fh)
+            for r in self.dst_addr_region_map.keys():
+                print(f" {r}", end="", file=_cfg_fh)
             print(" ];", file=_cfg_fh)
             print("", file=_cfg_fh)
+    
+    def write_set_no_closing_brace(self, output_vd_cfg: bool, _cfg_fh,  _indent: str) -> None:
+        """
+        Writes a part of the firewall rule configuration to a file without a closing brace.
 
-    def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
-        """write_set_no_closing_brace _summary_
+        This method writes a part of the firewall rule configuration to a file. The configuration is indented by a specified amount and does not include a closing brace.
 
         Args:
-            output_vd_cfg (_type_): _description_
-            _cfg_fh (_type_): _description_
-            _indent (_type_): _description_
+            output_vd_cfg (bool): A flag indicating whether to output the virtual device configuration.
+            _cfg_fh (TextIO): The file handle to write the configuration to.
+            _indent (str): The string to use for indentation.
         """
-        print("%s        set {" % (_indent), file=_cfg_fh)
-
-        #if self.action_line > 0:
-        #    print("%s            # src line: %d;" % (_indent, self.action_line), file=_cfg_fh)
-        #else:
-        #    print("%s            # src line: none (implicit)" % (_indent), file=_cfg_fh)
-
-        print(
-            "%s            action %s;" % (_indent, FirewallRuleAction.get_action_string(self.action)),
-            file=_cfg_fh,
-        )
-
-        print("%s            lef {" % (_indent), file=_cfg_fh)
-        print("%s                profile Default-Logging-Profile;" % (_indent), file=_cfg_fh)
-        # print('%s                event end;' % ( _indent ),
-        #      file=_cfg_fh)
-        print("%s            }" % (_indent), file=_cfg_fh)
+        print(f"{_indent}        set {{",file=_cfg_fh)
+        print(f"{_indent}            action {FirewallRuleAction.get_action_string(self.action)};", file=_cfg_fh)
+        print(f"{_indent}            lef {{",file=_cfg_fh)
+        print(f"{_indent}                profile Default-Logging-Profile;",file=_cfg_fh)
+        print(f"{_indent}            }}",file=_cfg_fh)
 
     def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
         """write_config _summary_
@@ -540,7 +438,7 @@ class FirewallRule(ConfigObject):
             _cfg_fh (_type_): _description_
             _indent (_type_): _description_
         """
-        write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
+        self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
         match_printed = False
 
         if (
@@ -548,10 +446,10 @@ class FirewallRule(ConfigObject):
             or (len(list(self.src_addr_map.keys())) > 0)
             or (len(list(self.src_addr_grp_map.keys())) > 0)
         ):
-            print("%s        match {" % (_indent), file=_cfg_fh)
+            print(f"{_indent}        match {{", file=_cfg_fh)
             match_printed = True
-            write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
-            print("%s            }" % (_indent), file=_cfg_fh)
+            self.write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
+            print(f"{_indent}            }}", file=_cfg_fh)
 
         if (
             (len(list(self.dst_zone_map.keys())) > 0)
@@ -559,22 +457,17 @@ class FirewallRule(ConfigObject):
             or (len(list(self.dst_addr_grp_map.keys())) > 0)
         ):
             if not match_printed:
-                print("%s        match {" % (_indent), file=_cfg_fh)
+                print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            write_dst_match_no_closing_braceoutput_vd_cfg, (_cfg_fh,  _indent)
-            print("%s            }" % (_indent), file=_cfg_fh)
+            self.write_dst_match_no_closing_braceoutput_vd_cfg(_cfg_fh,  _indent)
+            print(f"{_indent}            }}", file=_cfg_fh)
 
-        if len(self.match_ip_version) > 0:
-            print(
-                "%s            # src line %d" % (_indent, self.match_ip_version_src_line),
-                file=_cfg_fh,
-            )
-            print("%s            ip-version %s" % (_indent, self.match_ip_version), file=_cfg_fh)
+        if self.match_ip_version:
+            print(f"{_indent}            ip-version {self.match_ip_version}", file=_cfg_fh)
 
         if match_printed:
-            print("%s        }" % (_indent), file=_cfg_fh)
+            print(f"{_indent}        }}", file=_cfg_fh)
 
-        write_set_no_closing_braceoutput_vd_cfg, (_cfg_fh,  _indent)
-        print("%s        }" % (_indent), file=_cfg_fh)
-
-        print("%s    }" % (_indent), file=_cfg_fh)
+        self.write_set_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
+        print(f"{_indent}        }}", file=_cfg_fh)
+        print(f"{_indent}    }}", file=_cfg_fh)
