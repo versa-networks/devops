@@ -18,7 +18,7 @@ from csv import reader
 from datetime import datetime
 from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
-import lxml.etree as ET
+from lxml import etree as ET
 
 import versa
 from versa.Address import Address, AddressType
@@ -211,10 +211,22 @@ def the_logger(args: Namespace) -> logging.Logger:
         print(f"Error: Unable to create logger with {log_path}")
         print(f"Error Details: {e}")
         sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"Error: Unable to create logger with {log_path}")
+        print(f"Error Details: {e}")
+        sys.exit(1)
+    except PermissionError as e:
+        print(f"Error: Unable to create logger with {log_path}")
+        print(f"Error Details: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: Unable to create logger with {log_path}")
+        print(f"Error Details: {e}")
+        sys.exit(1)
     return logger
 
 
-def create_output_dir(args: Namespace) -> bool:
+def create_output_dir(args: Namespace) -> str:
     """
     Create the output directory if it doesn't exist.
 
@@ -222,25 +234,30 @@ def create_output_dir(args: Namespace) -> bool:
         args (Namespace): Command-line arguments.
 
     Returns:
-        bool: True if the output directory exists or was created, False otherwise.
+        str: The path to the output directory.
     """
     if not args.output_dir:
         print("Error: Please specify the output directory path")
-        return False
+        sys.exit(1)
 
     try:
-        if os.path.isdir(args.output_dir):
-            return True
-        os.mkdir(args.output_dir)
-        return True
+        output_dir = os.path.abspath(args.output_dir)
+
+        if os.path.isdir(output_dir):
+            print(f"Output directory already exists: {output_dir}")
+            return output_dir
+
+        print(f"Creating output directory: {output_dir}")
+        os.mkdir(output_dir)
+        return output_dir
     except OSError as e:
-        print(f"Error creating output directory: {args.output_dir}")
+        print(f"Error creating output directory: {output_dir}")
         print(f"Error Details: {e}")
         print("Please enter a valid directory path where the output files will be written")
-        return False
+        sys.exit(1)
 
 
-def open_3rd_party_config_file(args: Namespace):
+def open_3rd_party_config_file(args: Namespace) -> Optional[ET.Element]:
     """Open and parse an XML file.
 
     Args:
@@ -252,22 +269,24 @@ def open_3rd_party_config_file(args: Namespace):
     try:
         with open(args.pan_config_file, "r", encoding="utf-8") as xml_file:
             xml_tree = ET.parse(xml_file)
-            xml_root = xml_tree.getroot()
-            return xml_root
+            return xml_tree.getroot()
     except FileNotFoundError:
         print(f"Error: input file {args.pan_config_file} not found")
-    except Exception as e:
+    except ET.ParseError as e:
         print(f"Error: unable to parse XML input file {args.pan_config_file}")
         print(f"Error Details: {e}")
+    except Exception as e:
+        print(f"Error: Unexpected error with file {args.pan_config_file}")
+        print(f"Error Details: {e}")
     return None
+    
 
-
-def create_zone_interface_file(args: argparse.Namespace, xml_root):
+def create_zone_interface_file(args: argparse.Namespace, xml_root) -> None:
     """Create a CSV file containing zone and interface information.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-        xml_root (lxml.etree.Element): Root element of the XML tree.
+        xml_root (ET.Element): Root element of the XML tree.
     """
     if not args.zone_file:
         return
@@ -280,19 +299,19 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
             )
 
             zone_list: List[Dict[str, Union[str, int]]] = []
-            count = 0
+            count: int = 0
 
             for element in xml_root.xpath(".//*[devices]/descendant::zone", namespaces=xml_root.nsmap):
                 for subelements in element:
-                    zone_name = subelements.get("name").upper()
+                    zone_name: str = subelements.get("name").upper()
                     for k in subelements.iter("member"):
-                        pan_interface = k.text
+                        pan_interface: str = k.text
 
                         if any(row["3rd_Party_Zone_Name"] == zone_name for row in zone_list):
                             continue
 
                         match = re.search(r"\.\d{1,10}", pan_interface)
-                        matched_text = match.group(0) if match else ""
+                        matched_text: str = match.group(0) if match else ""
 
                         versa_paired_interface_name = ""
 
@@ -305,7 +324,7 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
                         else:
                             versa_interface_name = f"vni-0/{count}.0"
 
-                        row = {
+                        row: Dict[str, str] = {
                             "3rd_Party_Interface": pan_interface,
                             "3rd_Party_Zone_Name": zone_name,
                             "Versa_Zone_Name": f"{args.org_name}-{zone_name}",
@@ -508,13 +527,9 @@ def open_output_files(args: Namespace) -> Tuple[str, TextIO]:
     """
     pan_config_file_name = os.path.splitext(os.path.basename(args.pan_config_file))[0]
     outfile = os.path.join(args.output_dir, f"{pan_config_file_name}.cfg")
-    # csv_outfile = os.path.join(args.output_dir, f"{pan_config_file_name}.csv")
-    # logfile = os.path.join(args.output_dir, f"{pan_config_file_name}.json")
 
     try:
         out_fh = open(outfile, "w", encoding="utf-8")
-        # csv_out_fh = open(csv_outfile, "w", encoding="utf-8")
-        # log_fh = open(logfile, "w", encoding="utf-8")
     except OSError as e:
         print(f"Error: unable to open output files for writing")
         print(f"Error Details: {e}")
@@ -1394,6 +1409,14 @@ def main(args_list: list) -> bool:
         if template_data:
             args.template_name, args.org_name, args.org_services, args.service_node_groups = template_data
 
+    if args.create_interface_list:
+        print("Creating zone to interface file")
+        create_zone_interface_file(args, xml_root)
+        print("!!!Created zone/interface file!!!")
+        print(f"!!!Edit {args.zone_file} then run script again without -cil!!!")
+        print("Exiting...")
+        return False   
+    
     print("Importing predefined files...")
     app_csv, app_fh = open_predefined_applications(args)
     url_root = open_predefined_URL_categories_XML(args)
