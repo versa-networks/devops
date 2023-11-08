@@ -257,7 +257,7 @@ def create_output_dir(args: Namespace) -> str:
         sys.exit(1)
 
 
-def open_3rd_party_config_file(args: Namespace) -> Optional[ET.Element]:
+def open_3rd_party_config_file(args: Namespace):
     """Open and parse an XML file.
 
     Args:
@@ -324,7 +324,7 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root) -> None:
                         else:
                             versa_interface_name = f"vni-0/{count}.0"
 
-                        row: Dict[str, str] = {
+                        row = {
                             "3rd_Party_Interface": pan_interface,
                             "3rd_Party_Zone_Name": zone_name,
                             "Versa_Zone_Name": f"{args.org_name}-{zone_name}",
