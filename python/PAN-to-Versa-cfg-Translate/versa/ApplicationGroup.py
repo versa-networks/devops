@@ -4,10 +4,8 @@
 #  This file has the definition of an application group object, that can be
 #  used in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2019, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
-#
-#  pylint: disable=invalid-name
 
 
 from versa.ConfigObject import ConfigObject
@@ -32,6 +30,7 @@ class ApplicationGroup(ConfigObject):
     get_all_app_list(app_grp, predef_app_list, user_def_app_list): Gets all applications in the application group and its child groups.
     write_config(output_vd_cfg, _cfg_fh, _indent): Writes the configuration of the application group to a file.
     """
+
     def __init__(self, name, name_src_line, is_predefined):
         """
         Initialize an ApplicationGroup instance.
@@ -88,7 +87,7 @@ class ApplicationGroup(ConfigObject):
         for child_app_grp, child_app_grp_line in app_grp.application_group_map.items():
             self.get_all_app_list(child_app_grp, predef_app_list, user_def_app_list)
 
-    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
+    def write_config(self, output_vd_cfg, _cfg_fh, _indent):
         """
         Writes the configuration of the application group to a file.
 
@@ -109,14 +108,15 @@ class ApplicationGroup(ConfigObject):
         self.get_all_app_list(self, predef_app_list, user_def_app_list)
 
         if predef_app_list:
-            apps = ' '.join(a.name.upper() for a in predef_app_list)
+            apps = " ".join(a.name.upper() for a in predef_app_list)
             print(f"{_indent}    predefined-application-list [ {apps} ];", file=_cfg_fh)
         if user_def_app_list:
-            apps = ' '.join(a.name for a in user_def_app_list)
+            apps = " ".join(a.name for a in user_def_app_list)
             print(f"{_indent}    user-defined-application-list [ {apps} ];", file=_cfg_fh)
 
         print(f"{_indent}}}", file=_cfg_fh)
         return
+
 
 """
 #Unused

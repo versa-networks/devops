@@ -51,7 +51,6 @@ class ServiceGroup(ConfigObject):
             addr_grp_line = self.service_map.pop(service_group)
             self.service_group_map[service_group] = addr_grp_line
 
-
     def write_config(self, cfg_fh, indent):
         """
         Writes the configuration of the service group to a file.

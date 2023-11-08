@@ -4,7 +4,7 @@
 #  This file has the definition of an application object, that can be used
 #  in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2019, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
 
@@ -16,7 +16,7 @@ class Application(ConfigObject):
     """
     Represents an application object that can be used in any policy configuration on the Versa FlexVNF.
 
-    The Application class inherits from the ConfigObject class and adds additional attributes and methods related to 
+    The Application class inherits from the ConfigObject class and adds additional attributes and methods related to
     the specific needs of an application object.
 
     Attributes:
@@ -61,8 +61,7 @@ class Application(ConfigObject):
         if _desc_line is not None:
             self.desc_line = _desc_line
 
-
-    def write_config(self, output_vd_cfg: bool, _cfg_fh: TextIO,  _indent: str) -> None:
+    def write_config(self, output_vd_cfg: bool, _cfg_fh: TextIO, _indent: str) -> None:
         """Writes the configuration of the Application object to a file.
 
         Args:
@@ -71,9 +70,8 @@ class Application(ConfigObject):
             _indent (str): The indentation to use when writing the configuration.
         """
         vd_str = "user-defined-application " if output_vd_cfg else ""
-                
+
         print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
-        if (self.desc is not None):
+        if self.desc is not None:
             print(f'{_indent}    description "{self.desc}";', file=_cfg_fh)
         print(f"{_indent}}}", file=_cfg_fh)
-

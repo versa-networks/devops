@@ -4,10 +4,10 @@
 #  This file has the definition of an application filter object, that can be
 #  used in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2019, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name
+
 from typing import Any, Dict, TextIO
 from versa.ConfigObject import ConfigObject
 
@@ -16,7 +16,7 @@ class ApplicationFilter(ConfigObject):
     """
     Represents an application filter object that can be used in any policy configuration on the Versa FlexVNF.
 
-    The ApplicationFilter class inherits from the ConfigObject class and adds additional attributes and methods related to 
+    The ApplicationFilter class inherits from the ConfigObject class and adds additional attributes and methods related to
     the specific needs of an application filter object.
 
     Attributes:
@@ -62,7 +62,7 @@ class ApplicationFilter(ConfigObject):
         """Sets the application filter map of the ApplicationFilter object."""
         self.application_filter_map = _application_filter_map
 
-    def write_config(self, output_vd_cfg: bool, _cfg_fh: TextIO,  _indent: str) -> None:
+    def write_config(self, output_vd_cfg: bool, _cfg_fh: TextIO, _indent: str) -> None:
         """Writes the configuration of the ApplicationFilter object to a file.
 
         Args:
@@ -74,13 +74,11 @@ class ApplicationFilter(ConfigObject):
         print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
 
         for fn, fv in self.application_filter_map.items():
-            print(f"{_indent}    {fn} [", end='', file=_cfg_fh)
-            print(' '.join(fv[0]), end='', file=_cfg_fh)
-            print(' ];', file=_cfg_fh)
-
+            print(f"{_indent}    {fn} [", end="", file=_cfg_fh)
+            print(" ".join(fv[0]), end="", file=_cfg_fh)
+            print(" ];", file=_cfg_fh)
 
         print(f"{_indent}}}", file=_cfg_fh)
-
 
 
 """

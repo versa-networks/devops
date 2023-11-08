@@ -22,7 +22,7 @@ class FirewallRuleAction(Enum):
     REJECT = 3
 
     @staticmethod
-    def get_action_string(_action: 'FirewallRuleAction') -> str:
+    def get_action_string(_action: "FirewallRuleAction") -> str:
         """
         Returns the string representation of a firewall rule action.
 
@@ -289,7 +289,7 @@ class FirewallRule(ConfigObject):
         if _sname == self.schedule:
             self.schedule = _sname
 
-    def write_rule_open(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
+    def write_rule_open(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
         """
         Writes the opening of a firewall rule to a file.
 
@@ -300,8 +300,8 @@ class FirewallRule(ConfigObject):
             _cfg_fh (file object): The file handler where the rule opening will be written.
             _indent (str): The indentation to be used in the output file.
 
-        This method writes the name, description, and tag of a firewall rule to a file. Each of these elements is written only 
-        if it is not empty. The output is formatted with the provided indentation. If the output virtual directory configuration 
+        This method writes the name, description, and tag of a firewall rule to a file. Each of these elements is written only
+        if it is not empty. The output is formatted with the provided indentation. If the output virtual directory configuration
         is present, an "access-policy" prefix is added to the rule name.
         """
         vd_str = "access-policy " if output_vd_cfg else ""
@@ -311,7 +311,7 @@ class FirewallRule(ConfigObject):
         if len(self.tag) > 0:
             print(f'{_indent}   tag "{self.tag}";', file=_cfg_fh)
 
-    def write_src_match_no_closing_brace(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
+    def write_src_match_no_closing_brace(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
         """
         Writes the source match of a firewall rule to a file without a closing brace.
 
@@ -322,13 +322,13 @@ class FirewallRule(ConfigObject):
             _cfg_fh (file object): The file handler where the source match will be written.
             _indent (str): The indentation to be used in the output file.
 
-        This method writes the schedule, services, source zone, source addresses, source address groups, 
-        and source address regions of a firewall rule to a file. Each of these elements is written only 
+        This method writes the schedule, services, source zone, source addresses, source address groups,
+        and source address regions of a firewall rule to a file. Each of these elements is written only
         if it is not empty. The output is formatted with the provided indentation.
         """
         if self.schedule is not None:
             schedule = f"{_indent}            schedule {self.schedule};"
-            print(f"\n{schedule}\n\n",file=_cfg_fh)
+            print(f"\n{schedule}\n\n", file=_cfg_fh)
 
         if len(self.service_map) > 0:
             services = [svc if isinstance(svc, str) else svc.name for svc, svc_line in self.service_map.items()]
@@ -338,7 +338,7 @@ class FirewallRule(ConfigObject):
 
         print(f"{_indent}            source {{", file=_cfg_fh)
         if len(self.src_zone_map) > 0:
-            zones = ' '.join(zone for zone, zone_line in self.src_zone_map.items())
+            zones = " ".join(zone for zone, zone_line in self.src_zone_map.items())
             print(f"{_indent}                zone {{", file=_cfg_fh)
             print(f"{_indent}                    zone-list [ {zones} ];", file=_cfg_fh)
             print(f"{_indent}                }}", file=_cfg_fh)
@@ -347,21 +347,21 @@ class FirewallRule(ConfigObject):
             print(f"{_indent}                address {{", file=_cfg_fh)
 
         if len(self.src_addr_map) > 0:
-            addresses = ' '.join(addr for addr, addr_line in self.src_addr_map.items())
+            addresses = " ".join(addr for addr, addr_line in self.src_addr_map.items())
             print(f"{_indent}                    address-list [ {addresses} ];", file=_cfg_fh)
 
         if len(self.src_addr_grp_map) > 0:
-            addr_groups = ' '.join(addr_grp for addr_grp, addr_grp_line in self.src_addr_grp_map.items())
+            addr_groups = " ".join(addr_grp for addr_grp, addr_grp_line in self.src_addr_grp_map.items())
             print(f"{_indent}                    address-group-list [ {addr_groups} ];", file=_cfg_fh)
 
         if len(self.src_addr_map) > 0 or len(self.src_addr_grp_map) > 0:
             print(f"{_indent}                }}", file=_cfg_fh)
 
         if len(self.src_addr_region_map) > 0:
-            regions = ' '.join(region for region, region_line in self.src_addr_region_map.items())
+            regions = " ".join(region for region, region_line in self.src_addr_region_map.items())
             print(f"{_indent}                region [ {regions} ];", file=_cfg_fh)
 
-    def write_dst_match_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
+    def write_dst_match_no_closing_brace(self, output_vd_cfg, _cfg_fh, _indent):
         """write_dst_match_no_closing_brace _summary_
 
         Args:
@@ -392,7 +392,6 @@ class FirewallRule(ConfigObject):
 
             print(f" ];", file=_cfg_fh)
 
-
         if len(self.dst_addr_grp_map) > 0:
             print(f"{_indent}                    address-group-list [", end="", file=_cfg_fh)
 
@@ -410,8 +409,8 @@ class FirewallRule(ConfigObject):
                 print(f" {r}", end="", file=_cfg_fh)
             print(" ];", file=_cfg_fh)
             print("", file=_cfg_fh)
-    
-    def write_set_no_closing_brace(self, output_vd_cfg: bool, _cfg_fh,  _indent: str) -> None:
+
+    def write_set_no_closing_brace(self, output_vd_cfg: bool, _cfg_fh, _indent: str) -> None:
         """
         Writes a part of the firewall rule configuration to a file without a closing brace.
 
@@ -422,13 +421,13 @@ class FirewallRule(ConfigObject):
             _cfg_fh (TextIO): The file handle to write the configuration to.
             _indent (str): The string to use for indentation.
         """
-        print(f"{_indent}        set {{",file=_cfg_fh)
+        print(f"{_indent}        set {{", file=_cfg_fh)
         print(f"{_indent}            action {FirewallRuleAction.get_action_string(self.action)};", file=_cfg_fh)
-        print(f"{_indent}            lef {{",file=_cfg_fh)
-        print(f"{_indent}                profile Default-Logging-Profile;",file=_cfg_fh)
-        print(f"{_indent}            }}",file=_cfg_fh)
+        print(f"{_indent}            lef {{", file=_cfg_fh)
+        print(f"{_indent}                profile Default-Logging-Profile;", file=_cfg_fh)
+        print(f"{_indent}            }}", file=_cfg_fh)
 
-    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
+    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
         """write_config _summary_
 
         Args:
@@ -438,7 +437,7 @@ class FirewallRule(ConfigObject):
             _cfg_fh (_type_): _description_
             _indent (_type_): _description_
         """
-        self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
+        self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent)
         match_printed = False
 
         if (
@@ -448,7 +447,7 @@ class FirewallRule(ConfigObject):
         ):
             print(f"{_indent}        match {{", file=_cfg_fh)
             match_printed = True
-            self.write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
+            self.write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent)
             print(f"{_indent}            }}", file=_cfg_fh)
 
         if (
@@ -459,7 +458,7 @@ class FirewallRule(ConfigObject):
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            self.write_dst_match_no_closing_braceoutput_vd_cfg(_cfg_fh,  _indent)
+            self.write_dst_match_no_closing_braceoutput_vd_cfg(_cfg_fh, _indent)
             print(f"{_indent}            }}", file=_cfg_fh)
 
         if self.match_ip_version:
@@ -468,6 +467,6 @@ class FirewallRule(ConfigObject):
         if match_printed:
             print(f"{_indent}        }}", file=_cfg_fh)
 
-        self.write_set_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
+        self.write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
         print(f"{_indent}        }}", file=_cfg_fh)
         print(f"{_indent}    }}", file=_cfg_fh)

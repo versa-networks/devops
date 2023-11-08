@@ -71,7 +71,7 @@ class Zone(ConfigObject):
                 print(f"{indent}    {self.name} {{", file=cfg_fh)
                 print_name = False
 
-            for map_name, map_data in [('interface-list', self.interface_map), ('networks', self.network_map)]:
+            for map_name, map_data in [("interface-list", self.interface_map), ("networks", self.network_map)]:
                 if map_data:
                     print(f"{indent}        {map_name} [ ", end="", file=cfg_fh)
                     print(" ".join(map_data.keys()), end="", file=cfg_fh)

@@ -4,10 +4,10 @@
 #  Versa configuration supports full multi-tenancy.
 #  This file has the definition of Tenant in the Versa configuration.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name, unused-variable, unused-argument, attribute-defined-outside-init,line-too-long
+
 
 
 from versa.Address import AddressType
@@ -351,7 +351,7 @@ class Tenant(object):
         if len(self.address_map) > 0:
             for aname, [addr, addr_line] in self.address_map.items():
                 if addr.addr_type == AddressType.IP_V4_RANGE:
-                     if (addr.start_ip == _natpool.start_ip) and (addr.end_ip == _natpool.end_ip):
+                    if (addr.start_ip == _natpool.start_ip) and (addr.end_ip == _natpool.end_ip):
                         addr_list.extend([addr])
         return addr_list
 
@@ -417,7 +417,7 @@ class Tenant(object):
             for agname in ordered_list:
                 self.get_address_group(agname).write_config(output_vd_cfg, _cfg_fh, _indent)
 
-    def write_applications(self, output_vd_cfg, dup_app_list, _cfg_fh,  _indent):
+    def write_applications(self, output_vd_cfg, dup_app_list, _cfg_fh, _indent):
         """write_applications _summary_
 
         Args:
@@ -505,7 +505,7 @@ class Tenant(object):
         """
         if self.zone_map:
             configs = [zone.write_config(_indent) for zname, zone in self.zone_map.items()]
-            _cfg_fh.write('\n'.join(configs))
+            _cfg_fh.write("\n".join(configs))
 
     def write_services_config(self, _tnt_nm, _cfg_fh, _indent):
         """write_services_config _summary_
@@ -601,7 +601,6 @@ class Tenant(object):
 
             for agname in ordered_list:
                 self.get_application_group(agname).write_config(_cfg_fh, _indent)
-                                                                                               
 
             for agname, [ag, ag_line] in self.application_group_map.items():
                 ag.write_config(_cfg_fh, _indent)

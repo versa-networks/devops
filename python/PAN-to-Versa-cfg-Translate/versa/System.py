@@ -53,7 +53,7 @@ class System(ConfigObject):
         self.name_servers.append(_ns)
         self.name_servers_lines.append(_line)
 
-    def write_config(self, _cfg_fh,  _indent):
+    def write_config(self, _cfg_fh, _indent):
         """
         Writes the system configuration to a file.
 

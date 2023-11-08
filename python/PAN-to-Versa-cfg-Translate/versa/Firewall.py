@@ -3,10 +3,9 @@
 #
 #  This file has the definition of the Firewall.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name
 
 
 from versa.NetworkFunction import NetworkFunction
@@ -57,11 +56,11 @@ class Firewall(NetworkFunction):
         for rule in self.rules:
             rule.replace_service_group_by_service_members(_service_group)
 
-    def write_rules(self, output_vd_cfg, _vfcg, _tnt, _cfg_fh,  _indent):
+    def write_rules(self, output_vd_cfg, _vfcg, _tnt, _cfg_fh, _indent):
         for r in self.rules:
-            r.write_config(output_vd_cfg, _vfcg, _tnt, _cfg_fh,  _indent + "        ")
+            r.write_config(output_vd_cfg, _vfcg, _tnt, _cfg_fh, _indent + "        ")
 
-    def write_config(self, _cfg_fh,  _indent):
+    def write_config(self, _cfg_fh, _indent):
         """
         Writes the firewall configuration to a file.
 
@@ -76,7 +75,7 @@ class Firewall(NetworkFunction):
         print(f"{_indent}        rules {{", file=_cfg_fh)
 
         for r in self.rules:
-            r.write_config(_cfg_fh,  _indent + "                ")
+            r.write_config(_cfg_fh, _indent + "                ")
 
         print(f"{_indent}        }}", file=_cfg_fh)
         print(f"{_indent}    }}", file=_cfg_fh)

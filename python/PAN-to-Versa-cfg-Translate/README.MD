@@ -100,7 +100,7 @@ options:
 5. (Optional) Update all the files in ./Predefined
 6. Run script but DO NOT include -cil
    - example:\
-     - `python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_Files/PAN-merged-running-config.xml  -T ./Source_Files/NGFW-TEST.cfg`
+     - `python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_Files/PAN-merged-running-config.xml -T ./Source_Files/NGFW-TEST.cfg`
 7. Import .cfg file from the Output_Files directory, into Versa Director.
    - The .cfg file will most likely need to be edited before it will import correctly. If you import using the API you will get exact line numbers that are causing the import to fail.
    - Example:\

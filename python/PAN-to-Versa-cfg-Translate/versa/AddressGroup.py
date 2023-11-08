@@ -38,7 +38,7 @@ class AddressGroup(ConfigObject):
             _name_src_line (str): The source line of the name.
             _is_predefined (bool): Whether the AddressGroup is predefined or not.
 
-        This method initializes an AddressGroup object with the given name, name source line, and predefined status. 
+        This method initializes an AddressGroup object with the given name, name source line, and predefined status.
         It also initializes the address_map, address_group_map, filename_map, desc, and desc_line attributes of the object.
         """
         super().__init__(_name, _name_src_line, _is_predefined)
@@ -60,7 +60,6 @@ class AddressGroup(ConfigObject):
             self.desc = _desc
         if _desc_line is not None:
             self.desc_line = _desc_line
-
 
     def add_filename(self, _filename: str, _filename_src_line: int) -> None:
         """
@@ -130,7 +129,7 @@ class AddressGroup(ConfigObject):
             _tnt (TNT): The TNT object that contains the address groups.
             _ordered_list (list): The list to which the members will be added.
 
-        This method iterates over the address_group_map and adds the members of each address group to _ordered_list. 
+        This method iterates over the address_group_map and adds the members of each address group to _ordered_list.
         If a member is not already in _ordered_list, it is appended to the end of the list.
         """
         for addr_grp, addr_grp_line in self.address_group_map.items():
@@ -145,7 +144,7 @@ class AddressGroup(ConfigObject):
         Args:
             _address_group (str): The name of the address group.
 
-        This method replaces an address by an address group in the maps. If the address group named _address_group exists in the address_map, 
+        This method replaces an address by an address group in the maps. If the address group named _address_group exists in the address_map,
         it is removed and added to the address_group_map with the same value.
         """
         addr_grp_line = self.address_map.pop(_address_group, None)
@@ -160,7 +159,7 @@ class AddressGroup(ConfigObject):
             _aname (str): The name of the address to be replaced.
             _new_aname (str): The new name of the address.
 
-        This method replaces an address in the address_map. If the address named _aname exists in the map, 
+        This method replaces an address in the address_map. If the address named _aname exists in the map,
         it is removed and a new address named _new_aname is added to the map with the same value.
         """
         aline = self.address_map.pop(_aname, None)
@@ -175,7 +174,7 @@ class AddressGroup(ConfigObject):
             _agname (str): The name of the address group to be replaced.
             _new_agname (str): The new name of the address group.
 
-        This method replaces an address group in the address_group_map. If the address group named _agname exists in the map, 
+        This method replaces an address group in the address_group_map. If the address group named _agname exists in the map,
         it is removed and a new address group named _new_agname is added to the map with the same value.
         """
         aline = self.address_group_map.pop(_agname, None)
@@ -193,8 +192,8 @@ class AddressGroup(ConfigObject):
         Returns:
             bool: True if the two lists contain the same elements, False otherwise.
 
-        This method checks if two lists contain the same elements. It does not consider the order of the elements. 
-        If the two lists contain the same elements, the method returns True. If they do not contain the same elements, 
+        This method checks if two lists contain the same elements. It does not consider the order of the elements.
+        If the two lists contain the same elements, the method returns True. If they do not contain the same elements,
         the method returns False.
         """
         return set(a) == set(b)
@@ -209,12 +208,13 @@ class AddressGroup(ConfigObject):
         Returns:
             bool: True if the address_map and address_group_map of both AddressGroup objects have the same keys, False otherwise.
 
-        This method compares the keys of the address_map and address_group_map of the current AddressGroup object 
-        with those of another AddressGroup object. If the keys are the same, the method returns True, indicating that 
+        This method compares the keys of the address_map and address_group_map of the current AddressGroup object
+        with those of another AddressGroup object. If the keys are the same, the method returns True, indicating that
         the two AddressGroup objects are equal. If the keys are not the same, the method returns False.
         """
-        return (set(self.address_map.keys()) == set(_other.address_map.keys()) and
-                set(self.address_group_map.keys()) == set(_other.address_group_map.keys()))
+        return set(self.address_map.keys()) == set(_other.address_map.keys()) and set(
+            self.address_group_map.keys()
+        ) == set(_other.address_group_map.keys())
 
     def print_dict_items(self, label, dictionary, cfg_fh, indent):
         """
@@ -224,7 +224,7 @@ class AddressGroup(ConfigObject):
         :param cfg_fh: The file handler where to print the keys.
         :param indent: The indentation to use when printing.
         """
-        keys = ' '.join(dictionary.keys())
+        keys = " ".join(dictionary.keys())
         print(f"{indent}    {label} [ {keys} ];", file=cfg_fh)
 
     def write_config(self, output_vd_cfg, _cfg_fh, _indent):
@@ -236,8 +236,8 @@ class AddressGroup(ConfigObject):
             _cfg_fh (file): The file handle where the configuration will be written.
             _indent (str): The indentation to be used in the output file.
 
-        This method writes the configuration of the AddressGroup object to the file specified by _cfg_fh. 
-        The output format is controlled by the output_vd_cfg flag. If output_vd_cfg is True, 
+        This method writes the configuration of the AddressGroup object to the file specified by _cfg_fh.
+        The output format is controlled by the output_vd_cfg flag. If output_vd_cfg is True,
         the configuration is written in a specific format. If it's False, the configuration is written in a default format.
         The _indent argument specifies the indentation to be used in the output file.
         """

@@ -4,10 +4,9 @@
 #  This file has the definition of a network address object, that can be used
 #  in any policy configuration on the Versa FlexVNF.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name
 
 from enum import Enum
 from versa.ConfigObject import ConfigObject
@@ -77,8 +76,7 @@ class Schedule(ConfigObject):
                 return False
         return True
 
-
-    def equals(self, _other: 'Schedule') -> bool:
+    def equals(self, _other: "Schedule") -> bool:
         """
         Checks if the current instance is equal to another instance of the Schedule class.
 
@@ -90,21 +88,18 @@ class Schedule(ConfigObject):
         Returns:
             bool: True if the instances are equal, False otherwise.
         """
-        if (self.schedule_type != _other.schedule_type):
+        if self.schedule_type != _other.schedule_type:
             return False
-        if (self.schedule_type == ScheduleObjectType.RECURRING):
-            if (not self.listsAreEqual(self.recur_map.keys(),
-                                       _other.recur_map.keys())):
+        if self.schedule_type == ScheduleObjectType.RECURRING:
+            if not self.listsAreEqual(self.recur_map.keys(), _other.recur_map.keys()):
                 return False
             # XXX-TODO: compare the time stamps of the recurring days
-        elif (self.schedule_type == ScheduleObjectType.NON_RECURRING):
-            if (not self.listsAreEqual(self.non_recur_days_times,
-                                       _other.non_recur_days_times)):
+        elif self.schedule_type == ScheduleObjectType.NON_RECURRING:
+            if not self.listsAreEqual(self.non_recur_days_times, _other.non_recur_days_times):
                 return False
         return True
 
-
-    def write_config(self, output_vd_cfg, _cfg_fh,  _indent):
+    def write_config(self, output_vd_cfg, _cfg_fh, _indent):
         """
         Writes the configuration of the schedule to a file.
 
@@ -117,9 +112,9 @@ class Schedule(ConfigObject):
 
         """
         vd_str = "schedule " if output_vd_cfg else ""
-        
+
         print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
-                                     
+
         if self.schedule_type == ScheduleObjectType.NON_RECURRING and self.non_recur_days_times:
             print(f"{_indent}    non-recurring ", end="", file=_cfg_fh)
             print(",".join(nrtime for nrtime, _ in self.non_recur_days_times), end="", file=_cfg_fh)

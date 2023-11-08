@@ -43,7 +43,7 @@ LOG_FILENAME = "versa-cfg-translate.log"
 STRICT_CHECKS = False
 """bool: Enable strict checks."""
 
-INPUT_LINE_NUM = 0 #This is unused and should be removed in the future
+INPUT_LINE_NUM = 0  # This is unused and should be removed in the future
 """int: Input line number."""
 
 
@@ -59,7 +59,7 @@ def clean_string(input_string: str) -> str:
     Returns:
         str: The cleaned string, containing only a-z, A-Z, 0-9, -, _ characters.
     """
-    return re.sub(r'[^a-zA-Z0-9\-_]', '', input_string)
+    return re.sub(r"[^a-zA-Z0-9\-_]", "", input_string)
 
 
 def parse_args(args_list: list) -> Namespace:
@@ -274,8 +274,10 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
 
     try:
         with open(args.zone_file, "w", encoding="utf-8") as zone_fh:
-            
-            print("#3rd_Party_Interface,3rd_Party_Zone_Name,Versa_Zone_Name,Versa_Interface_Name,Versa_Paired_Interface_Name,Versa_VRF_Name,3rd_Party_Vsys_Name,Versa_Tenant_Name", file=zone_fh)
+            print(
+                "#3rd_Party_Interface,3rd_Party_Zone_Name,Versa_Zone_Name,Versa_Interface_Name,Versa_Paired_Interface_Name,Versa_VRF_Name,3rd_Party_Vsys_Name,Versa_Tenant_Name",
+                file=zone_fh,
+            )
 
             zone_list: List[Dict[str, Union[str, int]]] = []
             count = 0
@@ -291,9 +293,9 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
 
                         match = re.search(r"\.\d{1,10}", pan_interface)
                         matched_text = match.group(0) if match else ""
-                        
+
                         versa_paired_interface_name = ""
-                        
+
                         if "ae" in pan_interface:
                             versa_interface_name = f"{pan_interface}.0"
                         elif "tunnel" in pan_interface:
@@ -302,7 +304,7 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
                             versa_interface_name = f"vni-0/{count}{matched_text}"
                         else:
                             versa_interface_name = f"vni-0/{count}.0"
-                            
+
                         row = {
                             "3rd_Party_Interface": pan_interface,
                             "3rd_Party_Zone_Name": zone_name,
@@ -315,8 +317,11 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root):
                         }
 
                         zone_list.append(row)
-                        
-                        print(f"{pan_interface},{zone_name},{args.org_name}-{zone_name},{versa_interface_name},{versa_paired_interface_name},{args.org_name}-LAN-VR,vsys1,{args.org_name}", file=zone_fh,)
+
+                        print(
+                            f"{pan_interface},{zone_name},{args.org_name}-{zone_name},{versa_interface_name},{versa_paired_interface_name},{args.org_name}-LAN-VR,vsys1,{args.org_name}",
+                            file=zone_fh,
+                        )
                         count += 1
     except Exception as e:
         print(f"Error: unable to open zone/interface csv file {args.zone_file} for writing")
@@ -341,10 +346,10 @@ def get_versa_template_data(template_file_name: str) -> Optional[Tuple[str, str,
         with open(template_file_name, "r", encoding="utf-8") as file:
             content = file.read()
 
-        template_match = re.search(r'template\s+(.*?)\s+\{', content)
-        org_name_match = re.search(r'org\s+(.*?)\s+\{', content)
-        org_services_match = re.search(r'services\s+\[\s+(.*?)\s+\]', content)
-        service_node_groups_match = re.search(r'(service-node-groups\s+\{.*?\})', content, re.DOTALL)
+        template_match = re.search(r"template\s+(.*?)\s+\{", content)
+        org_name_match = re.search(r"org\s+(.*?)\s+\{", content)
+        org_services_match = re.search(r"services\s+\[\s+(.*?)\s+\]", content)
+        service_node_groups_match = re.search(r"(service-node-groups\s+\{.*?\})", content, re.DOTALL)
 
         template_name = template_match.group(1) if template_match else None
         org_name = org_name_match.group(1) if org_name_match else None
@@ -372,7 +377,7 @@ def open_predefined_applications(args: Namespace):
     if not args.app_file:
         print("Please specify the predefined applications CSV file")
         sys.exit(1)
-    
+
     print("   Applications")
     try:
         app_fh = open(args.app_file, "r", encoding="utf-8")
@@ -428,7 +433,7 @@ def open_predefined_countries_file(args: Namespace):
     if not args.countries_file:
         print("Please specify the predefined countries file")
         return None
-    
+
     print("   Countries")
     try:
         countries_fh = open(args.countries_file, "r", encoding="utf-8")
@@ -454,7 +459,7 @@ def open_predefined_subfamilies_file(args: Namespace):
     if not args.subfamilies_file:
         print("Please specify the predefined sub families categories file")
         return None
-    
+
     print("   Subfamilies")
     try:
         subfamilies_fh = open(args.subfamilies_file, "r", encoding="utf-8")
@@ -503,13 +508,13 @@ def open_output_files(args: Namespace) -> Tuple[str, TextIO]:
     """
     pan_config_file_name = os.path.splitext(os.path.basename(args.pan_config_file))[0]
     outfile = os.path.join(args.output_dir, f"{pan_config_file_name}.cfg")
-    #csv_outfile = os.path.join(args.output_dir, f"{pan_config_file_name}.csv")
-    #logfile = os.path.join(args.output_dir, f"{pan_config_file_name}.json")
+    # csv_outfile = os.path.join(args.output_dir, f"{pan_config_file_name}.csv")
+    # logfile = os.path.join(args.output_dir, f"{pan_config_file_name}.json")
 
     try:
         out_fh = open(outfile, "w", encoding="utf-8")
-        #csv_out_fh = open(csv_outfile, "w", encoding="utf-8")
-        #log_fh = open(logfile, "w", encoding="utf-8")
+        # csv_out_fh = open(csv_outfile, "w", encoding="utf-8")
+        # log_fh = open(logfile, "w", encoding="utf-8")
     except OSError as e:
         print(f"Error: unable to open output files for writing")
         print(f"Error Details: {e}")
@@ -553,7 +558,9 @@ def populate_zone_interface_map(zone_csv, zone_fh: Any, versa_cfg: Any, tnt_xlat
     return versa_cfg, tnt_xlate_map, versa_intf_zone_map
 
 
-def populate_interfaces_networks_zones_map(versa_intf_zone_map: Dict[str, List[str]], v_logger: logging.Logger, versa_cfg: Any, args: Any) -> None:
+def populate_interfaces_networks_zones_map(
+    versa_intf_zone_map: Dict[str, List[str]], v_logger: logging.Logger, versa_cfg: Any, args: Any
+) -> None:
     """
     Add interfaces, networks, and zones to the Versa configuration.
 
@@ -565,17 +572,19 @@ def populate_interfaces_networks_zones_map(versa_intf_zone_map: Dict[str, List[s
     """
     for v_ifname, ifinfo in versa_intf_zone_map.items():
         if "#" in v_ifname:
-            continue 
+            continue
         tnt = ifinfo[7]
         cur_tnt = versa_cfg.get_tenant(tnt, "0")
-        v_logger.info(f"{args.zone_file}:{ifinfo[8]}: adding versa interface {v_ifname} to tenant {tnt}; network {ifinfo[2]}; zone {ifinfo[1]}; pan interface {ifinfo[0]}")
+        v_logger.info(
+            f"{args.zone_file}:{ifinfo[8]}: adding versa interface {v_ifname} to tenant {tnt}; network {ifinfo[2]}; zone {ifinfo[1]}; pan interface {ifinfo[0]}"
+        )
         versa_cfg.add_network_and_interface(ifinfo[2], v_ifname)
 
         if ifinfo[2]:
             cur_tnt.add_zone_network(ifinfo[1], ifinfo[2], ifinfo[8])
         else:
             cur_tnt.add_zone_interface(ifinfo[1], v_ifname, ifinfo[8])
-    
+
     return versa_cfg
 
 
@@ -655,7 +664,9 @@ def populate_predefined_countries_map(countries_csv, countries_fh: Any, versa_cf
     return versa_cfg, predef_countries_map
 
 
-def populate_predefined_subfamilies_map(subfamilies_csv, subfamilies_fh: Any, versa_cfg: Any) -> Tuple[Any, Dict[str, list]]:
+def populate_predefined_subfamilies_map(
+    subfamilies_csv, subfamilies_fh: Any, versa_cfg: Any
+) -> Tuple[Any, Dict[str, list]]:
     """
     Populate predefined subfamilies from a CSV file into a dictionary.
 
@@ -687,7 +698,7 @@ def load_application_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> Non
     for app in applications:
         application_name = (clean_string(app.attrib["name"])).upper()
         if application_name in tnt.application_map:
-            continue 
+            continue
         cur_app = Application(application_name, INPUT_LINE_NUM, False)
         desc = app.find("./description")
         if desc is not None and desc.text is not None:
@@ -782,7 +793,7 @@ def load_schedule_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
             for t in w.findall("./member"):
                 cur_sched.add_recurring_day_time(w.tag, t.text.strip(), INPUT_LINE_NUM)
 
-        if len(cur_sched.non_recur_days_times) > 0  or cur_sched.schedule_type.name != "NON_RECURRING":
+        if len(cur_sched.non_recur_days_times) > 0 or cur_sched.schedule_type.name != "NON_RECURRING":
             v_logger.info(f"Tenant {tnt.name}: Adding Schedule {schedule_name}")
             tnt.add_schedule(cur_sched, INPUT_LINE_NUM)
 
@@ -879,7 +890,9 @@ def load_external_address_group_objects(tnt_xml, tnt: Any, v_logger: logging.Log
         entry = ag.find("type/ip")
         if entry is not None:
             ag_name = ag.attrib["name"].replace(" ", "_")
-            cur_addr_grp = tnt.get_address_group(ag_name) or tnt.add_address_group(AddressGroup(ag_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM)
+            cur_addr_grp = tnt.get_address_group(ag_name) or tnt.add_address_group(
+                AddressGroup(ag_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM
+            )
 
             desc = ag.find("./description")
             if desc is not None and desc.text is not None:
@@ -906,7 +919,9 @@ def load_external_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logg
         entry = url_cat.find("type/url")
         if entry is not None:
             url_cat_name = url_cat.attrib["name"].replace(" ", "_")
-            cur_url_cat = tnt.get_url_category(url_cat_name) or tnt.add_url_category(URLCategory(url_cat_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM)
+            cur_url_cat = tnt.get_url_category(url_cat_name) or tnt.add_url_category(
+                URLCategory(url_cat_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM
+            )
 
             desc = entry.find("./description")
             if desc is not None and desc.text is not None:
@@ -982,7 +997,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
             # check if the application is user defined application
             application_name = m.text.replace(" ", "_").upper()
             member_added = False
-            
+
             app = tnt.get_application(application_name)
 
             sh_tnt = tnt.get_shared_tenant()
@@ -1071,9 +1086,7 @@ def load_application_filters(tnt_xml, tnt: Any, v_logger: logging.Logger, predef
             if sc in list(predef_subfamilies.keys()):
                 cur_app_filter.add_application_filter("subfamily", c.text.strip(), INPUT_LINE_NUM)
             else:
-                v_logger.error(
-                    f"Tenant {tnt.name}; application filter {cur_app_filter.name}; subfamily {sc} not found"
-                )
+                v_logger.error(f"Tenant {tnt.name}; application filter {cur_app_filter.name}; subfamily {sc} not found")
 
         risk = app_filter.findall("./risk/member")
         for c in risk:
@@ -1088,7 +1101,14 @@ def load_application_filters(tnt_xml, tnt: Any, v_logger: logging.Logger, predef
             cur_app_filter.add_application_filter("tag", c.text.strip(), INPUT_LINE_NUM)
 
 
-def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, amap: Dict[str, Any], is_src_match: bool, v_logger: logging.Logger, predef_countries: Dict[str, Any]) -> None:
+def process_rule_address_match(
+    versa_rule_object,
+    cur_tnt: versa.Tenant.Tenant,
+    amap: Dict[str, Any],
+    is_src_match: bool,
+    v_logger: logging.Logger,
+    predef_countries: Dict[str, Any],
+) -> None:
     """
     Process the address match for a NextGenFirewallRule.
 
@@ -1105,7 +1125,9 @@ def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, 
         add_flag = False
         ao = cur_tnt.get_address(addr)
         if ao is not None:
-            v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address '{addr}'")
+            v_logger.info(
+                f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address '{addr}'"
+            )
             if is_src_match:
                 versa_rule_object.add_src_addr(addr, INPUT_LINE_NUM)
             else:
@@ -1115,7 +1137,9 @@ def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, 
         if not add_flag:
             ago = cur_tnt.get_address_group(addr)
             if ago is not None:
-                v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group '{addr}'")
+                v_logger.info(
+                    f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group '{addr}'"
+                )
                 if is_src_match:
                     versa_rule_object.add_src_addr_grp(addr, INPUT_LINE_NUM)
                 else:
@@ -1125,7 +1149,9 @@ def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, 
         if not add_flag:
             ao = sh_tnt.get_address(addr)
             if ao is not None:
-                v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address (shared) '{addr}'")
+                v_logger.info(
+                    f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address (shared) '{addr}'"
+                )
                 if is_src_match:
                     versa_rule_object.add_src_addr(addr, INPUT_LINE_NUM)
                 else:
@@ -1135,7 +1161,9 @@ def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, 
         if not add_flag:
             ago = sh_tnt.get_address_group(addr)
             if ago is not None:
-                v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group (shared) '{addr}'")
+                v_logger.info(
+                    f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group (shared) '{addr}'"
+                )
                 if is_src_match:
                     versa_rule_object.add_src_addr_grp(addr, INPUT_LINE_NUM)
                 else:
@@ -1159,8 +1187,10 @@ def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, 
                     versa_rule_object.add_dst_addr(addr, INPUT_LINE_NUM)
                 add_flag = True
             except:
-                v_logger.error(f"Tenant {cur_tnt.name}: while adding rule {versa_rule_object.name} to current tenant, error while parsing address")
-        
+                v_logger.error(
+                    f"Tenant {cur_tnt.name}: while adding rule {versa_rule_object.name} to current tenant, error while parsing address"
+                )
+
         if not add_flag:
             if addr in predef_countries:
                 if is_src_match:
@@ -1169,7 +1199,9 @@ def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, 
                     versa_rule_object.add_dst_addr_region(addr, INPUT_LINE_NUM)
 
         if not add_flag:
-            v_logger.error(f"tenant {cur_tnt.name}: while adding ngfw rule '{versa_rule_object.name}' no address or address group found with name '{addr}'")
+            v_logger.error(
+                f"tenant {cur_tnt.name}: while adding ngfw rule '{versa_rule_object.name}' no address or address group found with name '{addr}'"
+            )
 
 
 def get_element_path(root, element) -> Tuple[str, str]:
@@ -1192,7 +1224,7 @@ def get_element_path(root, element) -> Tuple[str, str]:
         path_tag_name.insert(0, tag_and_name)
         element = element.getparent()
     return ("/".join(path_tag_name), "/".join(path_tag))
-    
+
 
 def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
     # Process security rules
@@ -1219,12 +1251,26 @@ def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
         # Process source address match
         src_addresses = [clean_string(sa.text) for sa in rule.findall("./source/member")]
         if len(src_addresses) > 0 and "any" not in src_addresses:
-            process_rule_address_match(versa_rule_object, cur_tnt, {sa: INPUT_LINE_NUM for sa in src_addresses}, True, v_logger, predef_countries)
+            process_rule_address_match(
+                versa_rule_object,
+                cur_tnt,
+                {sa: INPUT_LINE_NUM for sa in src_addresses},
+                True,
+                v_logger,
+                predef_countries,
+            )
 
         # Process destination address match
         dst_addresses = [clean_string(da.text) for da in rule.findall("./destination/member")]
         if len(dst_addresses) > 0 and "any" not in dst_addresses:
-            process_rule_address_match(versa_rule_object, cur_tnt, {da: INPUT_LINE_NUM for da in dst_addresses}, False, v_logger, predef_countries)
+            process_rule_address_match(
+                versa_rule_object,
+                cur_tnt,
+                {da: INPUT_LINE_NUM for da in dst_addresses},
+                False,
+                v_logger,
+                predef_countries,
+            )
 
         # Process service match
         services = [clean_string(svc.text) for svc in rule.findall("./service/member")]
@@ -1262,13 +1308,15 @@ def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
                 versa_rule_object.set_action(FirewallRuleAction.DENY, INPUT_LINE_NUM)
 
 
-def load_config(xml, 
-                tnt: Any, 
-                v_logger: logging.Logger,
-                predef_app_map: Dict[str, Any], 
-                predef_subfamilies_map: Dict[str, Any], 
-                predef_countries_map: Dict[str, Any], 
-                predef_url_categories_map: Dict[str, Any]) -> None:
+def load_config(
+    xml,
+    tnt: Any,
+    v_logger: logging.Logger,
+    predef_app_map: Dict[str, Any],
+    predef_subfamilies_map: Dict[str, Any],
+    predef_countries_map: Dict[str, Any],
+    predef_url_categories_map: Dict[str, Any],
+) -> None:
     """
     Load configuration data from an XML element into a Tenant object.
 
@@ -1286,7 +1334,7 @@ def load_config(xml,
 
     Returns:
         None
-    """    
+    """
     if xml is None:
         return
 
@@ -1300,7 +1348,7 @@ def load_config(xml,
         load_address_objects,
         load_external_address_group_objects,
         load_external_url_category_objects,
-        load_address_group_objects
+        load_address_group_objects,
     ]
 
     # Iterate through list of object loaders and call each function
@@ -1309,7 +1357,7 @@ def load_config(xml,
             loader(xml, tnt, v_logger)
     load_application_groups(xml, tnt, v_logger, predef_app_map)
     load_application_filters(xml, tnt, v_logger, predef_subfamilies_map)
-    load_rules_into_tenant(xml, tnt, v_logger, predef_countries_map) 
+    load_rules_into_tenant(xml, tnt, v_logger, predef_countries_map)
 
 
 def main(args_list: list) -> bool:
@@ -1332,36 +1380,38 @@ def main(args_list: list) -> bool:
     args = parse_args(args_list)
     print("Setting up the logger...")
     v_logger = the_logger(args)
-    
+
     print("Creating output directory...")
     if not create_output_dir(args):
         return False
-    
+
     print("Opening 3rd party config file...")
     xml_root = open_3rd_party_config_file(args)
-    
+
     if args.template_file_name:
         print("Reading Versa Template File")
         template_data = get_versa_template_data(args.template_file_name)
         if template_data:
             args.template_name, args.org_name, args.org_services, args.service_node_groups = template_data
-    
+
     print("Importing predefined files...")
     app_csv, app_fh = open_predefined_applications(args)
     url_root = open_predefined_URL_categories_XML(args)
     countries_csv, countries_fh = open_predefined_countries_file(args)
     subfamilies_csv, subfamilies_fh = open_predefined_subfamilies_file(args)
-    
+
     zone_csv, zone_fh = open_zone_interface_file(args)
-    
+
     print("Opening output files...")
     pan_config_file_name, out_fh = open_output_files(args)
-                
+
     versa_cfg = VersaConfig("VersaCfg_From_PAN_" + pan_config_file_name)
     versa_cfg.set_logger(v_logger)
 
     print("Populating Maps...")
-    versa_cfg, tnt_xlate_map, versa_intf_zone_map = populate_zone_interface_map(zone_csv, zone_fh, versa_cfg, tnt_xlate_map)
+    versa_cfg, tnt_xlate_map, versa_intf_zone_map = populate_zone_interface_map(
+        zone_csv, zone_fh, versa_cfg, tnt_xlate_map
+    )
     populate_interfaces_networks_zones_map(versa_intf_zone_map, v_logger, versa_cfg, args)
     predef_apps, predef_app_map, versa_cfg = populate_predefined_applications_map(app_csv, app_fh, versa_cfg)
     versa_cfg, predef_url_categories_map = populate_predefined_url_categories_map(url_root, predef_apps, versa_cfg)
@@ -1375,23 +1425,39 @@ def main(args_list: list) -> bool:
     shared_xml = xml_root.find("./shared")
     tnt_xlate_map["shared"] = [args.org_name]
     versa_cfg.set_tenant_xlate_map(tnt_xlate_map)
-    
+
     print("Loading shared configuration...")
-    load_config(shared_xml, shared_tnt, v_logger, predef_app_map, predef_subfamilies_map, predef_countries_map,predef_url_categories_map)
+    load_config(
+        shared_xml,
+        shared_tnt,
+        v_logger,
+        predef_app_map,
+        predef_subfamilies_map,
+        predef_countries_map,
+        predef_url_categories_map,
+    )
 
     cur_tnt = versa_cfg.get_tenant(args.org_name, "0")
     cur_tnt.set_shared_tenant(shared_tnt)
     devices_xml = xml_root.find("./devices")
-    
+
     # Load objects into tenant
-    load_config(devices_xml, cur_tnt, v_logger, predef_app_map, predef_subfamilies_map, predef_countries_map,predef_url_categories_map)      
+    load_config(
+        devices_xml,
+        cur_tnt,
+        v_logger,
+        predef_app_map,
+        predef_subfamilies_map,
+        predef_countries_map,
+        predef_url_categories_map,
+    )
 
     # Replace address and service groups with their respective members
     print("Replacing address group with their respective members...")
     versa_cfg.replace_address_by_address_group()
     print("Replacing service group with their respective members...")
     versa_cfg.replace_service_group_by_service_members()
-    
+
     # Check and write configuration
     versa_cfg.check_config(STRICT_CHECKS)
     print(f"Writing configuration file {out_fh.name}")

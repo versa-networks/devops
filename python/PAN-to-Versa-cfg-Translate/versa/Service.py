@@ -102,7 +102,7 @@ class Service(ConfigObject):
         self.proto_value_src_line = proto_value_src_line
         self.proto_match_type = ProtoMatchType.PROTO_VALUE_MATCH
 
-    def equals(self, other: 'Service') -> bool:
+    def equals(self, other: "Service") -> bool:
         """
         Checks if the current instance is equal to another instance.
 
@@ -116,7 +116,9 @@ class Service(ConfigObject):
             return False
         if self.port_match_type == PortMatchType.ANY_PORT_MATCH and self.port != other.port:
             return False
-        if self.port_match_type == PortMatchType.SRC_DST_PORT_MATCH and (self.src_port != other.src_port or self.dst_port != other.dst_port):
+        if self.port_match_type == PortMatchType.SRC_DST_PORT_MATCH and (
+            self.src_port != other.src_port or self.dst_port != other.dst_port
+        ):
             return False
         if self.proto_match_type == ProtoMatchType.ENUM_PROTO_MATCH and self.proto != other.proto:
             return False
@@ -134,18 +136,18 @@ class Service(ConfigObject):
             indent (str): The indentation to use when writing to the file.
         """
         vd_str = "service " if output_vd_cfg else ""
-        
+
         if self.proto_match_type != ProtoMatchType.NONE:
-            print(f'{indent}{vd_str}{self.name} {{', file=cfg_fh)
+            print(f"{indent}{vd_str}{self.name} {{", file=cfg_fh)
             if self.port_match_type == PortMatchType.ANY_PORT_MATCH and self.port is not None:
-                print(f'{indent}    port {self.port};', file=cfg_fh)
+                print(f"{indent}    port {self.port};", file=cfg_fh)
             elif self.port_match_type == PortMatchType.SRC_DST_PORT_MATCH:
                 if self.src_port is not None:
-                    print(f'{indent}    source-port {self.src_port};', file=cfg_fh)
+                    print(f"{indent}    source-port {self.src_port};", file=cfg_fh)
                 if self.dst_port is not None:
-                    print(f'{indent}    destination-port {self.dst_port};', file=cfg_fh)
+                    print(f"{indent}    destination-port {self.dst_port};", file=cfg_fh)
             if self.proto_match_type == ProtoMatchType.ENUM_PROTO_MATCH and self.proto is not None:
-                print(f'{indent}    protocol {self.proto};', file=cfg_fh)
+                print(f"{indent}    protocol {self.proto};", file=cfg_fh)
             elif self.proto_match_type == ProtoMatchType.PROTO_VALUE_MATCH and self.proto_value is not None:
-                print(f'{indent}    protocol-value {self.proto_value};', file=cfg_fh)
-            print(f'{indent}}}', file=cfg_fh)
+                print(f"{indent}    protocol-value {self.proto_value};", file=cfg_fh)
+            print(f"{indent}}}", file=cfg_fh)

@@ -12,6 +12,7 @@ from enum import Enum
 from versa.ConfigObject import ConfigObject
 from typing import Optional
 
+
 class AddressType(Enum):
     """
     Enum representing the type of an address.
@@ -102,7 +103,7 @@ class Address(ConfigObject):
         if self.start_ip is not None:
             self.set_addr_value(f"{self.start_ip}-{self.end_ip}", _end_ip_src_line)
 
-    def equals(self, _other: 'Address') -> bool:
+    def equals(self, _other: "Address") -> bool:
         """
         Checks if this address is equal to another address.
 
@@ -128,7 +129,7 @@ class Address(ConfigObject):
             AddressType.IP_V4_RANGE: "ipv4-range",
             AddressType.FQDN: "fqdn",
             AddressType.IP_V4_PREFIX: "ipv4-prefix",
-            AddressType.WILDCARD: "ipv4-wildcard-mask"
+            AddressType.WILDCARD: "ipv4-wildcard-mask",
         }.get(self.addr_type, "")
 
         if addr_type_str and self.addr_value is not None:

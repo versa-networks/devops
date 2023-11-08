@@ -3,10 +3,9 @@
 #
 #  This file has the definition of a next gen firewall rule.
 #
-#  Copyright (c) 2017, Versa Networks, Inc.
+#  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
 #
-#  pylint: disable=invalid-name
 
 
 from versa.FirewallRule import FirewallRule
@@ -40,8 +39,8 @@ class NextGenFirewallRule(FirewallRule):
         """
         Initializes a new instance of the NextGenFirewallRule class.
 
-        This method extends the `__init__` method from the superclass and initializes additional 
-        attributes specific to next-generation firewall rules, such as application maps, URL 
+        This method extends the `__init__` method from the superclass and initializes additional
+        attributes specific to next-generation firewall rules, such as application maps, URL
         category maps, device maps, AV and IPS profiles, and a print counter.
 
         Args:
@@ -100,7 +99,7 @@ class NextGenFirewallRule(FirewallRule):
         self.ips_profile = _ips_profile
         self.ips_profile_line = _ips_profile_line
 
-    def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh,  _indent):
+    def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh, _indent):
         """
         Writes the security profile configuration to a file if AV or IPS profile is set.
 
@@ -114,7 +113,7 @@ class NextGenFirewallRule(FirewallRule):
             _indent (str): The indentation to use when writing to the file.
 
         """
-        super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
+        super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
         if self.get_av_profile() or self.get_ips_profile():
             print(f"{_indent}            security-profile {{", file=_cfg_fh)
 
@@ -126,7 +125,7 @@ class NextGenFirewallRule(FirewallRule):
         if self.get_av_profile() or self.get_ips_profile():
             print(f"{_indent}            }}", file=_cfg_fh)
 
-    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent):
+    def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
         """
         Writes the configuration of the next-generation firewall rule to a file.
 
@@ -141,36 +140,28 @@ class NextGenFirewallRule(FirewallRule):
             _cfg_fh (file): The file handle of the configuration file.
             _indent (str): The indentation to use when writing to the file.
         """
-        
+
         if self.has_devices():
             return
 
-        self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
+        self.write_rule_open(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent)
         match_printed = False
 
-        src_conditions = [
-            self.src_zone_map,
-            self.src_addr_map,
-            self.src_addr_grp_map
-        ]
+        src_conditions = [self.src_zone_map, self.src_addr_map, self.src_addr_grp_map]
 
         if any(src_conditions):
             print(f"{_indent}        match {{", file=_cfg_fh)
             match_printed = True
-            super().write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh,  _indent)
+            super().write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent)
             print(f"{_indent}            }}", file=_cfg_fh)
 
-        dst_conditions = [
-            self.dst_zone_map,
-            self.dst_addr_map,
-            self.dst_addr_grp_map
-        ]
+        dst_conditions = [self.dst_zone_map, self.dst_addr_map, self.dst_addr_grp_map]
 
         if any(dst_conditions):
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            super().write_dst_match_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
+            super().write_dst_match_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
             print(f"{_indent}            }}", file=_cfg_fh)
 
         if self.match_ip_version:
@@ -191,13 +182,27 @@ class NextGenFirewallRule(FirewallRule):
             print(f"{_indent}            application {{", file=_cfg_fh)
 
             predef_app_list = [app for app in self.application_map if app in predef_app_map]
-            user_def_app_list = [app for app in self.application_map if app in cur_tnt.application_map or (sh_tnt is not None and app in sh_tnt.application_map)]
-            user_def_app_grp_list = [app for app in self.application_map if app in cur_tnt.application_group_map or (sh_tnt is not None and app in sh_tnt.application_group_map)]
+            user_def_app_list = [
+                app
+                for app in self.application_map
+                if app in cur_tnt.application_map or (sh_tnt is not None and app in sh_tnt.application_map)
+            ]
+            user_def_app_grp_list = [
+                app
+                for app in self.application_map
+                if app in cur_tnt.application_group_map or (sh_tnt is not None and app in sh_tnt.application_group_map)
+            ]
 
             if predef_app_list:
-                print(f"{_indent}                predefined-application-list [ {' '.join(predef_app_list)} ];", file=_cfg_fh)
+                print(
+                    f"{_indent}                predefined-application-list [ {' '.join(predef_app_list)} ];",
+                    file=_cfg_fh,
+                )
             if user_def_app_list:
-                print(f"{_indent}                user-defined-application-list [ {' '.join(user_def_app_list)} ];", file=_cfg_fh)
+                print(
+                    f"{_indent}                user-defined-application-list [ {' '.join(user_def_app_list)} ];",
+                    file=_cfg_fh,
+                )
             if user_def_app_grp_list:
                 print(f"{_indent}                group-list [ {' '.join(user_def_app_grp_list)} ];", file=_cfg_fh)
 
@@ -209,8 +214,14 @@ class NextGenFirewallRule(FirewallRule):
                 match_printed = True
             print(f"{_indent}            url-category {{", file=_cfg_fh)
 
-            predef_uc_list = [uc.replace("-", "_") for uc in self.url_category_map if uc.replace("-", "_") in predef_uc_map]
-            user_def_uc_list = [uc for uc in self.url_category_map if uc in cur_tnt.url_category_map or (sh_tnt is not None and uc in sh_tnt.url_category_map)]
+            predef_uc_list = [
+                uc.replace("-", "_") for uc in self.url_category_map if uc.replace("-", "_") in predef_uc_map
+            ]
+            user_def_uc_list = [
+                uc
+                for uc in self.url_category_map
+                if uc in cur_tnt.url_category_map or (sh_tnt is not None and uc in sh_tnt.url_category_map)
+            ]
 
             if predef_uc_list:
                 print(f"{_indent}                predefined [ {' '.join(predef_uc_list)} ];", file=_cfg_fh)
@@ -222,7 +233,7 @@ class NextGenFirewallRule(FirewallRule):
         if match_printed:
             print(f"{_indent}        }}", file=_cfg_fh)
 
-        self.write_set_no_closing_brace(output_vd_cfg, _cfg_fh,  _indent)
+        self.write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
         print(f"{_indent}        }}", file=_cfg_fh)
 
         print(f"{_indent}    }}", file=_cfg_fh)

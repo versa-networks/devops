@@ -49,7 +49,6 @@ class ConfigObject(object):
         """
         return self.obj_type == ConfigObjectType.PRE_DEFINED
 
-
     def get_name(self):
         """
         Returns the name of the configuration object.

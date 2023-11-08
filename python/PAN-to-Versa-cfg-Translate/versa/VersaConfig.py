@@ -316,7 +316,7 @@ class VersaConfig(object):
             if dst_tname not in tnt_nm_map:
                 tnt_nm_map[dst_tname] = []
             tnt_nm_map[dst_tname].append(src_tname)
-        
+
         # If generating for Versa Director, use the approriate template/device
         indent = "    "
         indent1 = indent
@@ -330,26 +330,32 @@ class VersaConfig(object):
 
         output_vd_cfg = False
         if tmpl_name is not None:
-            print(f"# Based on CLI argument for template, the config\n"
+            print(
+                f"# Based on CLI argument for template, the config\n"
                 f"# generated will belong to the config template {tmpl_name}\n"
                 "devices {\n"
                 f"{indent1}template {tmpl_name}{{\n"
-                f"{indent2}config {{", file=_cfg_fh)
+                f"{indent2}config {{",
+                file=_cfg_fh,
+            )
             indent = indent1
             output_vd_cfg = True
         elif device_name is not None:
-            print(f"# Based on CLI argument for template, the config\n"
+            print(
+                f"# Based on CLI argument for template, the config\n"
                 f"# generated will belong to the device {device_name}\n"
                 "devices {\n"
                 f"{indent1}device {{\n"
-                f"{indent2}config {{", file=_cfg_fh)
+                f"{indent2}config {{",
+                file=_cfg_fh,
+            )
             indent = indent2
             output_vd_cfg = True
 
         # Generate the interface configuration
         print(f"   Interfaces")
         print(f"{indent3}interfaces {{", file=_cfg_fh)
-        
+
         intf_map = defaultdict(list)
 
         for tname, tnt in self.tenant_map.items():
@@ -414,8 +420,7 @@ class VersaConfig(object):
                 continue
             print(f"{indent5}appliance-owner;", file=_cfg_fh)
             print(f"{indent5}services [ {args.org_services} ];", file=_cfg_fh)
-         
-        
+
             # write configuration for traffic identification using
             # interfaces, based on the interfaces of the tenant config
             src_tnames = tnt_nm_map[tnt_nm]
@@ -427,7 +432,6 @@ class VersaConfig(object):
                 tnt = self.tenant_map[dst_tname]
 
             print(f"{indent5}traffic-identification {{", file=_cfg_fh)
-
 
             pflag = True
             for zname, zone in tnt.get_zone_map().items():
@@ -574,7 +578,7 @@ class VersaConfig(object):
                     vd_str = ""
                 print(f"{indent7}{vd_str}{zone.name}{{", file=_cfg_fh)
                 zone.write_config(_cfg_fh, indent5 + "    ", False)
-                #print(f"{indent7}}}", file=_cfg_fh)
+                # print(f"{indent7}}}", file=_cfg_fh)
 
             print(f"{indent6}}}", file=_cfg_fh)
 
@@ -656,8 +660,8 @@ class VersaConfig(object):
             print(f"{indent4}}}", file=_cfg_fh)
             print(f"{indent3}}}", file=_cfg_fh)
             print(f"{indent1}{args.service_node_groups}", file=_cfg_fh)
-        
-        print(f"{indent3}}}", file=_cfg_fh)    
+
+        print(f"{indent3}}}", file=_cfg_fh)
         print(f"{indent2}}}", file=_cfg_fh)
         print(f"{indent1}}}", file=_cfg_fh)
 
