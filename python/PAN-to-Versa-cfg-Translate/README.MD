@@ -11,17 +11,14 @@ Converts a Palo Alto configuration export to a Versa configuration.
 1. Python Installed
 2. Modules
    1. argparse
-   2. traceback
-   3. sys
-   4. os
-   5. csv
-   6. logging
-   7. lxml.etree
-   8. zoneinfo
-   9. sys
-   10. re
-   11. typing
-   12. datetime
+   2. csv
+   3. datetime
+   4. logging
+   5. lxml
+   6. os
+   7. re
+   8. sys
+   9. typing
 
 <!-- ### Installing-->
 
@@ -37,7 +34,7 @@ Converts a Palo Alto configuration export to a Versa configuration.
 
 - Windows 11
 - Python 3.10.6
-- Director 21.3
+- Director 22.1
 
 ## What it does
 
@@ -122,6 +119,30 @@ python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_File
 
 1. Palo Alto default application names don't match to Versa default application names. Meaning that some application groups will not have the correct memebers.
    a. This will be reolved in a future release
+
+## TODO
+
+### Bug Fixes
+
+1. Improve user defined application creation. Much of the data in the PAN config is not being used to create the new versa application.
+2. Improve user defined application creation. Much of the data in the PAN config is not being used to create the new versa application.
+
+### Feature Enhancements
+
+1. Add a "imported date and from" option for all descriptions
+2. Create 2 templates
+   1. one for next generation firewall rules and one for objects such as addresses, services, applications
+3. Import data from the versa configuration file.
+   1. At this time all versa configuration information is overwritten.
+4. Identify (Alert ?) on applications that do not have an associated Versa application
+   1. Identify Application groups that contains application identified above
+   2. Identify Security rule that contains application identified above
+   3. Create a  predefined application list and configurations that match PAN predifined application.
+5. Improved logging
+6. Improved error handling
+7. Import Regions
+8. Import Decryption Profile
+9. Import Tags
 
 ## Authors
 
