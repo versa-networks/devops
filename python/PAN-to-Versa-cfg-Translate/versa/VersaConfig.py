@@ -9,10 +9,8 @@
 
 
 from collections import defaultdict
-from enum import Enum
 from versa.System import System
 from versa.Tenant import Tenant
-from xml.dom import minidom
 
 
 class VersaConfig(object):
@@ -33,6 +31,7 @@ class VersaConfig(object):
     predef_app_map (dict): A map of predefined applications in the configuration.
     predef_url_cat_map (dict): A map of predefined URL categories in the configuration.
     predef_countries_map (dict): A map of predefined countries in the configuration.
+    predef_families_map (dict): A map of predefined families in the configuration.
     predef_subfamilies_map (dict): A map of predefined subfamilies in the configuration.
     tenant_xlate_map (dict): A map of tenant translations in the configuration.
     logger (Logger): The logger for the configuration.
@@ -58,11 +57,13 @@ class VersaConfig(object):
         self.predef_app_map = {}
         self.predef_url_cat_map = {}
         self.predef_countries_map = {}
+        self.predef_families_map = {}
         self.predef_subfamilies_map = {}
+        self.predef_app_tags_map = {}
         self.tenant_xlate_map = {}
         self.logger = None
 
-    def get_target_tenant(self, tenant):
+    def get_target_tenant(self, _tnt):
         """
         Gets the target tenant from the tenant map or tenant translation map.
 
@@ -72,12 +73,13 @@ class VersaConfig(object):
         Returns:
             Tenant: The target tenant if found, otherwise None.
         """
-        if tenant in self.tenant_xlate_map:
-            tgt_tenant = self.tenant_xlate_map[tenant][0]
-            if tgt_tenant in self.tenant_map:
+        if _tnt in self.tenant_xlate_map.keys():
+            tgt_tenant = self.tenant_xlate_map[_tnt][0]
+            if tgt_tenant in self.tenant_map.keys():
                 return self.tenant_map[tgt_tenant]
-
-        return self.tenant_map.get(tenant)
+        if _tnt in self.tenant_map.keys():
+            return self.tenant_map[_tnt]
+        return None
 
     def get_tenant_xlate_map(self):
         return self.tenant_xlate_map
@@ -103,11 +105,23 @@ class VersaConfig(object):
     def set_predef_countries_map(self, _predef_countries_map):
         self.predef_countries_map = _predef_countries_map
 
+    def get_predef_families_map(self):
+        return self.predef_families_map
+
+    def set_predef_families_map(self, _predef_families_map):
+        self.predef_families_map = _predef_families_map
+
     def get_predef_subfamilies_map(self):
         return self.predef_subfamilies_map
 
     def set_predef_subfamilies_map(self, _predef_subfamilies_map):
         self.predef_subfamilies_map = _predef_subfamilies_map
+
+    def get_predef_app_tags_map(self):
+        return self.predef_app_tags_map
+
+    def set_predef_app_tags_map(self, _predef_app_tags_map):
+        self.predef_app_tags_map = _predef_app_tags_map
 
     def get_logger(self):
         return self.logger
@@ -330,25 +344,11 @@ class VersaConfig(object):
 
         output_vd_cfg = False
         if tmpl_name is not None:
-            print(
-                f"# Based on CLI argument for template, the config\n"
-                f"# generated will belong to the config template {tmpl_name}\n"
-                "devices {\n"
-                f"{indent1}template {tmpl_name}{{\n"
-                f"{indent2}config {{",
-                file=_cfg_fh,
-            )
+            print(f"devices {{\n{indent1}template {tmpl_name}{{\n{indent2}config {{", file=_cfg_fh)
             indent = indent1
             output_vd_cfg = True
         elif device_name is not None:
-            print(
-                f"# Based on CLI argument for template, the config\n"
-                f"# generated will belong to the device {device_name}\n"
-                "devices {\n"
-                f"{indent1}device {{\n"
-                f"{indent2}config {{",
-                file=_cfg_fh,
-            )
+            print(f"devices {{\n{indent1}device {{\n{indent2}config {{", file=_cfg_fh)
             indent = indent2
             output_vd_cfg = True
 
@@ -357,7 +357,6 @@ class VersaConfig(object):
         print(f"{indent3}interfaces {{", file=_cfg_fh)
 
         intf_map = defaultdict(list)
-
         for tname, tnt in self.tenant_map.items():
             for zname, zone in tnt.zone_map.items():
                 for intf, ifline in zone.interface_map.items():
@@ -395,6 +394,7 @@ class VersaConfig(object):
         # Generate the networks configuration
         print(f"{indent3}networks {{", file=_cfg_fh)
         print(f"   Networks")
+
         for nw, intfs in self.nw_intf_map.items():
             vdi_str = ""
             if output_vd_cfg:
@@ -461,13 +461,11 @@ class VersaConfig(object):
 
             print(f"{indent5}}}", file=_cfg_fh)
             print(f"{indent4}}}", file=_cfg_fh)
-
         # Resolve conflicts between object names that are defined in multiple tenants.
         for tnt_nm in list(tnt_nm_map.keys()):
             print(f"{indent4}org-services {tnt_nm} {{", file=_cfg_fh)
             if tnt_nm not in list(self.tenant_map):
                 continue
-
             for src_tnm in src_tnames:
                 dst_tnt_info = tnt_xlate_map[src_tnm]
                 dst_tname = dst_tnt_info[0]
@@ -584,7 +582,6 @@ class VersaConfig(object):
 
             # end of configuration for tenant objects
             print(f"{indent5}}}", file=_cfg_fh)
-
             # write configuration for tenant application objects
             tnt = self.tenant_map[tnt_nm]
             if (

@@ -125,7 +125,6 @@ python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_File
 ### Bug Fixes
 
 1. Improve user defined application creation. Much of the data in the PAN config is not being used to create the new versa application.
-2. Improve user defined application creation. Much of the data in the PAN config is not being used to create the new versa application.
 
 ### Feature Enhancements
 
@@ -143,6 +142,7 @@ python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_File
 7. Import Regions
 8. Import Decryption Profile
 9. Import Tags
+10. Service mapping based on ports and protocols, not just service name.
 
 ## Authors
 

@@ -133,9 +133,11 @@ class AddressGroup(ConfigObject):
         If a member is not already in _ordered_list, it is appended to the end of the list.
         """
         for addr_grp, addr_grp_line in self.address_group_map.items():
-            _tnt.get_address_group(addr_grp).add_group_members_to_list(_tnt, _ordered_list)
-            if addr_grp not in _ordered_list:
-                _ordered_list.append(addr_grp)
+            _tnt.get_address_group(addr_grp). \
+                               add_group_members_to_list(_tnt, _ordered_list)
+            if (addr_grp not in _ordered_list):
+                _ordered_list.extend([ addr_grp ])
+
 
     def replace_address_by_address_group(self, _address_group):
         """
@@ -147,39 +149,46 @@ class AddressGroup(ConfigObject):
         This method replaces an address by an address group in the maps. If the address group named _address_group exists in the address_map,
         it is removed and added to the address_group_map with the same value.
         """
-        addr_grp_line = self.address_map.pop(_address_group, None)
-        if addr_grp_line is not None:
+        
+        if (_address_group in self.address_map):
+            addr_grp_line = self.address_map[_address_group]
+            self.address_map.pop(_address_group, None)
             self.address_group_map[_address_group] = addr_grp_line
+
 
     def replace_address(self, _aname, _new_aname):
         """
         Replaces an address in the address_map.
 
         Args:
-            _aname (str): The name of the address to be replaced.
-            _new_aname (str): The new name of the address.
+            _address_name (str): The name of the address to be replaced.
+            _new_address_name (str): The new name of the address.
 
-        This method replaces an address in the address_map. If the address named _aname exists in the map,
-        it is removed and a new address named _new_aname is added to the map with the same value.
+        This method replaces an address in the address_map. If the address named _address_name exists in the map,
+        it is removed and a new address named _new_address_name is added to the map with the same value.
         """
-        aline = self.address_map.pop(_aname, None)
-        if aline is not None:
+        if (_aname in self.address_map):
+            aline = self.address_map[_aname]
+            self.address_map.pop(_aname, None)
             self.address_map[_new_aname] = aline
+
 
     def replace_address_group(self, _agname, _new_agname):
         """
         Replaces an address group in the address_group_map.
 
         Args:
-            _agname (str): The name of the address group to be replaced.
-            _new_agname (str): The new name of the address group.
+            _address_group_name (str): The name of the address group to be replaced.
+            _new_address_group_name (str): The new name of the address group.
 
-        This method replaces an address group in the address_group_map. If the address group named _agname exists in the map,
-        it is removed and a new address group named _new_agname is added to the map with the same value.
+        This method replaces an address group in the address_group_map. If the address group named _address_group_name exists in the map,
+        it is removed and a new address group named _new_address_group_name is added to the map with the same value.
         """
-        aline = self.address_group_map.pop(_agname, None)
-        if aline is not None:
+        if (_agname in self.address_group_map):
+            aline = self.address_group_map[_agname]
+            self.address_group_map.pop(_agname, None)
             self.address_group_map[_new_agname] = aline
+
 
     def listsAreEqual(self, a, b):
         """

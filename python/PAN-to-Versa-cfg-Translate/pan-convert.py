@@ -13,6 +13,7 @@ import logging
 import os
 import re
 import sys
+import traceback
 from argparse import Namespace
 from csv import reader
 from datetime import datetime
@@ -23,7 +24,7 @@ from lxml import etree as ET
 import versa
 from versa.Address import Address, AddressType
 from versa.AddressGroup import AddressGroup
-from versa.Application import Application
+from versa.Application import Application, AppMatchRules
 from versa.ApplicationFilter import ApplicationFilter
 from versa.ApplicationGroup import ApplicationGroup
 from versa.Firewall import Firewall
@@ -47,7 +48,7 @@ INPUT_LINE_NUM = 0  # This is unused and should be removed in the future
 """int: Input line number."""
 
 
-def clean_string(input_string: str) -> str:
+def clean_string(input_string: str, spaces) -> str:
     """
     Cleans the input string by removing any character that is not a-z, A-Z, 0-9, -, _.
 
@@ -59,7 +60,10 @@ def clean_string(input_string: str) -> str:
     Returns:
         str: The cleaned string, containing only a-z, A-Z, 0-9, -, _ characters.
     """
-    return re.sub(r"[^a-zA-Z0-9\-_]", "", input_string)
+    if spaces:
+        return re.sub(r"[^a-zA-Z0-9\-_ ]", "", input_string)
+    else:
+        return re.sub(r"[^a-zA-Z0-9\-_]", "", input_string)
 
 
 def parse_args(args_list: list) -> Namespace:
@@ -116,12 +120,28 @@ def parse_args(args_list: list) -> Namespace:
         default="Predefined/applications.csv",
     )
     parser.add_argument(
+        "-f",
+        "--families_file",
+        dest="families_file",
+        action="store",
+        help="Path to Versa application families CSV file",
+        default="Predefined/app_families.csv",
+    )
+    parser.add_argument(
         "-s",
         "--subfamilies_file",
         dest="subfamilies_file",
         action="store",
         help="Path to Versa application subfamilies CSV file",
         default="Predefined/app_subfamiles.csv",
+    )
+    parser.add_argument(
+        "-at",
+        "--app_tags_file",
+        dest="app_tags_file",
+        action="store",
+        help="Path to Versa application tags CSV file",
+        default="Predefined/app_tags.csv",
     )
     parser.add_argument(
         "-u",
@@ -279,7 +299,7 @@ def open_3rd_party_config_file(args: Namespace):
         print(f"Error: Unexpected error with file {args.pan_config_file}")
         print(f"Error Details: {e}")
     return None
-    
+
 
 def create_zone_interface_file(args: argparse.Namespace, xml_root) -> None:
     """Create a CSV file containing zone and interface information.
@@ -466,6 +486,32 @@ def open_predefined_countries_file(args: Namespace):
     return None, None
 
 
+def open_predefined_families_file(args: Namespace):
+    """Open and parse a predefined families CSV file.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+
+    Returns:
+        Tuple[Optional[csv.reader], Optional[io.TextIOWrapper]]: CSV reader object and file object, or None if there was an error.
+    """
+    if not args.families_file:
+        print("Please specify the predefined families categories file")
+        return None
+
+    print("   Families")
+    try:
+        families_fh = open(args.families_file, "r", encoding="utf-8")
+        families_csv = csv.reader(families_fh)
+        return families_csv, families_fh
+    except FileNotFoundError:
+        print(f"Error: families CSV file {args.families_file} not found")
+    except Exception as e:
+        print(f"Error: unable to open families CSV file {args.families_file} for reading")
+        print(f"Error Details: {e}")
+    return None, None
+
+
 def open_predefined_subfamilies_file(args: Namespace):
     """Open and parse a predefined subfamilies CSV file.
 
@@ -488,6 +534,32 @@ def open_predefined_subfamilies_file(args: Namespace):
         print(f"Error: subfamilies CSV file {args.subfamilies_file} not found")
     except Exception as e:
         print(f"Error: unable to open subfamilies CSV file {args.subfamilies_file} for reading")
+        print(f"Error Details: {e}")
+    return None, None
+
+
+def open_predefined_app_tags_file(args: Namespace):
+    """Open and parse a predefined application tags  CSV file.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+
+    Returns:
+        Tuple[Optional[csv.reader], Optional[io.TextIOWrapper]]: CSV reader object and file object, or None if there was an error.
+    """
+    if not args.app_tags_file:
+        print("Please specify the predefined sub families categories file")
+        return None
+
+    print("   Tags")
+    try:
+        apps_tags_fh = open(args.app_tags_file, "r", encoding="utf-8")
+        apps_tags_csv = csv.reader(apps_tags_fh)
+        return apps_tags_csv, apps_tags_fh
+    except FileNotFoundError:
+        print(f"Error: app tags CSV file {args.app_tags_file} not found")
+    except Exception as e:
+        print(f"Error: unable to open app tags CSV file {args.app_tags_file} for reading")
         print(f"Error Details: {e}")
     return None, None
 
@@ -679,6 +751,31 @@ def populate_predefined_countries_map(countries_csv, countries_fh: Any, versa_cf
     return versa_cfg, predef_countries_map
 
 
+def populate_predefined_families_map(families_csv, families_fh: Any, versa_cfg: Any) -> Tuple[Any, Dict[str, list]]:
+    """
+    Populate predefined families from a CSV file into a dictionary.
+
+    Args:
+        families_csv (csv.reader): Contents of the families file.
+        families_fh (Any): File handle for the families file.
+        versa_cfg (Any): Storage object for Versa Config.
+
+    Returns:
+        Tuple[Any, Dict[str, list]]: A tuple containing the updated versa_cfg object and the predef_families dictionary.
+    """
+    # predef_families: Dict[str, list] = {row[0]: row for row in families_csv}
+
+    predef_families: Dict[str, list[str]] = {}
+    for row in families_csv:
+        if row and not row[0].startswith("#"):
+            family = row[0]
+            predef_families[family] = row[1:]
+
+    families_fh.close()
+    versa_cfg.set_predef_families_map(predef_families)
+    return versa_cfg, predef_families
+
+
 def populate_predefined_subfamilies_map(
     subfamilies_csv, subfamilies_fh: Any, versa_cfg: Any
 ) -> Tuple[Any, Dict[str, list]]:
@@ -693,34 +790,277 @@ def populate_predefined_subfamilies_map(
     Returns:
         Tuple[Any, Dict[str, list]]: A tuple containing the updated versa_cfg object and the predef_subfamilies dictionary.
     """
-    predef_subfamilies_map: Dict[str, list] = {row[0]: row for row in subfamilies_csv}
+    predef_subfamilies: Dict[str, list[str]] = {}
+    for row in subfamilies_csv:
+        if row and not row[0].startswith("#"):
+            subfamily = row[0]
+            predef_subfamilies[subfamily] = row[1:]
+
     subfamilies_fh.close()
-    versa_cfg.set_predef_subfamilies_map(predef_subfamilies_map)
-    return versa_cfg, predef_subfamilies_map
+    versa_cfg.set_predef_subfamilies_map(predef_subfamilies)
+    return versa_cfg, predef_subfamilies
 
 
-def load_application_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
-    """Load application objects into a tenant.
+def populate_predefined_app_tags_map(app_tags_csv, app_tags_fh, versa_cfg: Any) -> Tuple[Any, Dict[str, list]]:
+    """
+    Populate predefined app tags from a CSV file into a dictionary.
 
     Args:
-        _tnt_xml (Element): The XML element containing the application objects.
-        _tnt (Any): The tenant object to add the application objects to.
-        _v_logger (logging.Logger): The logger object for logging messages.
+        app_tags_csv (csv.reader): Contents of the app_tags file.
+        app_tags_fh (Any): File handle for the app_tags file.
+        versa_cfg (Any): Storage object for Versa Config.
+
+    Returns:
+        Tuple[Any, Dict[str, list]]: A tuple containing the updated versa_cfg object and the predef_app_tags dictionary.
     """
-    # Process application objects
+    predef_app_tags: Dict[str, list[str]] = {}
+    for row in app_tags_csv:
+        if row and not row[0].startswith("#"):
+            app_tags = row[0]
+            predef_app_tags[app_tags] = row[1:]
+
+    app_tags_fh.close()
+    versa_cfg.set_predef_app_tags_map(predef_app_tags)
+    return versa_cfg, predef_app_tags
+
+
+def get_key(my_dict: dict, val: Any) -> Any:
+    """
+    Returns the key in a dictionary for a given value.
+
+    Args:
+        my_dict (dict): The dictionary to search.
+        val (Any): The value to find the key for.
+
+    Returns:
+        Any: The key for the given value.
+
+    Raises:
+        ValueError: If the value is not found in the dictionary.
+    """
+    for key, value in my_dict.items():
+        if val in value:
+            return key
+    return ""
+
+
+def get_text_and_clean(element) -> Optional[str]:
+    """
+    Extracts text from an XML element and cleans it.
+
+    Args:
+        element (_Element, optional): The XML element to extract text from.
+
+    Returns:
+        str, optional: The cleaned text, or None if the element is None or contains no text.
+    """
+    if element is not None and element.text is not None:
+        return clean_string(element.text, True)
+    return None
+
+
+def add_tag(app_tags: List[str], tag: str, map: Dict[str, str]) -> None:
+    """
+    Adds a tag to the app_tags list if it's not already present.
+
+    Parameters:
+    app_tags (List[str]): The list of application tags.
+    tag (str): The tag to add.
+    map (Dict[str, str]): The mapping of tags.
+
+    Returns:
+    None
+    """
+    key = get_key(map, tag)
+    if key not in app_tags:
+        app_tags.insert(0, key)
+
+
+def handle_port(port: str):
+    """
+    Handles different formats of port values.
+
+    Parameters:
+    port (str): The port value.
+
+    Returns:
+    Tuple[str, str, str]: A tuple containing the port value, port low, and port high.
+    """
+    if port == "dynamic":
+        return "any", "", ""
+    elif "-" not in port:
+        return port, "", ""
+    else:
+        port_low, port_high = port.split("-")
+        return "", port_low, port_high
+
+
+def load_application_objects(
+    tnt_xml,
+    tnt: Any,
+    v_logger: logging.Logger,
+    predef_app_map: Dict[str, Any],
+    predef_families_map: Dict[str, Any],
+    predef_subfamilies_map: Dict[str, Any],
+    predef_app_tags_map: Dict[str, Any],
+) -> None:
+    """
+    Load application objects into a tenant from an XML document.
+
+    This function iterates over the application entries in the XML document, creates an `Application` object for each entry,
+    and adds the object to a tenant. It also sets various properties on the `Application` object based on the XML entry.
+
+    Args:
+        tnt_xml (_Element): The XML element containing the application objects.
+        tnt (Any): The tenant object to add the application objects to.
+        v_logger (logging.Logger): The logger object for logging messages.
+        predef_app_map (Dict[str, Any]): Predefined application map.
+        predef_families_map (Dict[str, Any]): Predefined families map.
+        predef_subfamilies_map (Dict[str, Any]): Predefined subfamilies map.
+        predef_app_tags_map (Dict[str, Any]): Predefined application tags map.
+
+    This function also handles the following application properties:
+        - Description
+        - Category
+        - Subcategory
+        - Risk
+        - Evasive behavior
+        - Bandwidth consumption
+        - Usage by malware
+        - File transfer capability
+        - Known vulnerabilities
+        - Ability to tunnel other applications
+        - Misuse potential
+        - Pervasive use
+        - File type identification
+        - Virus identification
+        - Data identification
+        - Technology
+    """
     print("Loading application objects into tenant...")
+
     applications = tnt_xml.xpath("./application/entry")
+    TAGS = {
+        "evasive-behavior",
+        "consume-big-bandwidth",
+        "used-by-malware",
+        "able-to-transfer-file",
+        "has-known-vulnerability",
+        "tunnel-other-application",
+        "tunnel-applications",
+        "prone-to-misuse",
+        "pervasive-use",
+        "file-type-ident",
+        "virus-ident",
+        "data-ident",
+    }
+
     for app in applications:
-        application_name = (clean_string(app.attrib["name"])).upper()
+        app_tags: List[str] = []
+        application_name = (clean_string(app.attrib["name"], False)).upper()
         if application_name in tnt.application_map:
             continue
         cur_app = Application(application_name, INPUT_LINE_NUM, False)
-        desc = app.find("./description")
-        if desc is not None and desc.text is not None:
-            desc.text = clean_string(desc.text)
-            cur_app.set_description(desc.text, INPUT_LINE_NUM)
+
+        desc_text = get_text_and_clean(app.find("./description"))
+        if desc_text:
+            cur_app.set_description(desc_text, INPUT_LINE_NUM)
+
+        category_text = get_text_and_clean(app.find("./category"))
+        if category_text:
+            add_tag(app_tags, category_text, predef_app_tags_map)
+            versa_family = get_key(predef_families_map, category_text)
+            cur_app.set_family(versa_family, INPUT_LINE_NUM)
+
+        subcategory_text = get_text_and_clean(app.find("./subcategory"))
+        if subcategory_text:
+            add_tag(app_tags, subcategory_text, predef_app_tags_map)
+            versa_subfamily = get_key(predef_subfamilies_map, subcategory_text)
+            cur_app.set_subfamily(versa_subfamily, INPUT_LINE_NUM)
+
+        risk_value = get_text_and_clean(app.find("./risk"))
+        if risk_value:
+            cur_app.set_risk(risk_value)
+
+        for tag in TAGS:
+            tag_element = app.find(f"./{tag}")
+            if tag_element is not None and tag_element.text == "yes":
+                add_tag(app_tags, tag, predef_app_tags_map)
+
+        technology_text = get_text_and_clean(app.find("./technology"))
+        if technology_text:
+            add_tag(app_tags, technology_text, predef_app_tags_map)
+            cur_app.set_tag(" ".join(app_tags))
+        else:
+            cur_app.set_tag("Data")
+
+        cur_app.set_precedence(100)
+        cur_app.set_app_timeout(0)
+        cur_app.set_app_match_ips(True)
+
+        # Gather Port Members that define the application. I am unable to find the every possible configuration options so this code may not be 100% accurate
+        protocol_map = {"tcp": 6, "udp": 17, "icmp": 1}
+        app_default_members = app.xpath("./default/port/member")
+        member_count = 0
+
+        for member in app_default_members:
+            app_match_rule_name = clean_string(member.text, False)
+            protocol, port = member.text.split("/")
+            protocol = protocol_map.get(protocol, "")
+            destination_port_value, destination_port_low, destination_port_high = handle_port(port)
+
+            app_match_rule = AppMatchRules(app_match_rule_name, INPUT_LINE_NUM, False)
+            app_match_rule.set_protocol(protocol)
+            app_match_rule.set_destination_port_value(str(destination_port_value))
+            if destination_port_low:
+                app_match_rule.set_destination_port_low(int(destination_port_low))
+            if destination_port_high:
+                app_match_rule.set_destination_port_high(int(destination_port_high))
+
+            print(
+                f"Rule: {app_match_rule_name} Protocol: {protocol} PAN Port: {port} Port Value: {destination_port_value} Port Low: {destination_port_low} Port High: {destination_port_high}"
+            )
+            cur_app.attach_app_match_rule(app_match_rule)
+            member_count += 1
+
         v_logger.info(f"Tenant {tnt.name}: Adding Application {cur_app.name} to current tenant")
         tnt.add_application(cur_app, INPUT_LINE_NUM)
+
+
+"""
+org-services RobK-Demo-1 {
+    application-identification {
+        user-defined-applications {
+            user-defined-application Deletem {
+                description   Descrip;
+                family        business-system;
+                subfamily     antivirus;
+                productivity  1;
+                risk          1;
+                tag           [ vs_anonymizer ];
+                precedence    100;
+                app-match-ips false;
+                app-match-rules Match1 {
+                    host-pattern       Hostp;
+                    source-prefix      192.168.1.1/32;
+                    destination-prefix 192.168.1.2/32;
+                    protocol           6;
+                    destination-port {
+                        value 1;
+                    }
+                }
+                app-match-rules Match2 {
+                    host-pattern Hop;
+                    protocol     1;
+                    destination-port {
+                        low  1;
+                        high 4;
+                    }
+                }
+            }
+        }
+    }
+"""
 
 
 def load_service_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
@@ -734,14 +1074,14 @@ def load_service_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
     print("Loading service objects into tenant...")
     services = tnt_xml.findall("./service/entry")
     for svc in services:
-        service_name = clean_string(svc.attrib["name"])
+        service_name = clean_string(svc.attrib["name"], False)
         if service_name in tnt.service_map:
             continue
         cur_svc = Service(service_name, INPUT_LINE_NUM, False)
 
         desc = svc.find("./description")
         if desc is not None and desc.text is not None:
-            desc.text = clean_string(desc.text)
+            desc.text = clean_string(desc.text, False)
             cur_svc.set_description(desc.text, INPUT_LINE_NUM)
 
         proto = svc.find("./protocol/*")
@@ -765,7 +1105,7 @@ def load_service_group_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> N
     print("Loading service group objects into tenant...")
     svc_groups = tnt_xml.findall("./service-group/entry")
     for svc_group in svc_groups:
-        sgname = clean_string(svc_group.attrib["name"])
+        sgname = clean_string(svc_group.attrib["name"], False)
 
         cur_svc_grp = tnt.get_service_group(sgname)
         if cur_svc_grp is None:
@@ -789,7 +1129,7 @@ def load_schedule_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
     """
     print("Loading schedule objects into tenant...")
     for s in tnt_xml.findall("./schedule/entry"):
-        schedule_name = clean_string(s.attrib["name"])
+        schedule_name = clean_string(s.attrib["name"], False)
         cur_sched = Schedule(schedule_name, INPUT_LINE_NUM, False, False)
 
         nr = s.findall("./schedule-type/non-recurring/member")
@@ -824,14 +1164,14 @@ def load_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> No
     print("Loading URL categories into tenant...")
     url_categories = tnt_xml.findall("./profiles/custom-url-category/entry")
     for uc in url_categories:
-        uc_name = uc.attrib["name"].replace(" ", "_")
+        uc_name = clean_string(uc.attrib["name"], False)
         if uc_name in tnt.url_categories_map:
             continue
         cur_uc = URLCategory(uc_name, INPUT_LINE_NUM, False)
 
         desc = uc.find("./description")
         if desc is not None and desc.text is not None:
-            desc.text = clean_string(desc.text)
+            desc.text = clean_string(desc.text, True)
             cur_uc.set_description(desc.text, INPUT_LINE_NUM)
 
         urls = uc.findall("./list/member")
@@ -846,7 +1186,7 @@ def load_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> No
         tnt.add_url_category(cur_uc, INPUT_LINE_NUM)
 
 
-def load_address_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
+def load_address_objects(_tnt_xml, _tnt: Any, v_logger) -> None:
     """Load address objects from an XML element into a tenant.
 
     Args:
@@ -856,42 +1196,34 @@ def load_address_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
     """
     # Process address objects
     print("Loading address_objects into tenant...")
-    addresses = tnt_xml.findall("./address/entry")
+    # Process address objects
+    addresses = _tnt_xml.findall("./address/entry")
     for addr in addresses:
-        address_name = addr.attrib["name"].replace(" ", "_")
-        if address_name in tnt.address_map:
-            continue
-        cur_addr = Address(address_name, INPUT_LINE_NUM, False)
-        ip_netmask = addr.find("./ip-netmask")
-        desc = addr.find("./description")
-        ip_ra = addr.find("./ip-range")
-        if desc is not None and desc.text is not None:
-            desc.text = clean_string(desc.text)
-            cur_addr.set_description(desc.text, INPUT_LINE_NUM)
+        aname = clean_string(addr.attrib["name"], False)
+        cur_addr = Address(aname, INPUT_LINE_NUM, False)
+        ip_nm = addr.find("./ip-netmask")
         add_flag = False
-        if ip_netmask is not None:
-            cur_addr.set_addr_value(ip_netmask.text.replace(" ", "_"), INPUT_LINE_NUM)
+        if ip_nm is not None:
+            cur_addr.set_addr_value(clean_string(ip_nm.text, False), INPUT_LINE_NUM)
             cur_addr.set_addr_type(AddressType.IP_V4_PREFIX, INPUT_LINE_NUM)
             add_flag = True
-        if ip_ra is not None:
-            cur_addr.set_addr_value(ip_ra.text.replace(" ", "_"), INPUT_LINE_NUM)
-            cur_addr.set_addr_type(AddressType.IP_V4_RANGE, INPUT_LINE_NUM)
-            add_flag = True
+
         if not add_flag:
             fqdn = addr.find("./fqdn")
             if fqdn is not None:
                 cur_addr.set_addr_value(fqdn.text, INPUT_LINE_NUM)
                 cur_addr.set_addr_type(AddressType.FQDN, INPUT_LINE_NUM)
                 add_flag = True
+
         if not add_flag:
-            v_logger.error(f"Tenant {tnt.name}: Address {cur_addr.name} unsupported")
+            v_logger.error("Tenant %s: Address %s unsupported" % (_tnt.name, cur_addr.name))
             continue
 
-        v_logger.info(f"Tenant {tnt.name}: Adding Address {cur_addr.name} to current tenant")
-        tnt.add_address(cur_addr, INPUT_LINE_NUM)
+        v_logger.info("Tenant %s: Adding Address %s to current tenant" % (_tnt.name, cur_addr.name))
+        _tnt.add_address(cur_addr, INPUT_LINE_NUM)
 
 
-def load_external_address_group_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
+def load_external_address_group_objects(_tnt_xml, _tnt: Any, v_logger: logging.Logger) -> None:
     """Load external address group objects from an XML element into a tenant.
 
     Args:
@@ -900,24 +1232,30 @@ def load_external_address_group_objects(tnt_xml, tnt: Any, v_logger: logging.Log
         v_logger (logging.Logger): A logger object for logging messages.
     """
     print("Loading external address group objects into tenant...")
-    addr_groups = tnt_xml.findall("./external-list/entry")
+    addr_groups = _tnt_xml.findall("./address-group/entry")
     for ag in addr_groups:
-        entry = ag.find("type/ip")
-        if entry is not None:
-            ag_name = ag.attrib["name"].replace(" ", "_")
-            cur_addr_grp = tnt.get_address_group(ag_name) or tnt.add_address_group(
-                AddressGroup(ag_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM
+        agname = clean_string(ag.attrib["name"], False)
+
+        cur_addr_grp = _tnt.get_address_group(agname)
+        if cur_addr_grp is None:
+            cur_addr_grp = AddressGroup(agname, INPUT_LINE_NUM, False)
+            _tnt.add_address_group(cur_addr_grp, INPUT_LINE_NUM)
+
+        ag_members = ag.findall("./members/member")
+        for m in ag_members:
+            addr = clean_string(m.text, False)
+            v_logger.info(
+                "tenant %s: adding address group '%s' " " with address member '%s'" % (_tnt.name, agname, addr)
             )
+            cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
 
-            desc = ag.find("./description")
-            if desc is not None and desc.text is not None:
-                desc.text = clean_string(desc.text)
-                cur_addr_grp.set_description(desc.text, INPUT_LINE_NUM)
-
-            url = entry.find("./url").text
-            file_name = url.split("/")[-1]
-            v_logger.info(f"Tenant {tnt.name}: Adding address group '{cur_addr_grp.name}' with file name '{file_name}'")
-            cur_addr_grp.add_filename(file_name, INPUT_LINE_NUM)
+        ag_members = ag.findall("./static/member")
+        for m in ag_members:
+            addr = clean_string(m.text, False)
+            v_logger.info(
+                "tenant %s: adding address group '%s' " " with address member '%s'" % (_tnt.name, agname, addr)
+            )
+            cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
 
 
 def load_external_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
@@ -933,14 +1271,14 @@ def load_external_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logg
     for url_cat in url_categories:
         entry = url_cat.find("type/url")
         if entry is not None:
-            url_cat_name = url_cat.attrib["name"].replace(" ", "_")
+            url_cat_name = clean_string(url_cat.attrib["name"], False)
             cur_url_cat = tnt.get_url_category(url_cat_name) or tnt.add_url_category(
                 URLCategory(url_cat_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM
             )
 
             desc = entry.find("./description")
             if desc is not None and desc.text is not None:
-                desc.text = clean_string(desc.text)
+                desc.text = clean_string(desc.text, True)
                 cur_url_cat.set_description(desc.text, INPUT_LINE_NUM)
 
             url = entry.find("./url").text
@@ -961,28 +1299,32 @@ def load_address_group_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> N
     print("Loading address groups into tenant...")
     addr_groups = tnt_xml.findall("./address-group/entry")
     for addr_group in addr_groups:
-        agname = addr_group.attrib["name"].replace(" ", "_")
-        if agname in tnt.address_group_map:
+        address_group_name = clean_string(addr_group.attrib["name"], False)
+        if address_group_name in tnt.address_group_map:
             continue
-        cur_addr_grp = tnt.get_address_group(agname)
+        cur_addr_grp = tnt.get_address_group(address_group_name)
         if cur_addr_grp is None:
-            cur_addr_grp = AddressGroup(agname, INPUT_LINE_NUM, False)
+            cur_addr_grp = AddressGroup(address_group_name, INPUT_LINE_NUM, False)
             tnt.add_address_group(cur_addr_grp, INPUT_LINE_NUM)
         desc = addr_group.find("./description")
         if desc is not None and desc.text is not None:
             desc.text = clean_string(desc.text)
             cur_addr_grp.set_description(desc.text, INPUT_LINE_NUM)
 
-        ag_members = addr_group.findall("./members/member")
-        for m in ag_members:
-            addr = m.text.replace(" ", "_")
-            v_logger.info(f"tenant {tnt.name}: adding address group '{agname}' with address member '{addr}'")
+        address_group_members = addr_group.findall("./members/member")
+        for address_group_member in address_group_members:
+            addr = clean_string(address_group_member.text, False)
+            v_logger.info(
+                f"tenant {tnt.name}: adding address group '{address_group_name}' with address member '{addr}'"
+            )
             cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
 
-        ag_members = addr_group.findall("./static/member")
-        for m in ag_members:
-            addr = m.text.replace(" ", "_")
-            v_logger.info(f"tenant {tnt.name}: adding address group '{agname}' with address member '{addr}'")
+        address_group_members = addr_group.findall("./static/member")
+        for address_group_member in address_group_members:
+            addr = clean_string(address_group_member.text, False)
+            v_logger.info(
+                f"tenant {tnt.name}: adding address group '{address_group_name}' with address member '{addr}'"
+            )
             cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
 
 
@@ -998,19 +1340,19 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
     # Process application groups
     print("Loading application groups into tenant...")
     app_groups = tnt_xml.findall("./application-group/entry")
-    for ag in app_groups:
-        agname = ag.attrib["name"].replace(" ", "_")
-        if agname in tnt.address_group_map:
+    for app_group in app_groups:
+        app_group_name = clean_string(app_group.attrib["name"], False)
+        if app_group_name in tnt.address_group_map:
             continue
-        cur_app_grp = tnt.get_application_group(agname)
+        cur_app_grp = tnt.get_application_group(app_group_name)
         if cur_app_grp is None:
-            cur_app_grp = ApplicationGroup(agname, INPUT_LINE_NUM, False)
+            cur_app_grp = ApplicationGroup(app_group_name, INPUT_LINE_NUM, False)
             tnt.add_application_group(cur_app_grp, INPUT_LINE_NUM)
 
-        ag_members = ag.findall("./members/member")
-        for m in ag_members:
+        app_group_members = app_group.findall("./members/member")
+        for m in app_group_members:
             # check if the application is user defined application
-            application_name = m.text.replace(" ", "_").upper()
+            application_name = clean_string(m.text, False).upper()
             member_added = False
 
             app = tnt.get_application(application_name)
@@ -1018,7 +1360,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
             sh_tnt = tnt.get_shared_tenant()
             if app is not None:
                 v_logger.info(
-                    f"Tenant {tnt.name}: Adding application group '{agname}'"
+                    f"Tenant {tnt.name}: Adding application group '{app_group_name}'"
                     + f" with custom application member '{application_name}'"
                 )
                 cur_app_grp.add_application(app, INPUT_LINE_NUM)
@@ -1028,7 +1370,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
                 app_grp = tnt.get_application_group(application_name)
                 if app_grp is not None:
                     v_logger.info(
-                        f"Tenant {tnt.name}: Adding application group '{agname}'"
+                        f"Tenant {tnt.name}: Adding application group '{app_group_name}'"
                         + f" with custom application group member '{application_name}'"
                     )
                     cur_app_grp.add_application_group(app_grp, INPUT_LINE_NUM)
@@ -1038,7 +1380,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
                 app = sh_tnt.get_application(application_name)
                 if app is not None:
                     v_logger.info(
-                        f"Tenant {tnt.name}: Adding application group '{agname}'"
+                        f"Tenant {tnt.name}: Adding application group '{app_group_name}'"
                         + f" with shared application member '{application_name}'"
                     )
                     cur_app_grp.add_application(app, INPUT_LINE_NUM)
@@ -1047,7 +1389,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
                     app_grp = sh_tnt.get_application_group(application_name)
                     if app_grp is not None:
                         v_logger.info(
-                            f"Tenant {tnt.name}: Adding application group '{agname}'"
+                            f"Tenant {tnt.name}: Adding application group '{app_group_name}'"
                             + f" with shared application group member '{application_name}'"
                         )
                         cur_app_grp.add_application_group(app_grp, INPUT_LINE_NUM)
@@ -1058,7 +1400,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
                 if application_name in predef_app_map:
                     app = predef_app_map[application_name]
                     v_logger.info(
-                        f"Tenant {tnt.name}: Adding application group '{agname}'"
+                        f"Tenant {tnt.name}: Adding application group '{app_group_name}'"
                         + f" with predefined application member '{application_name}'"
                     )
                     cur_app_grp.add_application(app, INPUT_LINE_NUM)
@@ -1066,7 +1408,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predef_
 
             if not member_added:
                 v_logger.error(
-                    f"Tenant {tnt.name}: Adding application group '{agname}'"
+                    f"Tenant {tnt.name}: Adding application group '{app_group_name}'"
                     + f" with unknown application member '{application_name}'"
                 )
 
@@ -1083,7 +1425,7 @@ def load_application_filters(tnt_xml, tnt: Any, v_logger: logging.Logger, predef
     print("Loading application filters into tenant...")
     app_filters = tnt_xml.findall("./application-filter/entry")
     for app_filter in app_filters:
-        afname = app_filter.attrib["name"].replace(" ", "_")
+        afname = clean_string(app_filter.attrib["name"], False)
         if afname in tnt.application_filter_map:
             continue
         cur_app_filter = tnt.get_application_filter(afname)
@@ -1248,23 +1590,23 @@ def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
 
     rules = xml.xpath(".//security/rules/entry")
     for rule in rules:
-        rule_name = clean_string(rule.attrib["name"])
+        rule_name = clean_string(rule.attrib["name"], False)
         versa_rule_object = NextGenFirewallRule(rule_name, INPUT_LINE_NUM, False)
         versa_rule_object.set_tenant(cur_tnt)
         cur_ngfw.add_rule(versa_rule_object)
 
         # Process source zone match
-        src_zones = [clean_string(sz.text) for sz in rule.findall("./from/member")]
+        src_zones = [clean_string(sz.text, False) for sz in rule.findall("./from/member")]
         if len(src_zones) > 0 and "any" not in src_zones:
             versa_rule_object.set_src_zone_map({sz: INPUT_LINE_NUM for sz in src_zones})
 
         # Process destination zone match
-        dst_zones = [clean_string(dz.text) for dz in rule.findall("./to/member")]
+        dst_zones = [clean_string(dz.text, False) for dz in rule.findall("./to/member")]
         if len(dst_zones) > 0 and "any" not in dst_zones:
             versa_rule_object.set_dst_zone_map({dz: INPUT_LINE_NUM for dz in dst_zones})
 
         # Process source address match
-        src_addresses = [clean_string(sa.text) for sa in rule.findall("./source/member")]
+        src_addresses = [clean_string(sa.text, False) for sa in rule.findall("./source/member")]
         if len(src_addresses) > 0 and "any" not in src_addresses:
             process_rule_address_match(
                 versa_rule_object,
@@ -1276,7 +1618,7 @@ def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
             )
 
         # Process destination address match
-        dst_addresses = [clean_string(da.text) for da in rule.findall("./destination/member")]
+        dst_addresses = [clean_string(da.text, False) for da in rule.findall("./destination/member")]
         if len(dst_addresses) > 0 and "any" not in dst_addresses:
             process_rule_address_match(
                 versa_rule_object,
@@ -1288,12 +1630,12 @@ def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
             )
 
         # Process service match
-        services = [clean_string(svc.text) for svc in rule.findall("./service/member")]
+        services = [clean_string(svc.text, False) for svc in rule.findall("./service/member")]
         if len(services) > 0 and "any" not in services:
             versa_rule_object.set_service_map({svc: INPUT_LINE_NUM for svc in services})
 
         # Process service group match
-        service_groups = [clean_string(sg.text) for sg in rule.findall("./service-group/member")]
+        service_groups = [clean_string(sg.text, False) for sg in rule.findall("./service-group/member")]
         if len(service_groups) > 0 and "any" not in service_groups:
             for sg in service_groups:
                 versa_rule_object.add_service(sg, INPUT_LINE_NUM)
@@ -1301,15 +1643,15 @@ def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
         # Process schedule match
         schedule = rule.find("./schedule")
         if schedule is not None:
-            versa_rule_object.set_schedule(schedule.text.strip().replace(" ", "_"), INPUT_LINE_NUM)
+            versa_rule_object.set_schedule(clean_string(schedule.text.strip(), False), INPUT_LINE_NUM)
 
         # Process application match
-        applications = [clean_string(app.text) for app in rule.findall("./application/member")]
+        applications = [clean_string(app.text, False) for app in rule.findall("./application/member")]
         if len(applications) > 0 and "any" not in applications:
             versa_rule_object.set_application_map({app: INPUT_LINE_NUM for app in applications})
 
         # Process url-category match
-        url_categories = [clean_string(uc.text) for uc in rule.findall("./category/member")]
+        url_categories = [clean_string(uc.text, False) for uc in rule.findall("./category/member")]
         if len(url_categories) > 0 and "any" not in url_categories:
             versa_rule_object.set_url_category_map({uc: INPUT_LINE_NUM for uc in url_categories})
 
@@ -1328,7 +1670,9 @@ def load_config(
     tnt: Any,
     v_logger: logging.Logger,
     predef_app_map: Dict[str, Any],
+    predef_families_map: Dict[str, Any],
     predef_subfamilies_map: Dict[str, Any],
+    predef_app_tags_map: Dict[str, Any],
     predef_countries_map: Dict[str, Any],
     predef_url_categories_map: Dict[str, Any],
 ) -> None:
@@ -1343,6 +1687,7 @@ def load_config(
         tnt (Tenant): Tenant object to load data into.
         v_logger (logging.Logger): Logger object for logging.
         predef_app_map (Dict[str, Any]): Dictionary mapping predefined application names to application objects.
+        predef_families_map (Dict[str, Any]): Dictionary mapping predefined subfamily names to subfamily objects.
         predef_subfamilies_map (Dict[str, Any]): Dictionary mapping predefined subfamily names to subfamily objects.
         predef_countries_map (Dict[str, Any]): Dictionary mapping predefined country names to country objects.
         predef_url_categories_map (Dict[str, Any]): Dictionary mapping predefined URL category names to URL category objects.
@@ -1355,7 +1700,6 @@ def load_config(
 
     # Define list of functions to load objects into tenant
     object_loaders = [
-        load_application_objects,
         load_service_objects,
         load_service_group_objects,
         load_schedule_objects,
@@ -1370,6 +1714,9 @@ def load_config(
     for loader in object_loaders:
         if callable(loader):
             loader(xml, tnt, v_logger)
+    load_application_objects(
+        xml, tnt, v_logger, predef_app_map, predef_families_map, predef_subfamilies_map, predef_app_tags_map
+    )
     load_application_groups(xml, tnt, v_logger, predef_app_map)
     load_application_filters(xml, tnt, v_logger, predef_subfamilies_map)
     load_rules_into_tenant(xml, tnt, v_logger, predef_countries_map)
@@ -1415,20 +1762,22 @@ def main(args_list: list) -> bool:
         print("!!!Created zone/interface file!!!")
         print(f"!!!Edit {args.zone_file} then run script again without -cil!!!")
         print("Exiting...")
-        return False   
-    
+        return False
+
     print("Importing predefined files...")
     app_csv, app_fh = open_predefined_applications(args)
     url_root = open_predefined_URL_categories_XML(args)
     countries_csv, countries_fh = open_predefined_countries_file(args)
+    families_csv, families_fh = open_predefined_families_file(args)
     subfamilies_csv, subfamilies_fh = open_predefined_subfamilies_file(args)
+    app_tags_csv, app_tags_fh = open_predefined_app_tags_file(args)
 
     zone_csv, zone_fh = open_zone_interface_file(args)
 
     print("Opening output files...")
     pan_config_file_name, out_fh = open_output_files(args)
 
-    versa_cfg = VersaConfig("VersaCfg_From_PAN_" + pan_config_file_name)
+    versa_cfg = VersaConfig("Versa_config_based_on-" + pan_config_file_name)
     versa_cfg.set_logger(v_logger)
 
     print("Populating Maps...")
@@ -1439,7 +1788,9 @@ def main(args_list: list) -> bool:
     predef_apps, predef_app_map, versa_cfg = populate_predefined_applications_map(app_csv, app_fh, versa_cfg)
     versa_cfg, predef_url_categories_map = populate_predefined_url_categories_map(url_root, predef_apps, versa_cfg)
     versa_cfg, predef_countries_map = populate_predefined_countries_map(countries_csv, countries_fh, versa_cfg)
+    versa_cfg, predef_families_map = populate_predefined_families_map(families_csv, families_fh, versa_cfg)
     versa_cfg, predef_subfamilies_map = populate_predefined_subfamilies_map(subfamilies_csv, subfamilies_fh, versa_cfg)
+    versa_cfg, predef_app_tags_map = populate_predefined_app_tags_map(app_tags_csv, app_tags_fh, versa_cfg)
 
     # Load the shared vsys config into the Provider-DataStore tenant
     print("Adding tenant to Versa configuration file...")
@@ -1455,7 +1806,9 @@ def main(args_list: list) -> bool:
         shared_tnt,
         v_logger,
         predef_app_map,
+        predef_families_map,
         predef_subfamilies_map,
+        predef_app_tags_map,
         predef_countries_map,
         predef_url_categories_map,
     )
@@ -1470,7 +1823,9 @@ def main(args_list: list) -> bool:
         cur_tnt,
         v_logger,
         predef_app_map,
+        predef_families_map,
         predef_subfamilies_map,
+        predef_app_tags_map,
         predef_countries_map,
         predef_url_categories_map,
     )

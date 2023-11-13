@@ -9,16 +9,36 @@
 #
 
 
-
 from versa.Address import AddressType
 from versa.Zone import Zone
+from typing import Any, Dict, TextIO, List
 
 
 class Tenant(object):
-    """Tenant _summary_
+    """
+    Represents a tenant in a multi-tenant system.
 
-    Args:
-        object (_type_): _description_
+    Each tenant has a set of resources that are isolated from those of other tenants.
+    These resources include addresses, address groups, applications, URL categories, schedules, and services.
+
+    Attributes:
+        name (str): The name of the tenant.
+        address_map (dict): A map of addresses belonging to the tenant.
+        address_group_map (dict): A map of address groups belonging to the tenant.
+        application_map (dict): A map of applications belonging to the tenant.
+        url_category_map (dict): A map of URL categories belonging to the tenant.
+        schedule_map (dict): A map of schedules belonging to the tenant.
+        service_map (dict): A map of services belonging to the tenant.
+        ngfw (NGFW): The Next-Generation Firewall associated with the tenant.
+
+    Methods:
+        write_addresses: Writes the addresses to the configuration file.
+        write_address_groups: Writes the address groups to the configuration file.
+        write_applications: Writes the applications to the configuration file.
+        write_url_categories: Writes the URL categories to the configuration file.
+        write_schedules: Writes the schedules to the configuration file.
+        write_services: Writes the services to the configuration file.
+        write_services_config: Writes the services configuration for the tenant to a file.
     """
 
     def __init__(self, _name, _name_src_line):
@@ -59,9 +79,9 @@ class Tenant(object):
     def set_application_map(self, _application_map):
         self.application_map = _application_map
 
-    def get_application(self, _aname):
-        if _aname in list(self.application_map.keys()):
-            return self.application_map[_aname][0]
+    def get_application(self, _app_name):
+        if _app_name in list(self.application_map.keys()):
+            return self.application_map[_app_name][0]
         else:
             return None
 
@@ -122,9 +142,9 @@ class Tenant(object):
     def set_address_map(self, _address_map):
         self.address_map = _address_map
 
-    def get_address(self, _aname):
-        if _aname in self.address_map:
-            return self.address_map[_aname][0]
+    def get_address(self, _app_name):
+        if _app_name in self.address_map:
+            return self.address_map[_app_name][0]
         else:
             return None
 
@@ -146,8 +166,8 @@ class Tenant(object):
     def set_schedule_map(self, _schedule_map):
         self.schedule_map = _schedule_map
 
-    def get_schedule(self, _sname):
-        return self.schedule_map[_sname][0]
+    def get_schedule(self, _schedule_name):
+        return self.schedule_map[_schedule_name][0]
 
     def add_service(self, _service, _service_src_line):
         self.service_map[_service.name] = [_service, _service_src_line]
@@ -158,8 +178,8 @@ class Tenant(object):
     def set_service_map(self, _service_map):
         self.service_map = _service_map
 
-    def get_service(self, _sname):
-        return self.service_map[_sname][0]
+    def get_service(self, _service_name):
+        return self.service_map[_service_name][0]
 
     def add_service_group(self, _service_group, _service_group_src_line):
         self.service_group_map[_service_group.name] = [_service_group, _service_group_src_line]
@@ -214,113 +234,136 @@ class Tenant(object):
         self.ngfw_src_line = _ngfw_src_line
 
     def replace_address_by_address_group(self):
-        """replace_address_by_address_group _summary_"""
+        """
+        Replaces the address by the address group in both the ngfw and the address group map.
+
+        This method iterates over each address group in the address group map. For each address group,
+        it replaces the address by the address group in all other address groups and in the ngfw.
+
+        No parameters are required as it operates on the instance's own address group map and ngfw.
+
+        Returns:
+        None
+        """
         for agname, [ag, ag_line] in self.address_group_map.items():
+            for _, [addr_grp, _] in self.address_group_map.items():
+                addr_grp.replace_address_by_address_group(agname)
             if self.ngfw is not None:
                 self.ngfw.replace_address_by_address_group(agname)
-            for agn, [addr_grp, addr_grp_line] in self.address_group_map.items():
-                if agn != agname:
-                    addr_grp.replace_address_by_address_group(agname)
 
-    def replace_address(self, _aname, _new_aname):
-        """replace_address _summary_
+    def replace_address(self, address_name: str, new_address_name: str) -> None:
+        """
+        Replaces an address with a new address in the address map, address groups, and firewall rules.
 
         Args:
-            _aname (_type_): _description_
-            _new_aname (_type_): _description_
+            address_name (str): The current address name.
+            new_address_name (str): The new address name to replace the current one.
+
+        Returns:
+            None
         """
-        if _aname in list(self.address_map.keys()):
-            # replace the address name in address object and address map
-            [_address, _address_src_line] = self.address_map[_aname]
-            _address.name = _new_aname
-            del self.address_map[_aname]
-            self.address_map[_new_aname] = [_address, _address_src_line]
+        address_info = self.address_map.pop(address_name, None)
+        if address_info is not None:
+            address, address_src_line = address_info
+            address.name = new_address_name
+            self.address_map[new_address_name] = [address, address_src_line]
 
             # replace the address name in groups that are referring to the current address name
-            for agname, [ag, ag_line] in self.address_group_map.items():
-                ag.replace_address(_aname, _new_aname)
+            for ag, ag_info in self.address_group_map.items():
+                ag_info[0].replace_address(address_name, new_address_name)
 
-            # replace the address name in firewall rules that are referring to
-            # the current address name
+            # replace the address name in firewall rules that are referring to the current address name
             if self.ngfw is not None:
-                self.ngfw.replace_address(_aname, _new_aname)
+                self.ngfw.replace_address(address_name, new_address_name)
 
-    def replace_address_group(self, _agname, _new_agname):
-        """replace_address_group _summary_
+    def replace_address_group(self, app_group_name: str, new_app_group_name: str) -> None:
+        """
+        Replaces an address group with a new address group in the address group map,
+        other address groups, and firewall rules.
 
         Args:
-            _agname (_type_): _description_
-            _new_agname (_type_): _description_
+            app_group_name (str): The current address group name.
+            new_app_group_name (str): The new address group name to replace the current one.
+
+        Returns:
+            None
         """
-        if _agname in list(self.address_group_map.keys()):
+        if app_group_name in self.address_group_map:
             # replace the address group name in address group object and address group map
-            [_address_grp, _address_grp_src_line] = self.address_group_map[_agname]
-            _address_grp.name = _new_agname
-            del self.address_group_map[_agname]
-            self.address_group_map[_new_agname] = [_address_grp, _address_grp_src_line]
+            address_grp, address_grp_src_line = self.address_group_map.pop(app_group_name)
+            address_grp.name = new_app_group_name
+            self.address_group_map[new_app_group_name] = [address_grp, address_grp_src_line]
 
             # replace the address group name in groups that are referring to the current address group name
-            for agname, [ag, ag_line] in self.address_group_map.items():
-                ag.replace_address_group(_agname, _new_agname)
+            for agn, (ag, ag_line) in self.address_group_map.items():
+                if agn != app_group_name:
+                    ag.replace_address_group(app_group_name, new_app_group_name)
 
             # replace the address group name in firewall rules that are referring to the current address group name
             if self.ngfw is not None:
-                self.ngfw.replace_address_group(_agname, _new_agname)
+                self.ngfw.replace_address_group(app_group_name, new_app_group_name)
 
-    def replace_schedule(self, _sname, _new_sname):
-        """replace_schedule _summary_
+    def replace_schedule(self, schedule_name: str, new_schedule_name: str) -> None:
+        """
+        Replaces a schedule with a new schedule in the schedule map and firewall rules.
 
         Args:
-            _sname (_type_): _description_
-            _new_sname (_type_): _description_
+            schedule_name (str): The current schedule name.
+            new_schedule_name (str): The new schedule name to replace the current one.
+
+        Returns:
+            None
         """
-        if _sname in list(self.schedule_map.keys()):
+        if schedule_name in self.schedule_map:
             # replace the schedule name in schedule object and schedule map
-            [_schedule, _schedule_src_line] = self.schedule_map[_sname]
-            _schedule.name = _new_sname
-            del self.schedule_map[_sname]
-            self.schedule_map[_new_sname] = [_schedule, _schedule_src_line]
+            schedule, schedule_src_line = self.schedule_map.pop(schedule_name)
+            schedule.name = new_schedule_name
+            self.schedule_map[new_schedule_name] = [schedule, schedule_src_line]
 
             # replace the schedule name in firewall rules that are referring to the current schedule name
             if self.ngfw is not None:
-                self.ngfw.replace_schedule(_sname, _new_sname)
+                self.ngfw.replace_schedule(schedule_name, new_schedule_name)
 
-    def replace_service(self, _sname, _new_sname):
-        """replace_service _summary_
+    def replace_service(self, service_name: str, new_service_name: str) -> None:
+        """
+        Replaces a service with a new service in the service map and firewall rules.
 
         Args:
-            _sname (_type_): _description_
-            _new_sname (_type_): _description_
+            service_name (str): The current service name.
+            new_service_name (str): The new service name to replace the current one.
+
+        Returns:
+            None
         """
-        if _sname in list(self.service_map.keys()):
+        if service_name in self.service_map:
             # replace the service name in service object and service map
-            [_service, _service_src_line] = self.service_map[_sname]
-            _service.name = _new_sname
-            del self.service_map[_sname]
-            self.service_map[_new_sname] = [_service, _service_src_line]
+            service, service_src_line = self.service_map.pop(service_name)
+            service.name = new_service_name
+            self.service_map[new_service_name] = [service, service_src_line]
 
             # replace the service name in firewall rules that are referring to the current service name
             if self.ngfw is not None:
-                self.ngfw.replace_service(_sname, _new_sname)
+                self.ngfw.replace_service(service_name, new_service_name)
 
-    def check_config(self, strict_checks):
-        """check_config _summary_
+    def check_config(self, strict_checks: bool) -> None:
+        """
+        Checks the configuration of the tenant. If an address is not found in the tenant's address map
+        and the shared tenant's address map, it raises an exception or prints a warning and removes the
+        address from the address group's address map depending on the strict_checks flag.
 
         Args:
-            strict_checks (_type_): _description_
+            strict_checks (bool): If True, raises an exception when an address is not found.
+                                  If False, prints a warning and removes the address from the address group's address map.
 
         Raises:
-            Exception: _description_
+            Exception: If strict_checks is True and an address is not found in the tenant's address map
+                       and the shared tenant's address map.
         """
-
-        for agname, [addr_grp, addr_grp_line] in self.address_group_map.items():
+        for address_group_name, [addr_grp, addr_grp_line] in self.address_group_map.items():
             for addr in list(addr_grp.address_map.keys()):
-                addr_found = False
-                if addr in list(self.address_map.keys()):
-                    addr_found = True
-                else:
-                    if self.shared_tnt is not None and addr in list(self.shared_tnt.address_map.keys()):
-                        addr_found = True
+                addr_found = addr in self.address_map or (
+                    self.shared_tnt is not None and addr in self.shared_tnt.address_map
+                )
 
                 if not addr_found:
                     if strict_checks:
@@ -333,301 +376,243 @@ class Tenant(object):
                         )
                         del addr_grp.address_map[addr]
 
-    def replace_service_group_by_service_members(self):
-        if self.ngfw is not None:
-            for sg, _ in self.service_group_map.values():
-                self.ngfw.replace_service_group_by_service_members(sg)
+    def replace_service_group_by_service_members(self) -> None:
+        """
+        Replaces each service group in the firewall rules with its service members.
 
-    def get_addresses_for_natpool(self, _natpool):
-        """get_addresses_for_natpool _summary_
-
-        Args:
-            _natpool (_type_): _description_
+        This function assumes that the ngfw attribute of the Tenant class is an instance of a class
+        that has a replace_service_group_by_service_members method.
 
         Returns:
-            _type_: _description_
+            None
         """
-        addr_list = []
-        if len(self.address_map) > 0:
-            for aname, [addr, addr_line] in self.address_map.items():
-                if addr.addr_type == AddressType.IP_V4_RANGE:
-                    if (addr.start_ip == _natpool.start_ip) and (addr.end_ip == _natpool.end_ip):
-                        addr_list.extend([addr])
-        return addr_list
+        if self.ngfw is not None:
+            for service_group, _ in self.service_group_map.values():
+                self.ngfw.replace_service_group_by_service_members(service_group)
 
-    def write_interfaces(self, vcfg, _cfg_fh, _indent):
-        """write_interfaces _summary_
+    def get_addresses_for_natpool(self, natpool):
+        """
+        Returns a list of addresses that match the start and end IP of the given NAT pool.
 
         Args:
-            vcfg (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
+            natpool (NatPool): The NAT pool to match addresses against.
+
+        Returns:
+            List[Address]: A list of addresses that match the start and end IP of the NAT pool.
         """
-        for zname, zone in self.zone_map.items():
-            for intf, ifline in zone.interface_map.items():
+        return [
+            addr
+            for addr, _ in self.address_map.values()
+            if addr.addr_type == AddressType.IP_V4_RANGE
+            and addr.start_ip == natpool.start_ip
+            and addr.end_ip == natpool.end_ip
+        ]
+
+    def write_interfaces(self, vcfg, _cfg_fh: TextIO, _indent: str) -> None:
+        """
+        Writes the interfaces to the configuration file.
+
+        Args:
+            vcfg (Vcfg): An instance of the Vcfg class.
+            _cfg_fh (TextIO): The file handler of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
+
+        Returns:
+            None
+        """
+        for zone in self.zone_map.values():
+            for intf, _ in zone.interface_map.items():
                 paired_if = vcfg.get_paired_interface(intf)
                 ptvi = vcfg.get_ptvi(intf)
                 is_merged = vcfg.is_merged_interface(intf)
                 print(f"intf {intf}: paired intf {paired_if}; ptvi {ptvi}; is-merged {is_merged}")
                 if not is_merged:
-                    print(f" {intf}", end="", file=_cfg_fh)
+                    print(f"{_indent}{intf}", end="", file=_cfg_fh)
 
-    def write_addresses(self, output_vd_cfg, dup_addr_list, _cfg_fh, _indent):
-        """write_addresses _summary_
+    def write_addresses(self, output_vd_cfg: bool, dup_addr_list: List[str], _cfg_fh: TextIO, _indent: str) -> None:
+        """
+        Writes the addresses to the configuration file.
 
         Args:
-            output_vd_cfg (_type_): _description_
-            dup_addr_list (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
-        """
-        if len(self.address_map) > 0:
-            for aname, [addr, addr_line] in self.address_map.items():
-                if not aname in dup_addr_list:
-                    addr.write_config(output_vd_cfg, _cfg_fh, _indent)
-                    dup_addr_list.extend([aname])
-
-    def write_address_groups(self, output_vd_cfg, dup_addr_grp_list, _cfg_fh, _indent):
-        """write_address_groups _summary_
-
-        Args:
-            output_vd_cfg (_type_): _description_
-            dup_addr_grp_list (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
-        """
-        if len(self.address_group_map) > 0:
-            ordered_list = []
-            for agname, [addr_grp, addr_grp_line] in self.address_group_map.items():
-                if len(addr_grp.address_group_map) == 0:
-                    if (agname not in ordered_list) and (agname not in dup_addr_grp_list):
-                        ordered_list.extend([agname])
-                        dup_addr_grp_list.extend([agname])
-
-            for agname, [addr_grp, addr_grp_line] in self.address_group_map.items():
-                if len(addr_grp.address_group_map) > 0:
-                    addr_grp.add_group_members_to_list(self, ordered_list)
-                if (agname not in ordered_list) and (agname not in dup_addr_grp_list):
-                    ordered_list.extend([agname])
-                    dup_addr_grp_list.extend([agname])
-
-            for agname in ordered_list:
-                self.get_address_group(agname).write_config(output_vd_cfg, _cfg_fh, _indent)
-
-    def write_applications(self, output_vd_cfg, dup_app_list, _cfg_fh, _indent):
-        """write_applications _summary_
-
-        Args:
-            output_vd_cfg (_type_): _description_
-            dup_app_list (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
-        """
-        if len(list(self.application_map.keys())) > 0:
-            for aname, [app, app_line] in self.application_map.items():
-                if not aname in dup_app_list:
-                    app.write_config(output_vd_cfg, _cfg_fh, _indent)
-                    dup_app_list.extend([aname])
-
-    def write_application_groups(self, output_vd_cfg, dup_app_grp_list, _cfg_fh, _indent):
-        for agname in list(self.get_application_group_map().keys()):
-            self.get_application_group(agname).write_config(output_vd_cfg, _cfg_fh, _indent)
-
-    def write_application_filters(self, output_vd_cfg, dup_app_fltr_list, _cfg_fh, _indent):
-        for afname in list(self.get_application_filter_map().keys()):
-            self.get_application_filter(afname).write_config(output_vd_cfg, _cfg_fh, _indent)
-
-    def write_url_categories(self, output_vd_cfg, dup_uc_list, _cfg_fh, _indent):
-        """write_url_categories _summary_
-
-        Args:
-            output_vd_cfg (_type_): _description_
-            dup_uc_list (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
-        """
-        if len(list(self.url_category_map.keys())) > 0:
-            for uc_name, [uc, uc_line] in self.url_category_map.items():
-                if not uc_name in dup_uc_list:
-                    uc.write_config(output_vd_cfg, _cfg_fh, _indent)
-                    dup_uc_list.extend([uc_name])
-
-    def write_schedules(self, output_vd_cfg, incl_schedules, _cfg_fh, _indent):
-        """write_schedules _summary_
-
-        Args:
-            output_vd_cfg (_type_): _description_
-            incl_schedules (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
-        """
-        if len(self.schedule_map) > 0:
-            for sname, [sched, sched_line] in self.schedule_map.items():
-                if not sname in incl_schedules:
-                    sched.write_config(output_vd_cfg, _cfg_fh, _indent)
-                    incl_schedules.extend([sname])
-
-    def write_services(self, output_vd_cfg, incl_services, _cfg_fh, _indent):
-        """
-        Writes the configuration of each service in the service_map to a file, if the service is not already included in incl_services.
-
-        Parameters:
-        output_vd_cfg (_type_): _description_
-        incl_services (list): A list of service names that have already been included.
-        _cfg_fh (file): The file handle where the service configurations will be written.
-        _indent (str): The indentation to be used for the written configurations.
+            output_vd_cfg (bool): A flag indicating whether to output the virtual device configuration.
+            dup_addr_list (List[str]): A list of duplicate address names.
+            _cfg_fh (TextIO): The file handler of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
 
         Returns:
-        None
+            None
         """
-        if len(self.service_map) > 0:
-            for sname, [svc, svc_line] in self.service_map.items():
-                if not sname in incl_services:
-                    svc.write_config(output_vd_cfg, _cfg_fh, _indent)
-                    incl_services.extend([sname])
+        for address_name, (addr, _) in self.address_map.items():
+            if address_name not in dup_addr_list:
+                addr.write_config(output_vd_cfg, _cfg_fh, _indent)
+                dup_addr_list.append(address_name)
 
-    def write_zones(self, _cfg_fh, _indent):
+    def write_address_groups(
+        self, output_vd_cfg: bool, dup_addr_grp_list: List[str], _cfg_fh: TextIO, _indent: str
+    ) -> None:
+        """
+        Writes the address groups to the configuration file.
+
+        Args:
+            output_vd_cfg (bool): A flag indicating whether to output the virtual device configuration.
+            dup_addr_grp_list (List[str]): A list of duplicate address group names.
+            _cfg_fh (TextIO): The file handler of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
+
+        Returns:
+            None
+        """
+        if self.address_group_map:
+            ordered_list = []
+            for app_group_name, (addr_grp, _) in self.address_group_map.items():
+                if not addr_grp.address_group_map and app_group_name not in dup_addr_grp_list:
+                    ordered_list.append(app_group_name)
+                    dup_addr_grp_list.append(app_group_name)
+
+            for app_group_name, (addr_grp, _) in self.address_group_map.items():
+                if addr_grp.address_group_map:
+                    addr_grp.add_group_members_to_list(self, ordered_list)
+                if app_group_name not in dup_addr_grp_list:
+                    ordered_list.append(app_group_name)
+                    dup_addr_grp_list.append(app_group_name)
+
+            for app_group_name in ordered_list:
+                self.get_address_group(app_group_name).write_config(output_vd_cfg, _cfg_fh, _indent)
+
+    def write_applications(self, output_vd_cfg: bool, dup_app_list: List[str], _cfg_fh: TextIO, _indent: str) -> None:
+        """
+        Writes the applications to the configuration file.
+
+        Args:
+            output_vd_cfg (bool): A flag indicating whether to output the virtual device configuration.
+            dup_app_list (List[str]): A list of duplicate application names.
+            _cfg_fh (TextIO): The file handler of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
+
+        Returns:
+            None
+        """
+        for app_name, (app, _) in self.application_map.items():
+            if app_name not in dup_app_list:
+                app.write_config(output_vd_cfg, _cfg_fh, _indent)
+                dup_app_list.append(app_name)
+
+    def write_application_groups(self, output_vd_cfg, dup_app_grp_list, _cfg_fh, _indent):
+        for app_group_name in list(self.get_application_group_map().keys()):
+            self.get_application_group(app_group_name).write_config(output_vd_cfg, _cfg_fh, _indent)
+
+    def write_application_filters(self, output_vd_cfg, dup_app_fltr_list, _cfg_fh, _indent):
+        for app_filter_name in list(self.get_application_filter_map().keys()):
+            self.get_application_filter(app_filter_name).write_config(output_vd_cfg, _cfg_fh, _indent)
+
+    def write_url_categories(self, output_vd_cfg: bool, dup_uc_list: List[str], _cfg_fh: TextIO, _indent: str) -> None:
+        """
+        Writes the URL categories to the configuration file.
+
+        Args:
+            output_vd_cfg (bool): A flag indicating whether to output the virtual device configuration.
+            dup_uc_list (List[str]): A list of duplicate URL category names.
+            _cfg_fh (TextIO): The file handler of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
+
+        Returns:
+            None
+        """
+        for uc_name, (uc, _) in self.url_category_map.items():
+            if uc_name not in dup_uc_list:
+                uc.write_config(output_vd_cfg, _cfg_fh, _indent)
+                dup_uc_list.append(uc_name)
+
+    def write_schedules(self, output_vd_cfg: bool, incl_schedules: List[str], _cfg_fh: TextIO, _indent: str) -> None:
+        """
+        Writes the schedules to the configuration file.
+
+        Args:
+            output_vd_cfg (bool): A flag indicating whether to output the virtual device configuration.
+            incl_schedules (List[str]): A list of included schedule names.
+            _cfg_fh (TextIO): The file handler of the configuration file.
+            _indent (str): The indentation to use when writing to the file.
+
+        Returns:
+            None
+        """
+        for schedule_name, (sched, _) in self.schedule_map.items():
+            if schedule_name not in incl_schedules:
+                sched.write_config(output_vd_cfg, _cfg_fh, _indent)
+                incl_schedules.append(schedule_name)
+
+    def write_services(self, output_vd_cfg: bool, incl_services: List[str], _cfg_fh: TextIO, _indent: str) -> None:
+        """
+        Writes the configuration of each service in the service_map to a file,
+        if the service is not already included in incl_services.
+
+        Args:
+            output_vd_cfg (bool): A flag indicating whether to output the virtual device configuration.
+            incl_services (List[str]): A list of service names that have already been included.
+            _cfg_fh (TextIO): The file handler where the service configurations will be written.
+            _indent (str): The indentation to be used for the written configurations.
+
+        Returns:
+            None
+        """
+        for service_name, (svc, _) in self.service_map.items():
+            if service_name not in incl_services:
+                svc.write_config(output_vd_cfg, _cfg_fh, _indent)
+                incl_services.append(service_name)
+
+    def write_zones(self, _cfg_fh: TextIO, _indent: str) -> None:
         """
         Writes the configuration of each zone in the zone_map to a file.
 
-        Parameters:
-        _cfg_fh (file): The file handle where the zone configurations will be written.
-        _indent (str): The indentation to be used for the written configurations.
-
-        Returns:
-        None
-        """
-        if self.zone_map:
-            configs = [zone.write_config(_indent) for zname, zone in self.zone_map.items()]
-            _cfg_fh.write("\n".join(configs))
-
-    def write_services_config(self, _tnt_nm, _cfg_fh, _indent):
-        """write_services_config _summary_
+        This method iterates over each zone in the zone_map and writes its configuration to the file
+        specified by _cfg_fh. Each line of the configuration is indented according to _indent.
 
         Args:
-            _tnt_nm (_type_): _description_
-            _cfg_fh (_type_): _description_
-             (_type_): _description_
-            _indent (_type_): _description_
+            _cfg_fh (TextIO): The file handler to which to write the configuration.
+            _indent (str): The indentation to use for each line of the configuration.
+
+        Returns:
+            None
+        """
+        if self.zone_map:
+            _cfg_fh.write("\n".join(zone.write_config(_indent) for zone in self.zone_map.values()))
+
+    def write_services_config(self, _tnt_nm: str, _cfg_fh: TextIO, _indent: str) -> None:
+        """
+        Writes the services configuration for a tenant to a file.
+
+        Args:
+            _tnt_nm (str): The name of the tenant for which to generate the configuration.
+            _cfg_fh (TextIO): The file handler to which to write the configuration.
+            _indent (str): The indentation to use for each line of the configuration.
+
+        Returns:
+            None
         """
         print(f"tenant: {self.name}; url category map: {str(self.url_category_map)}")
-
         print(f"{_indent}    org-services {_tnt_nm} {{", file=_cfg_fh)
-
         print(f"{_indent}        objects {{", file=_cfg_fh)
 
-        if len(self.address_map) > 0:
-            print(f"{_indent}            addresses {{", file=_cfg_fh)
+        config_maps = {
+            "address_map": "addresses",
+            "address_group_map": "address-groups",
+            "schedule_map": "schedules",
+            "service_map": "services",
+            "zone_map": "zones",
+            "application_map": "user-defined-applications",
+            "application_group_map": "application-groups",
+            "application_filter_map": "application-filters",
+            "url_category_map": "user-defined-url-categories",
+        }
 
-            for aname, [addr, addr_line] in self.address_map.items():
-                addr.write_config(_cfg_fh, _indent + "            ")
-
-            print(f"{_indent}            }}", file=_cfg_fh)
-
-        if len(self.address_group_map) > 0:
-            print(f"{_indent}            address-groups {{", file=_cfg_fh)
-
-            ordered_list = []
-            for agname, [addr_grp, addr_grp_line] in self.address_group_map.items():
-                if len(addr_grp.address_group_map) == 0:
-                    if agname not in ordered_list:
-                        ordered_list.extend([agname])
-
-            for agname, [addr_grp, addr_grp_line] in self.address_group_map.items():
-                if len(addr_grp.address_group_map) > 0:
-                    addr_grp.add_group_members_to_list(self, ordered_list)
-                if agname not in ordered_list:
-                    ordered_list.extend([agname])
-
-            for agname in ordered_list:
-                self.get_address_group(agname).write_config(_cfg_fh, _indent)
-
-            print(f"{_indent}            }}", file=_cfg_fh)
-
-        if len(self.schedule_map) > 0:
-            print(f"{_indent}            schedules {{", file=_cfg_fh)
-
-            for sname, [sched, sched_line] in self.schedule_map.items():
-                sched.write_config(_cfg_fh, _indent)
-
-            print(f"{_indent}            }}", file=_cfg_fh)
-
-        if len(self.service_map) > 0:
-            print(f"{_indent}            services {{", file=_cfg_fh)
-
-            for sname, [svc, svc_line] in self.service_map.items():
-                svc.write_config(_cfg_fh, _indent)
-
-            print(f"{_indent}            }}", file=_cfg_fh)
-
-        if len(self.zone_map) > 0:
-            print(f"{_indent}            zones {{", file=_cfg_fh)
-
-            for zname, zone in self.zone_map.items():
-                zone.write_config(_cfg_fh, _indent)
-
-            print(f"{_indent}            }}", file=_cfg_fh)
+        for attr, label in config_maps.items():
+            if len(getattr(self, attr)) > 0:
+                print(f"{_indent}            {label} {{", file=_cfg_fh)
+                for name, (obj, _) in getattr(self, attr).items():
+                    obj.write_config(_cfg_fh, _indent + "            ")
+                print(f"{_indent}            }}", file=_cfg_fh)
 
         print(f"{_indent}        }}", file=_cfg_fh)
-
-        if len(self.application_map) > 0 or len(self.application_group_map) or len(self.application_filter_map) > 0:
-            print(f"{_indent}        application-identification {{", file=_cfg_fh)
-
-        if len(self.application_map) > 0:
-            print(f"{_indent}            user-defined-applications {{", file=_cfg_fh)
-            for aname, [app, app_line] in self.application_map.items():
-                app.write_config(_cfg_fh, _indent + "            ")
-            print(f"{_indent}            }}", file=_cfg_fh)
-
-        if len(self.application_group_map) > 0:
-            print(f"{_indent}            application-groups {{", file=_cfg_fh)
-            ordered_list = []
-            for agname, [app_grp, app_grp_line] in self.application_group_map.items():
-                if len(app_grp.application_group_map) == 0:
-                    if agname not in ordered_list:
-                        ordered_list.extend([agname])
-
-            for agname, [app_grp, app_grp_line] in self.application_group_map.items():
-                if len(app_grp.application_group_map) > 0:
-                    app_grp.add_group_members_to_list(self, ordered_list)
-                if agname not in ordered_list:
-                    ordered_list.extend([agname])
-
-            for agname in ordered_list:
-                self.get_application_group(agname).write_config(_cfg_fh, _indent)
-
-            for agname, [ag, ag_line] in self.application_group_map.items():
-                ag.write_config(_cfg_fh, _indent)
-
-            print(f"{_indent}        }}", file=_cfg_fh)
-
-        if len(self.application_filter_map) > 0:
-            print(f"{_indent}            application-filters {{", file=_cfg_fh)
-            for afname, [af, af_line] in self.application_filter_map.items():
-                af.write_config(_cfg_fh, _indent)
-
-            print(f"{_indent}            }}", file=_cfg_fh)
-            print(f"{_indent}        }}", file=_cfg_fh)
-
-        if len(self.application_map) > 0 or len(self.application_group_map) or len(self.application_filter_map) > 0:
-            print(f"{_indent}        }}", file=_cfg_fh)
-
-        if len(self.url_category_map) > 0:
-            print(f"{_indent}        url-filtering {{", file=_cfg_fh)
-            print(f"{_indent}            user-defined-url-categories {{", file=_cfg_fh)
-
-            for uc_name, [uc, uc_line] in self.url_category_map.items():
-                uc.write_config(_cfg_fh, _indent)
-
-            print(f"{_indent}            }}", file=_cfg_fh)
-            print(f"{_indent}        }}", file=_cfg_fh)
-
         print(f"{_indent}        security {{", file=_cfg_fh)
 
         if self.ngfw is not None:
