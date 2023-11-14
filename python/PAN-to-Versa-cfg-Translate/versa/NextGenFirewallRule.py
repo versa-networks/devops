@@ -113,17 +113,23 @@ class NextGenFirewallRule(FirewallRule):
             _indent (str): The indentation to use when writing to the file.
 
         """
-        super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
+        output = []
+
+        set_no_closing_brace_output = super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
+        if set_no_closing_brace_output is not None:
+            output += set_no_closing_brace_output
         if self.get_av_profile() or self.get_ips_profile():
-            print(f"{_indent}            security-profile {{", file=_cfg_fh)
+            output.append(f"{_indent}            security-profile {{")
 
         if self.get_ips_profile():
-            print(f"{_indent}                ips {{", file=_cfg_fh)
-            print(f'{_indent}                    predefined-ips-profile "Versa Recommended Profile";', file=_cfg_fh)
-            print(f"{_indent}                }}", file=_cfg_fh)
+            output.append(f"{_indent}                ips {{")
+            output.append(f'{_indent}                    predefined-ips-profile "Versa Recommended Profile";')
+            output.append(f"{_indent}                }}")
 
         if self.get_av_profile() or self.get_ips_profile():
-            print(f"{_indent}            }}", file=_cfg_fh)
+            output.append(f"{_indent}            }}")
+
+        print('\n'.join(output), file=_cfg_fh)
 
     def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
         """

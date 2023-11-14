@@ -13,11 +13,16 @@ from versa.NetworkFunction import NetworkFunctionType
 
 
 class Firewall(NetworkFunction):
-    """Firewall
-    _summary_
+    """
+    Represents a Firewall which is a type of NetworkFunction.
 
-    Args:
-        NetworkFunction (_type_): _description_
+    The Firewall class inherits from the NetworkFunction class and represents a firewall in a network.
+    It contains methods to add and get rules, replace addresses, address groups, schedules, services,
+    and service groups, and write the firewall configuration to a file.
+
+    Attributes:
+        rules (list): A list of rules associated with the firewall.
+        rule_map (dict): A dictionary mapping rule names to rule objects.
     """
 
     def __init__(self, _name, _name_src_line, _is_predefined):

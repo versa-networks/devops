@@ -10,7 +10,7 @@
 
 from enum import Enum
 from versa.ConfigObject import ConfigObject
-from typing import Optional
+from typing import List, Optional
 
 
 class AddressType(Enum):
@@ -75,31 +75,43 @@ class Address(ConfigObject):
 
     def set_start_ip(self, _start_ip: str, _start_ip_src_line: int):
         self.start_ip = _start_ip
-        self.start_ip_src_line = _start_ip_src_line
-        self.update_addr_value(_start_ip_src_line)
+        self.update_addr_value()
 
     def set_end_ip(self, _end_ip: str, _end_ip_src_line: int):
         self.end_ip = _end_ip
-        self.end_ip_src_line = _end_ip_src_line
-        self.update_addr_value(_end_ip_src_line)
+        self.update_addr_value()
 
-    def update_addr_value(self, _src_line: int):
+    def update_addr_value(self):
         if self.start_ip and self.end_ip:
-            self.set_addr_value(f"{self.start_ip}-{self.end_ip}", _src_line)
+            self.set_addr_value(f"{self.start_ip}-{self.end_ip}")
 
     def equals(self, _other: "Address") -> bool:
         return self.addr_type == _other.addr_type and self.addr_value == _other.addr_value
 
-    def write_config(self, output_vd_cfg: bool, _cfg_fh, _indent: str):
-        vd_str = "address " if output_vd_cfg else ""
-        addr_type_str = self.addr_type.string
+    def write_config(self, output_vd_cfg: bool, config_file, indent: str) -> None:
+        """
+        Writes the configuration of the address to a file.
 
-        if addr_type_str and self.addr_value:
-            print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
+        This method generates the configuration lines for the address and writes them to a file. The configuration lines include the address type and value, and optionally a description. If the address type is IP_V4_PREFIX and the address value does not contain a "/", a "/32" is appended to the address value.
+
+        Args:
+            output_vd_cfg (bool): If True, the string "address " is prepended to the address name in the configuration.
+            config_file: The file to which the configuration is written.
+            indent (str): The indentation to use for the configuration lines.
+
+        """
+        address_prefix: str = "address " if output_vd_cfg else ""
+        address_type_str: str = self.addr_type.string
+
+        config_lines: List[str] = []
+        if address_type_str and self.addr_value:
+            config_lines.append(f"{indent}{address_prefix}{self.name} {{")
             if self.addr_type == AddressType.IP_V4_PREFIX and "/" not in self.addr_value:
-                print(f"{_indent}    {addr_type_str} {self.addr_value}/32;", file=_cfg_fh)
+                config_lines.append(f"{indent}    {address_type_str} {self.addr_value}/32;")
             else:
-                print(f"{_indent}    {addr_type_str} {self.addr_value};", file=_cfg_fh)
+                config_lines.append(f"{indent}    {address_type_str} {self.addr_value};")
             if self.desc:
-                print(f'{_indent}    description "{self.desc}";', file=_cfg_fh)
-            print(f"{_indent}}}", file=_cfg_fh)
+                config_lines.append(f'{indent}    description "{self.desc}";')
+            config_lines.append(f"{indent}}}")
+
+        print('\n'.join(config_lines), file=config_file)

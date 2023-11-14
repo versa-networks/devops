@@ -113,6 +113,10 @@ class NATPool(ConfigObject):
         vd_str = "pools " if output_vd_cfg else ""
         addr_str = "address-range" if self.addr_type == NATPoolType.IP_V4_RANGE else "address"
 
-        print(f"{indent}{vd_str}{self.name} {{", file=cfg_fh)
-        print(f"{indent}        {addr_str} {self.addr_value};", file=cfg_fh)
-        print(f"{indent}    }}", file=cfg_fh)
+        output = [
+            f"{indent}{vd_str}{self.name} {{",
+            f"{indent}        {addr_str} {self.addr_value};",
+            f"{indent}    }}"
+        ]
+
+        print('\n'.join(output), file=cfg_fh)

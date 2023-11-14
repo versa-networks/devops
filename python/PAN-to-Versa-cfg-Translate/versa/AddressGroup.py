@@ -8,7 +8,7 @@
 #  All rights reserved.
 #
 
-from typing import Dict, Optional
+from typing import Dict
 from versa.ConfigObject import ConfigObject
 
 
@@ -132,11 +132,10 @@ class AddressGroup(ConfigObject):
         This method iterates over the address_group_map and adds the members of each address group to _ordered_list.
         If a member is not already in _ordered_list, it is appended to the end of the list.
         """
-        for addr_grp, addr_grp_line in self.address_group_map.items():
-            _tnt.get_address_group(addr_grp). \
-                               add_group_members_to_list(_tnt, _ordered_list)
-            if (addr_grp not in _ordered_list):
-                _ordered_list.extend([ addr_grp ])
+        for addr_grp in self.address_group_map:
+            _tnt.get_address_group(addr_grp).add_group_members_to_list(_tnt, _ordered_list)
+            if addr_grp not in _ordered_list:
+                _ordered_list.append(addr_grp)
 
 
     def replace_address_by_address_group(self, _address_group):
@@ -236,7 +235,7 @@ class AddressGroup(ConfigObject):
         keys = " ".join(dictionary.keys())
         print(f"{indent}    {label} [ {keys} ];", file=cfg_fh)
 
-    def write_config(self, output_vd_cfg, _cfg_fh, _indent):
+    def write_config(self, output_vd_cfg, _cfg_fh, _indent)  -> None:
         """
         Writes the configuration of the AddressGroup object to a file.
 
@@ -251,13 +250,14 @@ class AddressGroup(ConfigObject):
         The _indent argument specifies the indentation to be used in the output file.
         """
         vd_str = "group " if output_vd_cfg else ""
-        print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
+        _cfg_fh.write(f"{_indent}{vd_str}{self.name} {{\n")
         if self.desc is not None:
-            print(f'{_indent}    description "{self.desc}";', file=_cfg_fh)
-        if self.address_map:
-            self.print_dict_items("address-list", self.address_map, _cfg_fh, _indent)
-        if self.address_group_map:
-            self.print_dict_items("address-group-list", self.address_group_map, _cfg_fh, _indent)
-        if self.filename_map:
-            self.print_dict_items("address-files", self.filename_map, _cfg_fh, _indent)
-        print(f"{_indent}}}", file=_cfg_fh)
+            _cfg_fh.write(f'{_indent}    description "{self.desc}";\n')
+
+        for attr, name in [(self.address_map, "address-list"), 
+                        (self.address_group_map, "address-group-list"), 
+                        (self.filename_map, "address-files")]:
+            if attr:
+                self.print_dict_items(name, attr, _cfg_fh, _indent)
+
+        _cfg_fh.write(f"{_indent}}}\n")

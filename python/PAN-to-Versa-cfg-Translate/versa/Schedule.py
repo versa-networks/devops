@@ -112,28 +112,23 @@ class Schedule(ConfigObject):
 
         """
         vd_str = "schedule " if output_vd_cfg else ""
-
-        print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
+        output = [f"{_indent}{vd_str}{self.name} {{"]
 
         if self.schedule_type == ScheduleObjectType.NON_RECURRING and self.non_recur_days_times:
-            print(f"{_indent}    non-recurring ", end="", file=_cfg_fh)
-            print(",".join(nrtime for nrtime, _ in self.non_recur_days_times), end="", file=_cfg_fh)
-            print(";", file=_cfg_fh)
+            non_recur_times = ",".join(nrtime for nrtime, _ in self.non_recur_days_times)
+            output.append(f"{_indent}    non-recurring {non_recur_times};")
 
         elif self.schedule_type == ScheduleObjectType.RECURRING and self.recur_map:
             for rday, rtimes in self.recur_map.items():
-                print(f"{_indent}    recurring {rday} {{", file=_cfg_fh)
-                print("\n".join(f"{rdt_src_line} " for rtime, rdt_src_line in rtimes if rtime), file=_cfg_fh)
+                output.append(f"{_indent}    recurring {rday} {{")
+                output.extend(f"{_indent}    {rdt_src_line}" for rtime, rdt_src_line in rtimes if rtime)
 
                 if rtimes:
-                    print(
-                        f"{_indent}    time-of-day ",
-                        ",".join(rtime for rtime, _ in rtimes if rtime),
-                        ";",
-                        sep="",
-                        file=_cfg_fh,
-                    )
+                    times_of_day = ",".join(rtime for rtime, _ in rtimes if rtime)
+                    output.append(f"{_indent}    time-of-day {times_of_day};")
 
-                print(f"{_indent}    }}", file=_cfg_fh)
+                output.append(f"{_indent}    }}")
 
-        print(f"{_indent}}}", file=_cfg_fh)
+        output.append(f"{_indent}}}")
+
+        print('\n'.join(output), file=_cfg_fh)

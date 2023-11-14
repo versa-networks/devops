@@ -688,16 +688,17 @@ def populate_predefined_applications_map(predefined_apps_csv_reader, predefined_
     predefined_app_map: Dict[str, Application] = {}
 
     for predefined_apps_csv_row in predefined_apps_csv_reader:
-        if len(predefined_apps_csv_row) > 0 and len(predefined_apps_csv_row[0]) > 0:
-            try:
-                int(predefined_apps_csv_row[0])
-            except ValueError:
-                continue
+        if predefined_apps_csv_row and not predefined_apps_csv_row[0].startswith("#"):
+            if len(predefined_apps_csv_row) > 0 and len(predefined_apps_csv_row[0]) > 0:
+                try:
+                    int(predefined_apps_csv_row[0])
+                except ValueError:
+                    continue
 
-            app_name = predefined_apps_csv_row[3]
-            predefined_apps[app_name] = predefined_apps_csv_row
-            cur_app = Application(app_name, INPUT_LINE_NUM, True)
-            predefined_app_map[app_name] = cur_app
+                app_name = predefined_apps_csv_row[3]
+                predefined_apps[app_name] = predefined_apps_csv_row
+                cur_app = Application(app_name, INPUT_LINE_NUM, True)
+                predefined_app_map[app_name] = cur_app
 
     predefined_apps_fh.close()
     versa_cfg.set_predef_app_map(predefined_app_map)
@@ -744,9 +745,10 @@ def populate_predefined_countries_map(
     """
     predefined_countries_map: Dict[str, list] = {}
     for predefined_countries_csv_row in predefined_countries_csv_reader:
-        if len(predefined_countries_csv_row) >= 5:
-            code = predefined_countries_csv_row[-4].strip()
-            predefined_countries_map[code] = predefined_countries_csv_row
+        if predefined_countries_csv_row and not predefined_countries_csv_row[0].startswith("#"):
+            if len(predefined_countries_csv_row) >= 5:
+                code = predefined_countries_csv_row[-4].strip()
+                predefined_countries_map[code] = predefined_countries_csv_row
     predefined_countries_fh.close()
     versa_cfg.set_predef_countries_map(predefined_countries_map)
     return versa_cfg, predefined_countries_map

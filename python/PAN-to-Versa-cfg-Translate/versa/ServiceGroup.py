@@ -59,17 +59,17 @@ class ServiceGroup(ConfigObject):
             cfg_fh (file): The file handle where the configuration will be written.
             indent (str): The indentation to use in the output.
         """
-        print(f"{indent}    {self.name} {{", file=cfg_fh)
+        output = []
+
+        output.append(f"{indent}    {self.name} {{")
 
         if self.service_map:
-            print("", file=cfg_fh)
-            print(f"{indent}         service-list [", end="", file=cfg_fh)
-            print(" ".join(self.service_map.keys()), end="", file=cfg_fh)
-            print(" ];", file=cfg_fh)
+            output.append("")
+            output.append(f"{indent}         service-list [ {' '.join(self.service_map.keys())} ];")
 
         if self.service_group_map:
-            print(f"{indent}         service-group-list [", end="", file=cfg_fh)
-            print(" ".join(self.service_group_map.keys()), end="", file=cfg_fh)
-            print(" ];", file=cfg_fh)
+            output.append(f"{indent}         service-group-list [ {' '.join(self.service_group_map.keys())} ];")
 
-        print(f"{indent}     }}", file=cfg_fh)
+        output.append(f"{indent}     }}")
+
+        print('\n'.join(output), file=cfg_fh)

@@ -137,17 +137,21 @@ class Service(ConfigObject):
         """
         vd_str = "service " if output_vd_cfg else ""
 
+        output = []
+
         if self.proto_match_type != ProtoMatchType.NONE:
-            print(f"{indent}{vd_str}{self.name} {{", file=cfg_fh)
+            output.append(f"{indent}{vd_str}{self.name} {{")
             if self.port_match_type == PortMatchType.ANY_PORT_MATCH and self.port is not None:
-                print(f"{indent}    port {self.port};", file=cfg_fh)
+                output.append(f"{indent}    port {self.port};")
             elif self.port_match_type == PortMatchType.SRC_DST_PORT_MATCH:
                 if self.src_port is not None:
-                    print(f"{indent}    source-port {self.src_port};", file=cfg_fh)
+                    output.append(f"{indent}    source-port {self.src_port};")
                 if self.dst_port is not None:
-                    print(f"{indent}    destination-port {self.dst_port};", file=cfg_fh)
+                    output.append(f"{indent}    destination-port {self.dst_port};")
             if self.proto_match_type == ProtoMatchType.ENUM_PROTO_MATCH and self.proto is not None:
-                print(f"{indent}    protocol {self.proto};", file=cfg_fh)
+                output.append(f"{indent}    protocol {self.proto};")
             elif self.proto_match_type == ProtoMatchType.PROTO_VALUE_MATCH and self.proto_value is not None:
-                print(f"{indent}    protocol-value {self.proto_value};", file=cfg_fh)
-            print(f"{indent}}}", file=cfg_fh)
+                output.append(f"{indent}    protocol-value {self.proto_value};")
+            output.append(f"{indent}}}")
+
+        print('\n'.join(output), file=cfg_fh)
