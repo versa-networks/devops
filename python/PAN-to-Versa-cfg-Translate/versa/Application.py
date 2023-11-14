@@ -8,7 +8,7 @@
 #  All rights reserved.
 #
 
-from typing import Optional, TextIO
+from typing import List, Optional, TextIO
 from versa.ConfigObject import ConfigObject
 
 
@@ -47,12 +47,12 @@ class Application(ConfigObject):
         self.subfamily: Optional[str] = None
         self.risk: Optional[str] = None
         self.tag: Optional[str] = None
-        self.precedence: Optional[int] = 100
+        self.precedence: Optional[str] = "100"
         # How should precedence be hanlded?
-        self.app_timeout: Optional[int] = None
+        self.app_timeout: Optional[str] = None
         self.app_match_ips: Optional[bool] = None
         self.app_tags: Optional[str] = None
-        self.app_match_rules = []
+        self.app_match_rules: List[AppMatchRules] = []
 
     def get_description(self) -> str:
         """Returns the description of the Application object."""
@@ -127,11 +127,11 @@ class Application(ConfigObject):
         if _tag is not None:
             self.tag = _tag
 
-    def get_precedence(self) -> int:
+    def get_precedence(self) -> str:
         """Returns the precedence of the Application object."""
         return self.precedence if self.precedence is not None else ""
 
-    def set_precedence(self, _precedence: int) -> None:
+    def set_precedence(self, _precedence: str) -> None:
         """
         Sets the precedence for the Application object.
 
@@ -141,11 +141,11 @@ class Application(ConfigObject):
         if _precedence is not None:
             self.precedence = _precedence
 
-    def get_app_timeout(self) -> int:
+    def get_app_timeout(self) -> str:
         """Returns the app_timeout of the Application object."""
         return self.app_timeout if self.app_timeout is not None else ""
 
-    def set_app_timeout(self, _app_timeout: int) -> None:
+    def set_app_timeout(self, _app_timeout: str) -> None:
         """
         Sets the app_timeout for the Application object.
 
@@ -157,7 +157,7 @@ class Application(ConfigObject):
 
     def get_app_match_ips(self) -> bool:
         """Returns the app_match_ips of the Application object."""
-        return self.app_match_ips if self.app_match_ips is not None else ""
+        return self.app_match_ips if self.app_match_ips is not None else False
 
     def set_app_match_ips(self, _app_match_ips: bool) -> None:
         """
