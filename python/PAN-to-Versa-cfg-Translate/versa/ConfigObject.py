@@ -39,6 +39,7 @@ class ConfigObject(object):
         self.name = name
         self.name_src_line = name_src_line
         self.obj_type = ConfigObjectType.PRE_DEFINED if is_predefined else ConfigObjectType.USER_DEFINED
+        self.desc = ""
 
     def is_predefined(self):
         """
@@ -69,7 +70,7 @@ class ConfigObject(object):
         self.name = _name
         self.name_src_line = _name_src_line
 
-    def set_desc(self, _desc, _desc_src_line):
+    def set_desc(self, _desc, _):
         """
         Sets the description of the configuration object and the source line where the description was defined.
 
@@ -78,4 +79,3 @@ class ConfigObject(object):
         _desc_src_line (int): The source line where the new description was defined.
         """
         self.desc = _desc
-        self.desc_src_line = _desc_src_line

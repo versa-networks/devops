@@ -8,9 +8,10 @@
 #  All rights reserved.
 #
 
+from typing import List
 from enum import Enum
 from versa.ConfigObject import ConfigObject
-from typing import List, Optional
+
 
 
 class AddressType(Enum):
@@ -65,19 +66,17 @@ class Address(ConfigObject):
         self.desc = _desc
         self.desc_line = _desc_line
 
-    def set_addr_type(self, _addr_type: AddressType, _addr_type_src_line: int):
+    def set_addr_type(self, _addr_type: AddressType, _: int):
         self.addr_type = _addr_type
-        self.addr_type_src_line = _addr_type_src_line
 
-    def set_addr_value(self, _addr_value: str, _addr_value_src_line: int):
+    def set_addr_value(self, _addr_value: str):
         self.addr_value = _addr_value
-        self.addr_value_src_line = _addr_value_src_line
 
-    def set_start_ip(self, _start_ip: str, _start_ip_src_line: int):
+    def set_start_ip(self, _start_ip: str, _: int):
         self.start_ip = _start_ip
         self.update_addr_value()
 
-    def set_end_ip(self, _end_ip: str, _end_ip_src_line: int):
+    def set_end_ip(self, _end_ip: str, _: int):
         self.end_ip = _end_ip
         self.update_addr_value()
 
@@ -92,7 +91,8 @@ class Address(ConfigObject):
         """
         Writes the configuration of the address to a file.
 
-        This method generates the configuration lines for the address and writes them to a file. The configuration lines include the address type and value, and optionally a description. If the address type is IP_V4_PREFIX and the address value does not contain a "/", a "/32" is appended to the address value.
+        This method generates the configuration lines for the address and writes them to a file. The configuration lines include the address type and value, and optionally a description.
+        If the address type is IP_V4_PREFIX and the address value does not contain a "/", a "/32" is appended to the address value.
 
         Args:
             output_vd_cfg (bool): If True, the string "address " is prepended to the address name in the configuration.

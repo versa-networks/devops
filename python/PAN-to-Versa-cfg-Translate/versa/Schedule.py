@@ -24,7 +24,8 @@ class Schedule(ConfigObject):
     This class inherits from ConfigObject and adds additional attributes specific to schedules.
 
     Args:
-        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, source line, and predefined flag.
+        ConfigObject (class): The base class for configuration objects. It provides common attributes for 
+        all configuration objects, such as name, source line, and predefined flag.
     """
 
     def __init__(self, _name, _name_src_line, _is_predefined, _is_recurring):
@@ -38,7 +39,11 @@ class Schedule(ConfigObject):
             _is_recurring (bool): A flag indicating whether the schedule is recurring.
         """
         super().__init__(_name, _name_src_line, _is_predefined)
-        self.schedule_type = ScheduleObjectType.RECURRING if _is_recurring else ScheduleObjectType.NON_RECURRING
+        self.schedule_type = (
+            ScheduleObjectType.RECURRING
+            if _is_recurring
+            else ScheduleObjectType.NON_RECURRING
+        )
         self.non_recur_days_times = []
         self.recur_map = {}
 
@@ -53,9 +58,8 @@ class Schedule(ConfigObject):
 
     def set_recurring_map(self, _recur_map, _recur_map_src_line):
         self.recur_map = _recur_map
-        self.recur_map_src_line = _recur_map_src_line
 
-    def listsAreEqual(self, a, b) -> bool:
+    def lists_are_equal(self, a, b) -> bool:
         """
         Checks if two lists are equal.
 
@@ -80,7 +84,8 @@ class Schedule(ConfigObject):
         """
         Checks if the current instance is equal to another instance of the Schedule class.
 
-        This method checks if the current instance is equal to another instance by comparing their schedule types and the keys of their recurring maps or their non-recurring days and times.
+        This method checks if the current instance is equal to another instance by comparing their schedule 
+        types and the keys of their recurring maps or their non-recurring days and times.
 
         Args:
             _other (Schedule): The other instance to compare with.
@@ -91,11 +96,13 @@ class Schedule(ConfigObject):
         if self.schedule_type != _other.schedule_type:
             return False
         if self.schedule_type == ScheduleObjectType.RECURRING:
-            if not self.listsAreEqual(self.recur_map.keys(), _other.recur_map.keys()):
+            if not self.lists_are_equal(self.recur_map.keys(), _other.recur_map.keys()):
                 return False
             # XXX-TODO: compare the time stamps of the recurring days
         elif self.schedule_type == ScheduleObjectType.NON_RECURRING:
-            if not self.listsAreEqual(self.non_recur_days_times, _other.non_recur_days_times):
+            if not self.lists_are_equal(
+                self.non_recur_days_times, _other.non_recur_days_times
+            ):
                 return False
         return True
 
@@ -103,7 +110,8 @@ class Schedule(ConfigObject):
         """
         Writes the configuration of the schedule to a file.
 
-        This method writes the configuration of the schedule to a file. The configuration is indented by a specified amount and may include a "schedule" prefix depending on the value of `output_vd_cfg`.
+        This method writes the configuration of the schedule to a file. The configuration is indented 
+        by a specified amount and may include a "schedule" prefix depending on the value of `output_vd_cfg`.
 
         Args:
             output_vd_cfg (bool): If True, a "schedule" prefix is included in the output.
@@ -114,14 +122,23 @@ class Schedule(ConfigObject):
         vd_str = "schedule " if output_vd_cfg else ""
         output = [f"{_indent}{vd_str}{self.name} {{"]
 
-        if self.schedule_type == ScheduleObjectType.NON_RECURRING and self.non_recur_days_times:
-            non_recur_times = ",".join(nrtime for nrtime, _ in self.non_recur_days_times)
+        if (
+            self.schedule_type == ScheduleObjectType.NON_RECURRING
+            and self.non_recur_days_times
+        ):
+            non_recur_times = ",".join(
+                nrtime for nrtime, _ in self.non_recur_days_times
+            )
             output.append(f"{_indent}    non-recurring {non_recur_times};")
 
         elif self.schedule_type == ScheduleObjectType.RECURRING and self.recur_map:
             for rday, rtimes in self.recur_map.items():
                 output.append(f"{_indent}    recurring {rday} {{")
-                output.extend(f"{_indent}    {rdt_src_line}" for rtime, rdt_src_line in rtimes if rtime)
+                output.extend(
+                    f"{_indent}    {rdt_src_line}"
+                    for rtime, rdt_src_line in rtimes
+                    if rtime
+                )
 
                 if rtimes:
                     times_of_day = ",".join(rtime for rtime, _ in rtimes if rtime)
@@ -131,4 +148,4 @@ class Schedule(ConfigObject):
 
         output.append(f"{_indent}}}")
 
-        print('\n'.join(output), file=_cfg_fh)
+        print("\n".join(output), file=_cfg_fh)

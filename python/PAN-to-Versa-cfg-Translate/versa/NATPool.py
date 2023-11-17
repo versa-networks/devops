@@ -35,7 +35,7 @@ class NATPool(ConfigObject):
         self.start_ip = None
         self.end_ip = None
 
-    def set_addr_type(self, addr_type, addr_type_src_line):
+    def set_addr_type(self, addr_type, _):
         """
         Sets the address type of the NAT pool.
 
@@ -44,9 +44,8 @@ class NATPool(ConfigObject):
             addr_type_src_line (int): The line number in the source file where the address type is defined.
         """
         self.addr_type = addr_type
-        self.addr_type_src_line = addr_type_src_line
 
-    def set_addr_value(self, addr_value, addr_value_src_line):
+    def set_addr_value(self, addr_value):
         """
         Sets the address value of the NAT pool.
 
@@ -55,9 +54,8 @@ class NATPool(ConfigObject):
             addr_value_src_line (int): The line number in the source file where the address value is defined.
         """
         self.addr_value = addr_value
-        self.addr_value_src_line = addr_value_src_line
 
-    def set_start_ip(self, start_ip, start_ip_src_line):
+    def set_start_ip(self, start_ip, _):
         """
         Sets the start IP address of the NAT pool.
 
@@ -66,11 +64,10 @@ class NATPool(ConfigObject):
             start_ip_src_line (int): The line number in the source file where the start IP is defined.
         """
         self.start_ip = start_ip
-        self.start_ip_src_line = start_ip_src_line
         if self.end_ip is not None:
             self.set_addr_value(self.start_ip + "-" + self.end_ip)
 
-    def set_end_ip(self, end_ip, end_ip_src_line):
+    def set_end_ip(self, end_ip, _):
         """
         Sets the end IP address of the NAT pool.
 
@@ -79,12 +76,8 @@ class NATPool(ConfigObject):
             end_ip_src_line (int): The line number in the source file where the end IP is defined.
         """
         self.end_ip = end_ip
-        self.end_ip_src_line = end_ip_src_line
         if self.start_ip is not None:
-            self.set_addr_value(
-                f"{self.start_ip}-{self.end_ip}",
-                f"{self.start_ip_src_line}, {self.end_ip_src_line}",
-            )
+            self.set_addr_value(f"{self.start_ip}-{self.end_ip}")
 
     def equals(self, other):
         """

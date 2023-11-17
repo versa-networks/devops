@@ -40,9 +40,8 @@ class Zone(ConfigObject):
     def add_interface(self, _interface, _interface_src_line):
         self.interface_map[_interface] = _interface_src_line
 
-    def set_interface_map(self, _interface_map, _interface_map_src_line):
+    def set_interface_map(self, _interface_map, _):
         self.interface_map = _interface_map
-        self.interface_map_src_line = _interface_map_src_line
 
     def get_interface_map(self):
         return self.interface_map
@@ -50,9 +49,8 @@ class Zone(ConfigObject):
     def add_network(self, _network, _network_src_line):
         self.network_map[_network] = _network_src_line
 
-    def set_network_map(self, _network_map, _network_map_src_line):
+    def set_network_map(self, _network_map, _):
         self.network_map = _network_map
-        self.network_map_src_line = _network_map_src_line
 
     def get_network_map(self):
         return self.network_map

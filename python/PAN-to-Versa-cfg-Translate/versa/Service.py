@@ -58,19 +58,16 @@ class Service(ConfigObject):
         self.desc = _desc
         self.desc_line = _desc_line
 
-    def set_src_port(self, _src_port, _src_port_src_line):
+    def set_src_port(self, _src_port, _):
         self.src_port = _src_port
-        self.src_port_src_line = _src_port_src_line
         self.port_match_type = PortMatchType.SRC_DST_PORT_MATCH
 
-    def set_dst_port(self, _dst_port, _dst_port_src_line):
+    def set_dst_port(self, _dst_port, _):
         self.dst_port = _dst_port
-        self.dst_port_src_line = _dst_port_src_line
         self.port_match_type = PortMatchType.SRC_DST_PORT_MATCH
 
-    def set_port(self, _port, _port_src_line):
+    def set_port(self, _port, _):
         self.port = _port
-        self.port_src_line = _port_src_line
         self.port_match_type = PortMatchType.ANY_PORT_MATCH
 
     def set_proto(self, proto, proto_src_line: int):
@@ -87,10 +84,9 @@ class Service(ConfigObject):
                 self.set_proto_value(58, proto_src_line)
             else:
                 self.proto = proto
-                self.proto_src_line = proto_src_line
                 self.proto_match_type = ProtoMatchType.ENUM_PROTO_MATCH
 
-    def set_proto_value(self, proto_value, proto_value_src_line: int):
+    def set_proto_value(self, proto_value, _: int):
         """
         Sets the protocol value and the source line of the protocol value.
 
@@ -99,7 +95,6 @@ class Service(ConfigObject):
             proto_value_src_line (int): The source line of the protocol value.
         """
         self.proto_value = proto_value
-        self.proto_value_src_line = proto_value_src_line
         self.proto_match_type = ProtoMatchType.PROTO_VALUE_MATCH
 
     def equals(self, other: "Service") -> bool:
@@ -154,4 +149,5 @@ class Service(ConfigObject):
                 output.append(f"{indent}    protocol-value {self.proto_value};")
             output.append(f"{indent}}}")
 
-        print('\n'.join(output), file=cfg_fh)
+        if output:
+            print('\n'.join(output), file=cfg_fh)

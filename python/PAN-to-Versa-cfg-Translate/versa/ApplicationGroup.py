@@ -9,7 +9,6 @@
 
 
 from versa.ConfigObject import ConfigObject
-from enum import Enum
 
 
 class ApplicationGroup(ConfigObject):
@@ -76,7 +75,19 @@ class ApplicationGroup(ConfigObject):
         self.application_group_map = _application_group_map
 
     def get_all_app_list(self, app_grp, predef_app_list, user_def_app_list):
-        for app, app_line in app_grp.application_map.items():
+        """
+        Populates the provided lists with applications from the given application group.
+
+        For each application in the application group, if the application is predefined, 
+        it's added to the `predef_app_list` if it's not already there. If the application 
+        is not predefined, it's added to the `user_def_app_list` if it's not already there.
+
+        Args:
+            app_grp: The application group to get applications from.
+            predef_app_list: A list to populate with predefined applications.
+            user_def_app_list: A list to populate with user-defined applications.
+        """
+        for app, _ in app_grp.application_map.items():
             if app.is_predefined():
                 if app not in predef_app_list:
                     predef_app_list.append(app)
@@ -84,7 +95,7 @@ class ApplicationGroup(ConfigObject):
                 if app not in user_def_app_list:
                     user_def_app_list.append(app)
 
-        for child_app_grp, child_app_grp_line in app_grp.application_group_map.items():
+        for child_app_grp, _ in app_grp.application_group_map.items():
             self.get_all_app_list(child_app_grp, predef_app_list, user_def_app_list)
 
     def write_config(self, output_vd_cfg, _cfg_fh, _indent):
@@ -116,21 +127,3 @@ class ApplicationGroup(ConfigObject):
 
         print(f"{_indent}}}", file=_cfg_fh)
         return
-
-
-"""
-#Unused
-    if self.application_map:
-        print(f"{_indent}        # src lines: {' '.join(str(line) for line in self.application_map.values())}", file=_cfg_fh)
-
-        predef_apps = [app.upper() for app in self.application_map if app.is_predefined()]
-        userdef_apps = [app for app in self.application_map if not app.is_predefined()]
-
-        if predef_apps:
-            print(f"{_indent}        predefined-application-list [ {' '.join(predef_apps)} ];", file=_cfg_fh)
-
-        if userdef_apps:
-            print(f"{_indent}        user-defined-application-list [ {' '.join(userdef_apps)} ];", file=_cfg_fh)
-
-    print(f"{_indent}    }}", file=_cfg_fh)
-"""

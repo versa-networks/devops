@@ -204,34 +204,6 @@ class Application(ConfigObject):
         print(f"{_indent}}}", file=_cfg_fh)
 
 
-"""
-Example Versa Application configuration:
-user-defined-application BLADELOGIC {
-    description   PWHOBLADELOGIC-DRQS7541625-TREQ575503-RL;
-    family        business-system;
-    subfamily     standard;
-    risk          1;
-    tag           [ vs_malware ];
-    precedence    100;
-    app-timeout   600;
-    app-match-ips true;
-    app-match-rules PORT-TCP-27829 {
-        host-pattern       host-patter;
-        source-prefix      192.168.1.1/24;
-        destination-prefix 192.168.10.10/32;
-        protocol           6;
-        source-port {
-            low  1;
-            high 10;
-        }
-        destination-port {
-            value 27829;
-        }
-    }
-}
-"""
-
-
 class AppMatchRules(ConfigObject):
     """
     A class used to represent application match rules.
@@ -322,7 +294,7 @@ class AppMatchRules(ConfigObject):
         if _destination_port_low is not None:
             self.destination_port_low = _destination_port_low
 
-    def write_config(self, output_vd_cfg: bool, _cfg_fh: TextIO, _indent: str) -> None:
+    def write_config(self, _: bool, _cfg_fh: TextIO, _indent: str) -> None:
         """Writes the configuration of the Application App Match object to a file.
 
         Args:
@@ -356,20 +328,3 @@ class AppMatchRules(ConfigObject):
                 print(f"{_indent}        high {self.destination_port_high};", file=_cfg_fh)
                 print(f"{_indent}    }}", file=_cfg_fh)
             print(f"{_indent}}}", file=_cfg_fh)
-
-            """"
-        app-match-rules PORT-TCP-27829 {
-        host-pattern       host-patter;
-        source-prefix      192.168.1.1/24;
-        destination-prefix 192.168.10.10/32;
-        protocol           6;
-        source-port {
-            low  1;
-            high 10;
-        }
-        destination-port {
-            value 27829;
-        }
-    }
-}
-"""

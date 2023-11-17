@@ -148,11 +148,9 @@ class AddressGroup(ConfigObject):
         This method replaces an address by an address group in the maps. If the address group named _address_group exists in the address_map,
         it is removed and added to the address_group_map with the same value.
         """
-        
-        if (_address_group in self.address_map):
-            addr_grp_line = self.address_map[_address_group]
+
+        if _address_group in self.address_map:
             self.address_map.pop(_address_group, None)
-            self.address_group_map[_address_group] = addr_grp_line
 
 
     def replace_address(self, _aname, _new_aname):
@@ -166,7 +164,7 @@ class AddressGroup(ConfigObject):
         This method replaces an address in the address_map. If the address named _address_name exists in the map,
         it is removed and a new address named _new_address_name is added to the map with the same value.
         """
-        if (_aname in self.address_map):
+        if _aname in self.address_map:
             aline = self.address_map[_aname]
             self.address_map.pop(_aname, None)
             self.address_map[_new_aname] = aline
@@ -183,13 +181,13 @@ class AddressGroup(ConfigObject):
         This method replaces an address group in the address_group_map. If the address group named _address_group_name exists in the map,
         it is removed and a new address group named _new_address_group_name is added to the map with the same value.
         """
-        if (_agname in self.address_group_map):
+        if _agname in self.address_group_map:
             aline = self.address_group_map[_agname]
             self.address_group_map.pop(_agname, None)
             self.address_group_map[_new_agname] = aline
 
 
-    def listsAreEqual(self, a, b):
+    def lists_are_equal(self, a, b):
         """
         Checks if two lists are equal.
 
@@ -254,8 +252,8 @@ class AddressGroup(ConfigObject):
         if self.desc is not None:
             _cfg_fh.write(f'{_indent}    description "{self.desc}";\n')
 
-        for attr, name in [(self.address_map, "address-list"), 
-                        (self.address_group_map, "address-group-list"), 
+        for attr, name in [(self.address_map, "address-list"),
+                        (self.address_group_map, "address-group-list"),
                         (self.filename_map, "address-files")]:
             if attr:
                 self.print_dict_items(name, attr, _cfg_fh, _indent)

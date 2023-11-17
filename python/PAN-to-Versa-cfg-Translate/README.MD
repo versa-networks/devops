@@ -136,7 +136,7 @@ python.exe pan-convert.py -z ./Source_Files/interface-list.csv -pc ./Source_File
 4. Identify (Alert ?) on applications that do not have an associated Versa application
    1. Identify Application groups that contains application identified above
    2. Identify Security rule that contains application identified above
-   3. Create a  predefined application list and configurations that match PAN predifined application.
+   3. Create a predefined application list and configurations that match PAN predifined application.
 5. Improved logging
 6. Improved error handling
 7. Import Regions

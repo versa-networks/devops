@@ -72,4 +72,5 @@ class ServiceGroup(ConfigObject):
 
         output.append(f"{indent}     }}")
 
-        print('\n'.join(output), file=cfg_fh)
+        if output:
+            print('\n'.join(output), file=cfg_fh)

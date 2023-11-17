@@ -5,6 +5,23 @@
 #
 #  Copyright (c) 2023, Versa Networks, Inc.
 #  All rights reserved.
+# Primary Objects:
+# 1. Tenants
+#    a. shared
+#    b. All other tenants
+# Secondary Objects:
+# 1. Address
+# 2. AddressGroup
+# 3. Application
+# 4. ApplicationGroup
+# 5. ApplicationFilter
+# 6. FirewallRule
+# 7. NextGenFirewall
+# 8. NextGenFirewallRule
+# 9. Schedule
+# 10. Service
+# 11. ServiceGroup
+# 12. URLCategory
 
 
 import argparse
@@ -14,7 +31,6 @@ import os
 import re
 import sys
 from argparse import Namespace
-from csv import reader
 from datetime import datetime
 from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
@@ -26,7 +42,6 @@ from versa.AddressGroup import AddressGroup
 from versa.Application import Application, AppMatchRules
 from versa.ApplicationFilter import ApplicationFilter
 from versa.ApplicationGroup import ApplicationGroup
-from versa.Firewall import Firewall
 from versa.FirewallRule import FirewallRuleAction
 from versa.NextGenFirewall import NextGenFirewall
 from versa.NextGenFirewallRule import NextGenFirewallRule
@@ -35,6 +50,8 @@ from versa.Service import Service
 from versa.ServiceGroup import ServiceGroup
 from versa.URLCategory import URLCategory
 from versa.VersaConfig import VersaConfig
+
+import validate_versa_config_file as validate_cfg
 
 # Constants
 LOG_FILENAME = "versa-cfg-translate.log"
@@ -50,15 +67,13 @@ INPUT_LINE_NUM = 0  # This is unused and should be removed in the future
 def clean_string(input_string: str, spaces: bool) -> str:
     """
     Cleans the input string by removing any character that is not a-z, A-Z, 0-9, -, _, or space (if spaces is True).
-
     Args:
         input_string (str): The string to be cleaned.
         spaces (bool): If True, spaces are allowed in the cleaned string. If False, spaces are removed.
-
     Returns:
         str: The cleaned string, containing only a-z, A-Z, 0-9, -, _ characters and possibly spaces.
     """
-    return re.sub(f"[^a-zA-Z0-9\-_{' ' if spaces else ''}]", "", input_string)
+    return re.sub(f"[^a-zA-Z0-9-_{' ' if spaces else ''}]", "", input_string)
 
 
 def parse_args(args_list: list) -> Namespace:
@@ -208,11 +223,11 @@ def the_logger(args: Namespace) -> logging.Logger:
     Args:
         args (argparse.Namespace): Command-line arguments. The output_dir attribute specifies the directory where the
         log file will be created.
-
     Returns:
         logging.Logger: Logger object configured to write logs to a file in the output directory. If there is an error
         creating the logger or the file handler, the function will exit the program and will not return a value.
     """
+
     log_path = os.path.join(args.output_dir, LOG_FILENAME)
     try:
         formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
@@ -222,21 +237,9 @@ def the_logger(args: Namespace) -> logging.Logger:
         logger = logging.getLogger(log_path)
         logger.addHandler(fh)
         logger.setLevel(logging.DEBUG)
-    except OSError as e:
+    except Exception as e_tl:
         print(f"Error: Unable to create logger with {log_path}")
-        print(f"Error Details: {e}")
-        sys.exit(1)
-    except FileNotFoundError as e:
-        print(f"Error: Unable to create logger with {log_path}")
-        print(f"Error Details: {e}")
-        sys.exit(1)
-    except PermissionError as e:
-        print(f"Error: Unable to create logger with {log_path}")
-        print(f"Error Details: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: Unable to create logger with {log_path}")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_tl}")
         sys.exit(1)
     return logger
 
@@ -248,10 +251,8 @@ def create_output_dir(args: Namespace) -> str:
     Args:
         args (Namespace): Command-line arguments. Expected to have an 'output_dir' attribute
                           which contains the path to the output directory as a string.
-
     Returns:
         str: The absolute path to the output directory.
-
     Exits:
         If 'output_dir' is not specified in 'args', or if there is an error creating the directory,
         the function will print an error message and exit the program with status code 1.
@@ -264,9 +265,9 @@ def create_output_dir(args: Namespace) -> str:
 
     try:
         os.makedirs(output_dir, exist_ok=True)
-    except OSError as e:
+    except OSError as e_cod:
         print(f"Error creating output directory: {output_dir}")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_cod}")
         print("Please enter a valid directory path where the output files will be written")
         sys.exit(1)
 
@@ -274,31 +275,33 @@ def create_output_dir(args: Namespace) -> str:
 
 
 def open_3rd_party_config_file(args: Namespace):
-    """Open and parse an XML file.
+    """
+    Open and parse an XML file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Optional[Element]: XML root element, or None if there was an error.
     """
     try:
         with open(args.pan_config_file, "r", encoding="utf-8") as xml_file:
             xml_tree = ET.parse(xml_file)
+
             return xml_tree.getroot()
     except FileNotFoundError:
         print(f"Error: input file {args.pan_config_file} not found")
-    except ET.ParseError as e:
+    except ET.ParseError as e_o3pcf:
         print(f"Error: unable to parse XML input file {args.pan_config_file}")
-        print(f"Error Details: {e}")
-    except Exception as e:
+        print(f"Error Details: {e_o3pcf}")
+    except Exception as e_o3pcf:
         print(f"Error: Unexpected error with file {args.pan_config_file}")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_o3pcf}")
     return None
 
 
 def create_zone_interface_file(args: argparse.Namespace, xml_root) -> None:
-    """Create a CSV file containing zone and interface information.
+    """
+    Create a CSV file containing zone and interface information.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
@@ -359,22 +362,21 @@ def create_zone_interface_file(args: argparse.Namespace, xml_root) -> None:
                         )
                         count += 1
 
-    except Exception as e:
+    except Exception as e_czif:
         print(f"Error: unable to open zone/interface csv file {args.zone_file} for writing")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_czif}")
         sys.exit(1)
 
 
 def get_versa_template_data(template_file_name: str) -> Optional[Tuple[str, str, str, str]]:
-    """Extract template, organization names, services, and service node groups from a file.
+    """
+    Extract template, organization names, services, and service node groups from a file.
 
     Args:
         template_file_name (str): The name of the template file.
-
     Raises:
         FileNotFoundError: If the template file is not found.
         ValueError: If unable to parse the template file.
-
     Returns:
         Optional[Tuple[str, str, str, str]]: The names of the template, organization, services, and service node groups, or None if not found.
     """
@@ -397,16 +399,16 @@ def get_versa_template_data(template_file_name: str) -> Optional[Tuple[str, str,
 
         return template_name, org_name, org_services, service_node_groups
 
-    except FileNotFoundError:
-        raise FileNotFoundError(f"File {template_file_name} not found.")
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(f"File {template_file_name} not found.") from exc
 
 
 def open_predefined_applications(args: Namespace):
-    """Open and parse a predefined applications CSV file.
+    """
+    Open and parse a predefined applications CSV file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Tuple[_csv._reader, TextIO]: CSV reader object and file object.
     """
@@ -419,22 +421,22 @@ def open_predefined_applications(args: Namespace):
         predefined_apps_fh = open(args.app_file, "r", encoding="utf-8")
         predefined_apps_csv_reader = csv.reader(predefined_apps_fh)
         return predefined_apps_csv_reader, predefined_apps_fh
-    except OSError as e:
+    except OSError as e_opa:
         print(f"Error: unable to open predefined applications CSV file {args.app_file} for reading")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opa}")
         sys.exit(1)
-    except csv.Error as e:
+    except csv.Error as e_opa:
         print(f"Error: unable to parse predefined applications CSV file {args.app_file}")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opa}")
         sys.exit(1)
 
 
-def open_predefined_URL_categories_XML(args: Namespace):
-    """Open and parse a predefined URL categories XML file.
+def open_predefined_url_categories_xml(args: Namespace):
+    """
+    Open and parse a predefined URL categories XML file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Element: XML root element.
     """
@@ -445,22 +447,22 @@ def open_predefined_URL_categories_XML(args: Namespace):
     print("   URL categories")
     try:
         return ET.parse(args.url_file).getroot()
-    except ET.ParseError as e:
+    except ET.ParseError as e_opuc:
         print(f"Error: unable to parse URL categories XML file {args.url_file}")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opuc}")
         return None
-    except OSError as e:
+    except OSError as e_opuc:
         print(f"Error: unable to open URL categories XML file {args.url_file} for reading")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opuc}")
         return None
 
 
 def open_predefined_countries_file(args: Namespace):
-    """Open and parse a predefined countries CSV file.
+    """
+    Open and parse a predefined countries CSV file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Tuple[Optional[csv.reader], Optional[io.TextIOWrapper]]: CSV reader object and file object, or None if there was an error.
     """
@@ -475,18 +477,18 @@ def open_predefined_countries_file(args: Namespace):
         return predefined_countries_csv_reader, predefined_countries_fh
     except FileNotFoundError:
         print(f"Error: countries CSV file {args.countries_file} not found")
-    except Exception as e:
+    except Exception as e_opcf:
         print(f"Error: unable to open countries CSV file {args.countries_file} for reading")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opcf}")
     return None, None
 
 
 def open_predefined_families_file(args: Namespace):
-    """Open and parse a predefined families CSV file.
+    """
+    Open and parse a predefined families CSV file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Tuple[Optional[csv.reader], Optional[io.TextIOWrapper]]: CSV reader object and file object, or None if there was an error.
     """
@@ -501,18 +503,18 @@ def open_predefined_families_file(args: Namespace):
         return predefined_app_families_csv_reader, predefined_app_families_fh
     except FileNotFoundError:
         print(f"Error: families CSV file {args.families_file} not found")
-    except Exception as e:
+    except Exception as e_opff:
         print(f"Error: unable to open families CSV file {args.families_file} for reading")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opff}")
     return None, None
 
 
 def open_predefined_subfamilies_file(args: Namespace):
-    """Open and parse a predefined subfamilies CSV file.
+    """
+    Open and parse a predefined subfamilies CSV file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Tuple[Optional[csv.reader], Optional[io.TextIOWrapper]]: CSV reader object and file object, or None if there was an error.
     """
@@ -527,18 +529,18 @@ def open_predefined_subfamilies_file(args: Namespace):
         return predefined_app_subfamilies_csv_reader, predefined_app_subfamilies_fh
     except FileNotFoundError:
         print(f"Error: subfamilies CSV file {args.subfamilies_file} not found")
-    except Exception as e:
+    except Exception as e_opsf:
         print(f"Error: unable to open subfamilies CSV file {args.subfamilies_file} for reading")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opsf}")
     return None, None
 
 
 def open_predefined_app_tags_file(args: Namespace):
-    """Open and parse a predefined application tags  CSV file.
+    """
+    Open and parse a predefined application tags  CSV file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Tuple[Optional[csv.reader], Optional[io.TextIOWrapper]]: CSV reader object and file object, or None if there was an error.
     """
@@ -553,18 +555,18 @@ def open_predefined_app_tags_file(args: Namespace):
         return predefined_app_tags_csv_reader, predefined_app_tags_fh
     except FileNotFoundError:
         print(f"Error: app tags CSV file {args.app_tags_file} not found")
-    except Exception as e:
+    except Exception as e_opatf:
         print(f"Error: unable to open app tags CSV file {args.app_tags_file} for reading")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_opatf}")
     return None, None
 
 
 def open_zone_interface_file(args: Namespace):
-    """Open and parse a zone/interface CSV file.
+    """
+    Open and parse a zone/interface CSV file.
 
     Args:
         args (argparse.Namespace): Command-line arguments.
-
     Returns:
         Tuple[Optional[csv.reader], Optional[io.TextIOWrapper]]: CSV reader object and file object, or None if there was an error.
     """
@@ -576,9 +578,9 @@ def open_zone_interface_file(args: Namespace):
         zone_interface_fh = open(args.zone_file, "r", encoding="utf-8")
         zone_interface_csv_reader = csv.reader(zone_interface_fh)
         return zone_interface_csv_reader, zone_interface_fh
-    except Exception as e:
+    except Exception as e_ozif:
         print(f"Error: unable to open zone/interface CSV file {args.zone_file} for reading")
-        print(f"Error Details: {e}")
+        print(f"Error Details: {e_ozif}")
         return None, None
 
 
@@ -588,7 +590,6 @@ def open_output_files(args: Namespace) -> Tuple[str, TextIO]:
 
     Args:
         args (Namespace): Command-line arguments.
-
     Returns:
         Tuple[str, TextIO]: Tuple containing the output file names and file objects.
     """
@@ -596,18 +597,16 @@ def open_output_files(args: Namespace) -> Tuple[str, TextIO]:
     outfile = os.path.join(args.output_dir, f"{pan_config_file_name}.cfg")
 
     try:
-        versa_configuration_fh = open(outfile, "w", encoding="utf-8")
-    except OSError as e:
-        print(f"Error: unable to open output files for writing")
-        print(f"Error Details: {e}")
+        versa_configuration_fh = open(outfile, "w+", encoding="utf-8")
+    except OSError as e_oof:
+        print("Error: unable to open output files for writing")
+        print(f"Error Details: {e_oof}")
         sys.exit(1)
 
     return pan_config_file_name, versa_configuration_fh
 
 
-def populate_zone_interface_map(
-    zone_interface_csv_reader, zone_interface_fh: Any, versa_cfg: Any, tnt_xlate_map: Dict[str, List[str]]
-):
+def populate_zone_interface_map(zone_interface_csv_reader, zone_interface_fh: Any, versa_cfg: Any, tnt_xlate_map: Dict[str, List[str]]):
     """
     Populate the interface zone map from a CSV file.
 
@@ -616,10 +615,10 @@ def populate_zone_interface_map(
         zone_interface_fh (Any): File handle for the zone file.
         versa_cfg (Any): Storage object for Versa Config.
         tnt_xlate_map (Dict[str, List[str]]): A dictionary containing tenant translation information.
-
     Returns:
         Tuple[Any, Dict[str, List[str]], Dict[str, List[str]]]: A tuple containing the updated versa_cfg object, tnt_xlate_map dictionary, and the versa_intf_zone_map dictionary.
     """
+    print("    Zone/Interface")
     pan_intf_zone_map: Dict[str, List[str]] = {}
     versa_intf_zone_map: Dict[str, List[str]] = {}
     cur_line_num: int = 0
@@ -642,36 +641,6 @@ def populate_zone_interface_map(
     return versa_cfg, tnt_xlate_map, versa_intf_zone_map
 
 
-def populate_interfaces_networks_zones_map(
-    versa_intf_zone_map: Dict[str, List[str]], v_logger: logging.Logger, versa_cfg: Any, args: Any
-) -> None:
-    """
-    Add interfaces, networks, and zones to the Versa configuration.
-
-    Args:
-        versa_intf_zone_map (Dict[str, List[str]]): A dictionary containing interface, network, and zone information.
-        v_logger (logging.Logger): A logging module variable.
-        versa_cfg (Any): A storage object for Versa Config.
-        args (Any): Command line arguments.
-    """
-    for v_ifname, ifinfo in versa_intf_zone_map.items():
-        if "#" in v_ifname:
-            continue
-        tnt = ifinfo[7]
-        cur_tnt = versa_cfg.get_tenant(tnt, "0")
-        v_logger.info(
-            f"{args.zone_file}:{ifinfo[8]}: adding versa interface {v_ifname} to tenant {tnt}; network {ifinfo[2]}; zone {ifinfo[1]}; pan interface {ifinfo[0]}"
-        )
-        versa_cfg.add_network_and_interface(ifinfo[2], v_ifname)
-
-        if ifinfo[2]:
-            cur_tnt.add_zone_network(ifinfo[1], ifinfo[2], ifinfo[8])
-        else:
-            cur_tnt.add_zone_interface(ifinfo[1], v_ifname, ifinfo[8])
-
-    return versa_cfg
-
-
 def populate_predefined_applications_map(predefined_apps_csv_reader, predefined_apps_fh: Any, versa_cfg: Any):
     """
     Populate predefined applications from a CSV file into a dictionary.
@@ -680,13 +649,12 @@ def populate_predefined_applications_map(predefined_apps_csv_reader, predefined_
         predefined_apps_csv_reader (csv.reader): Contents of the applications file.
         predefined_apps_fh (Any): File handle for the predefined applications file.
         versa_cfg (Any): Storage object for Versa Config.
-
     Returns:
         Tuple[Dict[str, List[str]], Dict[str, Application], Any]: A tuple containing the predefined_apps dictionary, predefined_app_map dictionary, and the updated versa_cfg object.
     """
     predefined_apps: Dict[str, List[str]] = {}
     predefined_app_map: Dict[str, Application] = {}
-
+    print("    Applications")
     for predefined_apps_csv_row in predefined_apps_csv_reader:
         if predefined_apps_csv_row and not predefined_apps_csv_row[0].startswith("#"):
             if len(predefined_apps_csv_row) > 0 and len(predefined_apps_csv_row[0]) > 0:
@@ -702,12 +670,10 @@ def populate_predefined_applications_map(predefined_apps_csv_reader, predefined_
 
     predefined_apps_fh.close()
     versa_cfg.set_predef_app_map(predefined_app_map)
-    return predefined_apps, predefined_app_map, versa_cfg
+    return versa_cfg, predefined_app_map, predefined_apps
 
 
-def populate_predefined_url_categories_map(
-    predefined_url_categories_xml_root, predefined_apps: Any, versa_cfg
-) -> Tuple[Any, Dict[str, URLCategory]]:
+def populate_predefined_url_categories_map(predefined_url_categories_xml_root, predefined_apps: Any, versa_cfg) -> Tuple[Any, Dict[str, URLCategory]]:
     """
     Populate predefined URL categories from an XML file into a dictionary.
 
@@ -715,11 +681,10 @@ def populate_predefined_url_categories_map(
         predefined_url_categories_xml_root (Element): Root element of the URL categories XML file.
         url_fh (Any): File handle for the URL categories file.
         versa_cfg (Any): Storage object for Versa Config.
-
     Returns:
         Tuple[Any, Dict[str, URLCategory]]: A tuple containing the updated versa_cfg object and the predefined_url_categories_map dictionary.
     """
-
+    print("    URL categories")
     predefined_url_categories_map = {}
     for url_categories in predefined_url_categories_xml_root.findall("./categories/entity/subtype"):
         url_categories_name = url_categories.text
@@ -729,9 +694,7 @@ def populate_predefined_url_categories_map(
     return versa_cfg, predefined_url_categories_map
 
 
-def populate_predefined_countries_map(
-    predefined_countries_csv_reader, predefined_countries_fh: Any, versa_cfg: Any
-) -> Tuple[Any, Dict[str, list]]:
+def populate_predefined_countries_map(predefined_countries_csv_reader, predefined_countries_fh: Any, versa_cfg: Any) -> Tuple[Any, Dict[str, list]]:
     """
     Populate predefined countries from a CSV file into a dictionary.
 
@@ -739,10 +702,10 @@ def populate_predefined_countries_map(
         predefined_countries_csv_reader (csv.reader): Contents of the countries file.
         predefined_countries_fh (Any): File handle for the countries file.
         versa_cfg (Any): Storage object for Versa Config.
-
     Returns:
         Tuple[Any, Dict[str, list]]: A tuple containing the updated versa_cfg object and the predefined_countries_map dictionary.
     """
+    print("    Countries")
     predefined_countries_map: Dict[str, list] = {}
     for predefined_countries_csv_row in predefined_countries_csv_reader:
         if predefined_countries_csv_row and not predefined_countries_csv_row[0].startswith("#"):
@@ -754,9 +717,7 @@ def populate_predefined_countries_map(
     return versa_cfg, predefined_countries_map
 
 
-def populate_predefined_families_map(
-    predefined_app_families_csv_reader, predefined_app_families_fh: Any, versa_cfg: Any
-) -> Tuple[Any, Dict[str, list]]:
+def populate_predefined_families_map(predefined_app_families_csv_reader, predefined_app_families_fh: Any, versa_cfg: Any) -> Tuple[Any, Dict[str, list]]:
     """
     Populate predefined families from a CSV file into a dictionary.
 
@@ -764,11 +725,10 @@ def populate_predefined_families_map(
         predefined_app_families_csv_reader (csv.reader): Contents of the families file.
         predefined_app_families_fh (Any): File handle for the families file.
         versa_cfg (Any): Storage object for Versa Config.
-
     Returns:
         Tuple[Any, Dict[str, list]]: A tuple containing the updated versa_cfg object and the predefined_families_map dictionary.
     """
-
+    print("    Families")
     predefined_families_map: Dict[str, list[str]] = {}
     for predefined_app_csv_row in predefined_app_families_csv_reader:
         if predefined_app_csv_row and not predefined_app_csv_row[0].startswith("#"):
@@ -780,9 +740,7 @@ def populate_predefined_families_map(
     return versa_cfg, predefined_families_map
 
 
-def populate_predefined_subfamilies_map(
-    predefined_app_subfamilies_csv_reader, predefined_app_subfamilies_fh: Any, versa_cfg: Any
-) -> Tuple[Any, Dict[str, list]]:
+def populate_predefined_subfamilies_map(predefined_app_subfamilies_csv_reader, predefined_app_subfamilies_fh: Any, versa_cfg: Any) -> Tuple[Any, Dict[str, list]]:
     """
     Populate predefined subfamilies from a CSV file into a dictionary.
 
@@ -790,10 +748,10 @@ def populate_predefined_subfamilies_map(
         predefined_app_subfamilies_csv_reader (csv.reader): Contents of the subfamilies file.
         predefined_app_subfamilies_fh (Any): File handle for the subfamilies file.
         versa_cfg (Any): Storage object for Versa Config.
-
     Returns:
         Tuple[Any, Dict[str, list]]: A tuple containing the updated versa_cfg object and the predefined_subfamilies_map dictionary.
     """
+    print("    Subfamilies")
     predefined_subfamilies_map: Dict[str, list[str]] = {}
     for row in predefined_app_subfamilies_csv_reader:
         if row and not row[0].startswith("#"):
@@ -805,9 +763,7 @@ def populate_predefined_subfamilies_map(
     return versa_cfg, predefined_subfamilies_map
 
 
-def populate_predefined_app_tags_map(
-    predefined_app_tags_csv_reader, predefined_app_tags_fh, versa_cfg: Any
-) -> Tuple[Any, Dict[str, list]]:
+def populate_predefined_app_tags_map(predefined_app_tags_csv_reader, predefined_app_tags_fh, versa_cfg: Any) -> Tuple[Any, Dict[str, list]]:
     """
     Populate predefined app tags from a CSV file into a dictionary.
 
@@ -815,10 +771,10 @@ def populate_predefined_app_tags_map(
         predefined_app_tags_csv_reader (csv.reader): Contents of the app_tags file.
         predefined_app_tags_fh (Any): File handle for the app_tags file.
         versa_cfg (Any): Storage object for Versa Config.
-
     Returns:
         Tuple[Any, Dict[str, list]]: A tuple containing the updated versa_cfg object and the predefined_app_tags_map dictionary.
     """
+    print("    Tags")
     predefined_app_tags_map: Dict[str, list[str]] = {}
     for row in predefined_app_tags_csv_reader:
         if row and not row[0].startswith("#"):
@@ -837,10 +793,8 @@ def get_key(my_dict: dict, val: Any) -> Any:
     Args:
         my_dict (dict): The dictionary to search.
         val (Any): The value to find the key for.
-
     Returns:
         Any: The key for the given value.
-
     Raises:
         ValueError: If the value is not found in the dictionary.
     """
@@ -856,7 +810,6 @@ def get_text_and_clean(element) -> Optional[str]:
 
     Args:
         element (_Element, optional): The XML element to extract text from.
-
     Returns:
         str, optional: The cleaned text, or None if the element is None or contains no text.
     """
@@ -865,32 +818,39 @@ def get_text_and_clean(element) -> Optional[str]:
     return None
 
 
-def add_tag(app_tags: List[str], tag: str, map: Dict[str, str]) -> None:
+def add_tag(app_tags: List[str], tag: str, predefined_app_tags_map: Dict[str, str]) -> None:
     """
-    Adds a tag to the app_tags list if it's not already present.
+    Adds a tag to the beginning of the app_tags list if it's not already present.
 
-    Parameters:
-    app_tags (List[str]): The list of application tags.
-    tag (str): The tag to add.
-    map (Dict[str, str]): The mapping of tags.
+    This function first retrieves the key associated with the given tag from the
+    predefined_app_tags_map. If this key is not already in the app_tags list, it's
+    inserted at the beginning of the list.
 
+    Args:
+        app_tags (List[str]): The list of application tags.
+        tag (str): The tag to add.
+        predefined_app_tags_map (Dict[str, str]): The mapping of predefined application tags.
     Returns:
-    None
+        None
     """
-    key = get_key(map, tag)
+    key = get_key(predefined_app_tags_map, tag)
     if key not in app_tags:
         app_tags.insert(0, key)
 
 
 def handle_port(port: str):
     """
-    Handles different formats of port values.
+    Handles different formats of port values and returns a tuple of port value, port low, and port high.
+
+    If the port value is "dynamic", it returns "any" as the port value and two empty strings as port low and high.
+    If the port value does not contain a "-", it returns the port value and two empty strings as port low and high.
+    If the port value contains a "-", it splits the value into port low and high and returns two empty strings as the port value.
 
     Parameters:
-    port (str): The port value.
-
+        port (str): The port value in one of the following formats: "dynamic", "port", or "port_low-port_high".
     Returns:
-    Tuple[str, str, str]: A tuple containing the port value, port low, and port high.
+        Tuple[str, str, str]: A tuple containing the port value, port low, and port high. The port value is "any" or the port value if it does not contain a "-", and it's an empty string otherwise.
+        The port low and high are empty strings if the port value is "dynamic" or does not contain a "-", and they are the split port value otherwise.
     """
     if port == "dynamic":
         return "any", "", ""
@@ -901,15 +861,34 @@ def handle_port(port: str):
         return "", port_low, port_high
 
 
-def load_application_objects(
-    tnt_xml,
-    tnt: Any,
-    v_logger: logging.Logger,
-    predefined_app_map: Dict[str, Any],
-    predefined_families_map: Dict[str, Any],
-    predefined_subfamilies_map: Dict[str, Any],
-    predefined_app_tags_map: Dict[str, Any],
-) -> None:
+def load_zones_networks_interfaces(versa_intf_zone_map: Dict[str, List[str]], v_logger: logging.Logger, versa_cfg: Any, args: Any) -> None:
+    """
+    Add interfaces, networks, and zones to the Versa configuration.
+
+    Args:
+        versa_intf_zone_map (Dict[str, List[str]]): A dictionary containing interface, network, and zone information.
+        v_logger (logging.Logger): A logging module variable.
+        versa_cfg (Any): A storage object for Versa Config.
+        args (Any): Command line arguments.
+    """
+    print("    Zones, Networks, Interfaces")
+    for v_ifname, ifinfo in versa_intf_zone_map.items():
+        if "#" in v_ifname:
+            continue
+        tnt = ifinfo[7]
+        cur_tnt = versa_cfg.get_tenant(tnt, "0")
+        v_logger.info(f"{args.zone_file}:{ifinfo[8]}: adding versa interface {v_ifname} to tenant {tnt}; network {ifinfo[2]}; zone {ifinfo[1]}; pan interface {ifinfo[0]}")
+        versa_cfg.add_network_and_interface(ifinfo[2], v_ifname)
+
+        if ifinfo[2]:
+            cur_tnt.add_zone_network(ifinfo[1], ifinfo[2], ifinfo[8])
+        else:
+            cur_tnt.add_zone_interface(ifinfo[1], v_ifname, ifinfo[8])
+
+    return versa_cfg
+
+
+def load_application_objects(tnt_xml, tnt: Any, v_logger: logging.Logger, _, predefined_families_map: Dict[str, Any], predefined_subfamilies_map: Dict[str, Any], predefined_app_tags_map: Dict[str, Any]) -> None:
     """
     Load application objects into a tenant from an XML document.
 
@@ -943,10 +922,10 @@ def load_application_objects(
         - Data identification
         - Technology
     """
-    print("Loading application objects into tenant...")
+    print("    Applications")
 
     applications = tnt_xml.xpath("./application/entry")
-    TAGS = {
+    tags = {
         "evasive-behavior",
         "consume-big-bandwidth",
         "used-by-malware",
@@ -964,6 +943,7 @@ def load_application_objects(
     for app in applications:
         app_tags: List[str] = []
         application_name = (clean_string(app.attrib["name"], False)).upper()
+
         # This may not work as expected for application mapping
         if application_name in tnt.application_map:
             continue
@@ -989,7 +969,7 @@ def load_application_objects(
         if cur_app_risk_value:
             cur_app.set_risk(cur_app_risk_value)
 
-        for tag in TAGS:
+        for tag in tags:
             tag_element = app.find(f"./{tag}")
             if tag_element is not None and tag_element.text == "yes":
                 add_tag(app_tags, tag, predefined_app_tags_map)
@@ -1014,7 +994,11 @@ def load_application_objects(
             app_match_rule_name = clean_string(member.text, False)
             protocol, port = member.text.split("/")
             protocol = protocol_map.get(protocol, "")
-            destination_port_value, destination_port_low, destination_port_high = handle_port(port)
+            (
+                destination_port_value,
+                destination_port_low,
+                destination_port_high,
+            ) = handle_port(port)
 
             app_match_rule = AppMatchRules(app_match_rule_name, INPUT_LINE_NUM, False)
             app_match_rule.set_protocol(protocol)
@@ -1032,14 +1016,15 @@ def load_application_objects(
 
 
 def load_service_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
-    """Load service objects from an XML element into a tenant.
+    """
+    Load service objects from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing service information.
         tnt (Any): A tenant object.
         v_logger (logging.Logger): A logger object for logging messages.
     """
-    print("Loading service objects into tenant...")
+    print("    Services")
     services = tnt_xml.findall("./service/entry")
     for svc in services:
         svc_name = clean_string(svc.attrib["name"], False)
@@ -1063,14 +1048,15 @@ def load_service_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
 
 
 def load_service_group_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
-    """Load service group objects from an XML element into a tenant.
+    """
+    Load service group objects from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing service group information.
         tnt (Any): A tenant object.
         v_logger (logging.Logger): A logger object for logging messages.
     """
-    print("Loading service group objects into tenant...")
+    print("    Service groups")
     svc_groups = tnt_xml.findall("./service-group/entry")
     for svc_group in svc_groups:
         svc_group_name = clean_string(svc_group.attrib["name"], False)
@@ -1083,21 +1069,20 @@ def load_service_group_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> N
         svc_group_members = svc_group.findall("./members/member")
         for member in svc_group_members:
             svc_group_member = member.text
-            v_logger.info(
-                f"tenant {tnt}: adding service group '{svc_group_name}' with service member '{svc_group_member}'"
-            )
+            v_logger.info(f"tenant {tnt}: adding service group '{svc_group_name}' with service member '{svc_group_member}'")
             cur_svc_group.add_service(svc_group_member, INPUT_LINE_NUM)
 
 
 def load_schedule_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
-    """Load schedule objects from an XML element into a tenant.
+    """
+    Load schedule objects from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing schedule information.
         tnt (Any): A tenant object.
         v_logger (logging.Logger): A logger object for logging messages.
     """
-    print("Loading schedule objects into tenant...")
+    print("    Schedules")
     for schedule in tnt_xml.findall("./schedule/entry"):
         schedule_name = clean_string(schedule.attrib["name"], False)
         cur_sched = Schedule(schedule_name, INPUT_LINE_NUM, False, False)
@@ -1124,14 +1109,15 @@ def load_schedule_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
 
 
 def load_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
-    """Load URL category objects from an XML element into a tenant.
+    """
+    Load URL category objects from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing URL category information.
         tnt (Any): A tenant object.
         v_logger (logging.Logger): A logger object for logging messages.
     """
-    print("Loading URL categories into tenant...")
+    print("    URL categories")
     url_categories = tnt_xml.findall("./profiles/custom-url-category/entry")
     for url_category in url_categories:
         uc_name = clean_string(url_category.attrib["name"], False)
@@ -1157,7 +1143,8 @@ def load_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> No
 
 
 def load_address_objects(_tnt_xml, _tnt: Any, v_logger) -> None:
-    """Load address objects from an XML element into a tenant.
+    """
+    Load address objects from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing address information.
@@ -1165,7 +1152,7 @@ def load_address_objects(_tnt_xml, _tnt: Any, v_logger) -> None:
         v_logger (logging.Logger): A logger object for logging messages.
     """
     # Process address objects
-    print("Loading address_objects into tenant...")
+    print("    Addresses")
     # Process address objects
     addresses = _tnt_xml.findall("./address/entry")
     for addr in addresses:
@@ -1174,14 +1161,14 @@ def load_address_objects(_tnt_xml, _tnt: Any, v_logger) -> None:
         ip_netmask = addr.find("./ip-netmask")
         add_flag = False
         if ip_netmask is not None:
-            cur_addr.set_addr_value(clean_string(ip_netmask.text, False), INPUT_LINE_NUM)
+            cur_addr.set_addr_value(clean_string(ip_netmask.text, False))
             cur_addr.set_addr_type(AddressType.IP_V4_PREFIX, INPUT_LINE_NUM)
             add_flag = True
 
         if not add_flag:
             addr_fqdn = addr.find("./fqdn")
             if addr_fqdn is not None:
-                cur_addr.set_addr_value(addr_fqdn.text, INPUT_LINE_NUM)
+                cur_addr.set_addr_value(addr_fqdn.text)
                 cur_addr.set_addr_type(AddressType.FQDN, INPUT_LINE_NUM)
                 add_flag = True
 
@@ -1193,54 +1180,22 @@ def load_address_objects(_tnt_xml, _tnt: Any, v_logger) -> None:
         _tnt.add_address(cur_addr, INPUT_LINE_NUM)
 
 
-def load_external_address_group_objects(_tnt_xml, _tnt: Any, v_logger: logging.Logger) -> None:
-    """Load external address group objects from an XML element into a tenant.
-
-    Args:
-        tnt_xml (Element): An XML element containing external address group information.
-        tnt (Any): A tenant object.
-        v_logger (logging.Logger): A logger object for logging messages.
-    """
-    print("Loading external address group objects into tenant...")
-    addr_groups = _tnt_xml.findall("./address-group/entry")
-    for addr_group in addr_groups:
-        addr_group_name = clean_string(addr_group.attrib["name"], False)
-
-        cur_addr_grp = _tnt.get_address_group(addr_group_name)
-        if cur_addr_grp is None:
-            cur_addr_grp = AddressGroup(addr_group_name, INPUT_LINE_NUM, False)
-            _tnt.add_address_group(cur_addr_grp, INPUT_LINE_NUM)
-
-        addr_group_members = addr_group.findall("./members/member")
-        for addr_group_member in addr_group_members:
-            addr = clean_string(addr_group_member.text, False)
-            v_logger.info(f"tenant {_tnt.name}: adding address group '{addr_group_name}' with address member '{addr}'")
-            cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
-
-        addr_group_static_members = addr_group.findall("./static/member")
-        for addr_group_static_member in addr_group_static_members:
-            addr = clean_string(addr_group_static_member.text, False)
-            v_logger.info(f"tenant {_tnt.name}: adding address group '{addr_group_name}' with address member '{addr}'")
-            cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
-
-
 def load_external_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
-    """Load external URL category objects from an XML element into a tenant.
+    """
+    Load external URL category objects from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing external URL category information.
         tnt (Any): A tenant object.
         v_logger (logging.Logger): A logger object for logging messages.
     """
-    print("Loading external url category objects into tenant...")
+    print("    External URL categories")
     url_categories = tnt_xml.findall("./external-list/entry")
     for url_category in url_categories:
         entry = url_category.find("type/url")
         if entry is not None:
             url_category_name = clean_string(url_category.attrib["name"], False)
-            cur_url_category = tnt.get_url_category(url_category_name) or tnt.add_url_category(
-                URLCategory(url_category_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM
-            )
+            cur_url_category = tnt.get_url_category(url_category_name) or tnt.add_url_category(URLCategory(url_category_name, INPUT_LINE_NUM, False), INPUT_LINE_NUM)
 
             url_category_desc = entry.find("./description")
             if url_category_desc is not None and url_category_desc.text is not None:
@@ -1255,14 +1210,15 @@ def load_external_url_category_objects(tnt_xml, tnt: Any, v_logger: logging.Logg
 
 
 def load_address_group_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> None:
-    """Load address group objects from an XML element into a tenant.
+    """
+    Load address group objects from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing address group information.
         tnt (Any): A tenant object.
         v_logger (logging.Logger): A logger object for logging messages.
     """
-    print("Loading address groups into tenant...")
+    print("    Address groups")
     addr_groups = tnt_xml.findall("./address-group/entry")
     for addr_group in addr_groups:
         address_group_name = clean_string(addr_group.attrib["name"], False)
@@ -1280,22 +1236,19 @@ def load_address_group_objects(tnt_xml, tnt: Any, v_logger: logging.Logger) -> N
         address_group_members = addr_group.findall("./members/member")
         for address_group_member in address_group_members:
             addr = clean_string(address_group_member.text, False)
-            v_logger.info(
-                f"tenant {tnt.name}: adding address group '{address_group_name}' with address member '{addr}'"
-            )
+            v_logger.info(f"tenant {tnt.name}: adding address group '{address_group_name}' with address member '{addr}'")
             cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
 
         address_group_members = addr_group.findall("./static/member")
         for address_group_member in address_group_members:
             addr = clean_string(address_group_member.text, False)
-            v_logger.info(
-                f"tenant {tnt.name}: adding address group '{address_group_name}' with address member '{addr}'"
-            )
+            v_logger.info(f"tenant {tnt.name}: adding address group '{address_group_name}' with address member '{addr}'")
             cur_addr_grp.add_address(addr, INPUT_LINE_NUM)
 
 
 def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predefined_app_map: Dict[str, Any]) -> None:
-    """Load application groups into a tenant.
+    """
+    Load application groups into a tenant.
 
     Args:
         _tnt_xml (Element): The XML element containing the application groups.
@@ -1304,7 +1257,7 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predefi
         _predefined_app_map (Dict[str, Any]): A dictionary mapping predefined application names to their objects.
     """
     # Process application groups
-    print("Loading application groups into tenant...")
+    print("    Application groups")
     app_groups = tnt_xml.findall("./application-group/entry")
     for app_group in app_groups:
         app_group_name = clean_string(app_group.attrib["name"], False)
@@ -1325,35 +1278,27 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predefi
 
             sh_tnt = tnt.get_shared_tenant()
             if cur_app is not None:
-                v_logger.info(
-                    f"Tenant {tnt.name}: Adding application group '{app_group_name}' with custom application member '{application_name}'"
-                )
+                v_logger.info(f"Tenant {tnt.name}: Adding application group '{app_group_name}' with custom application member '{application_name}'")
                 cur_app_grp.add_application(cur_app, INPUT_LINE_NUM)
                 member_added = True
 
             if not member_added:
                 app_grp = tnt.get_application_group(application_name)
                 if app_grp is not None:
-                    v_logger.info(
-                        f"Tenant {tnt.name}: Adding application group '{app_group_name}' with custom application group member '{application_name}'"
-                    )
+                    v_logger.info(f"Tenant {tnt.name}: Adding application group '{app_group_name}' with custom application group member '{application_name}'")
                     cur_app_grp.add_application_group(app_grp, INPUT_LINE_NUM)
                     member_added = True
 
             if not member_added and sh_tnt is not None:
                 cur_app = sh_tnt.get_application(application_name)
                 if cur_app is not None:
-                    v_logger.info(
-                        f"Tenant {tnt.name}: Adding application group '{app_group_name}' with shared application member '{application_name}'"
-                    )
+                    v_logger.info(f"Tenant {tnt.name}: Adding application group '{app_group_name}' with shared application member '{application_name}'")
                     cur_app_grp.add_application(cur_app, INPUT_LINE_NUM)
                     member_added = True
                 else:
                     app_grp = sh_tnt.get_application_group(application_name)
                     if app_grp is not None:
-                        v_logger.info(
-                            f"Tenant {tnt.name}: Adding application group '{app_group_name}' with shared application group member '{application_name}'"
-                        )
+                        v_logger.info(f"Tenant {tnt.name}: Adding application group '{app_group_name}' with shared application group member '{application_name}'")
                         cur_app_grp.add_application_group(app_grp, INPUT_LINE_NUM)
                         member_added = True
 
@@ -1361,22 +1306,17 @@ def load_application_groups(tnt_xml, tnt: Any, v_logger: logging.Logger, predefi
                 # check if the application is predefined application
                 if application_name in predefined_app_map:
                     cur_app = predefined_app_map[application_name]
-                    v_logger.info(
-                        f"Tenant {tnt.name}: Adding application group '{app_group_name}' with predefined application member '{application_name}'"
-                    )
+                    v_logger.info(f"Tenant {tnt.name}: Adding application group '{app_group_name}' with predefined application member '{application_name}'")
                     cur_app_grp.add_application(cur_app, INPUT_LINE_NUM)
                     member_added = True
 
             if not member_added:
-                v_logger.error(
-                    f"Tenant {tnt.name}: Adding application group '{app_group_name}' with unknown application member '{application_name}'"
-                )
+                v_logger.error(f"Tenant {tnt.name}: Adding application group '{app_group_name}' with unknown application member '{application_name}'")
 
 
-def load_application_filters(
-    tnt_xml, tnt: Any, v_logger: logging.Logger, predefined_subfamilies_map: Dict[str, Any]
-) -> None:
-    """Load application filters from an XML element into a tenant.
+def load_application_filters(tnt_xml, tnt: Any, v_logger: logging.Logger, predefined_subfamilies_map: Dict[str, Any]) -> None:
+    """
+    Load application filters from an XML element into a tenant.
 
     Args:
         tnt_xml (Element): An XML element containing application filter information.
@@ -1384,7 +1324,7 @@ def load_application_filters(
         v_logger (logging.Logger): A logger object for logging messages.
         predefined_subfamilies_map (Dict[str, Any]): A dictionary of predefined subfamilies.
     """
-    print("Loading application filters into tenant...")
+    print("    Application filters")
     app_filters = tnt_xml.findall("./application-filter/entry")
     for app_filter in app_filters:
         app_filter_name = clean_string(app_filter.attrib["name"], False)
@@ -1405,9 +1345,7 @@ def load_application_filters(
             if sc in list(predefined_subfamilies_map.keys()):
                 cur_app_filter.add_application_filter("subfamily", subcategory_members.text.strip(), INPUT_LINE_NUM)
             else:
-                v_logger.error(
-                    f"Tenant {tnt.name}; application filter {cur_app_filter.name}; subfamily {subcategory_members} not found"
-                )
+                v_logger.error(f"Tenant {tnt.name}; application filter {cur_app_filter.name}; subfamily {subcategory_members} not found")
 
         risk_members = app_filter.findall("./risk/member")
         for risk_member in risk_members:
@@ -1419,17 +1357,10 @@ def load_application_filters(
 
         tag_members = app_filter.findall("./tag/member")
         for tag_member in tag_members:
-            cur_app_filter.add_application_filter("tag", tag_members.text.strip(), INPUT_LINE_NUM)
+            cur_app_filter.add_application_filter("tag", tag_member.text.strip(), INPUT_LINE_NUM)
 
 
-def process_rule_address_match(
-    versa_rule_object,
-    cur_tnt: versa.Tenant.Tenant,
-    address_map: Dict[str, Any],
-    is_src_match: bool,
-    v_logger: logging.Logger,
-    predef_countries: Dict[str, Any],
-) -> None:
+def process_rule_address_match(versa_rule_object, cur_tnt: versa.Tenant.Tenant, address_map: Dict[str, Any], is_src_match: bool, v_logger: logging.Logger, predef_countries: Dict[str, Any]) -> None:
     """
     Process the address match for a NextGenFirewallRule.
 
@@ -1440,7 +1371,6 @@ def process_rule_address_match(
         is_src_match (bool): A boolean indicating whether the match is for the source address.
         v_logger (logging.Logger): A logging module variable.
         predef_countries (dict): A dictionary containing predefined country information. The keys are country names and the values are irrelevant.
-
     Logs:
         Information about the addition of addresses or address groups to the NextGenFirewallRule.
         Error message if no address or address group is found with the given name.
@@ -1452,9 +1382,7 @@ def process_rule_address_match(
         add_flag = False
         addr_object = cur_tnt.get_address(addr)
         if addr_object is not None:
-            v_logger.info(
-                f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address '{addr}'"
-            )
+            v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address '{addr}'")
             if is_src_match:
                 versa_rule_object.add_src_addr(addr, INPUT_LINE_NUM)
             else:
@@ -1464,9 +1392,7 @@ def process_rule_address_match(
         if not add_flag:
             addr_group_object = cur_tnt.get_address_group(addr)
             if addr_group_object is not None:
-                v_logger.info(
-                    f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group '{addr}'"
-                )
+                v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group '{addr}'")
                 if is_src_match:
                     versa_rule_object.add_src_addr_grp(addr, INPUT_LINE_NUM)
                 else:
@@ -1476,9 +1402,7 @@ def process_rule_address_match(
         if not add_flag:
             addr_object = sh_tnt.get_address(addr)
             if addr_object is not None:
-                v_logger.info(
-                    f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address (shared) '{addr}'"
-                )
+                v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address (shared) '{addr}'")
                 if is_src_match:
                     versa_rule_object.add_src_addr(addr, INPUT_LINE_NUM)
                 else:
@@ -1488,9 +1412,7 @@ def process_rule_address_match(
         if not add_flag:
             addr_group_object = sh_tnt.get_address_group(addr)
             if addr_group_object is not None:
-                v_logger.info(
-                    f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group (shared) '{addr}'"
-                )
+                v_logger.info(f"tenant {cur_tnt.name}: adding ngfw rule '{versa_rule_object.name}' with src/dst address group (shared) '{addr}'")
                 if is_src_match:
                     versa_rule_object.add_src_addr_grp(addr, INPUT_LINE_NUM)
                 else:
@@ -1501,10 +1423,10 @@ def process_rule_address_match(
             try:
                 if "/" in addr:
                     cur_addr = Address(addr, INPUT_LINE_NUM, False)
-                    cur_addr.set_addr_value(addr, INPUT_LINE_NUM)
+                    cur_addr.set_addr_value(addr)
                 else:
                     cur_addr = Address(addr, INPUT_LINE_NUM, False)
-                    cur_addr.set_addr_value(addr + "/32", INPUT_LINE_NUM)
+                    cur_addr.set_addr_value(addr + "/32")
                 cur_addr.set_addr_type(AddressType.IP_V4_PREFIX, INPUT_LINE_NUM)
                 v_logger.info(f"Tenant {cur_tnt.name}: Adding Address {cur_addr.name} to current tenant")
                 cur_tnt.add_address(cur_addr, INPUT_LINE_NUM)
@@ -1513,10 +1435,8 @@ def process_rule_address_match(
                 else:
                     versa_rule_object.add_dst_addr(addr, INPUT_LINE_NUM)
                 add_flag = True
-            except:
-                v_logger.error(
-                    f"Tenant {cur_tnt.name}: while adding rule {versa_rule_object.name} to current tenant, error while parsing address"
-                )
+            except Exception as e_pram:
+                v_logger.error(f"Tenant {cur_tnt.name}: while adding rule {versa_rule_object.name} to current tenant, error while parsing address: {e_pram}")
 
         if not add_flag:
             if addr in predef_countries:
@@ -1526,18 +1446,16 @@ def process_rule_address_match(
                     versa_rule_object.add_dst_addr_region(addr, INPUT_LINE_NUM)
 
         if not add_flag:
-            v_logger.error(
-                f"tenant {cur_tnt.name}: while adding ngfw rule '{versa_rule_object.name}' no address or address group found with name '{addr}'"
-            )
+            v_logger.error(f"tenant {cur_tnt.name}: while adding ngfw rule '{versa_rule_object.name}' no address or address group found with name '{addr}'")
 
 
 def get_element_path(root, element) -> Tuple[str, str]:
-    """Get the full path of an element in an XML tree.
+    """
+    Get the full path of an element in an XML tree.
 
     Args:
         root (etree.Element): The root element of the XML tree.
         element (etree.Element): The element to get the path for.
-
     Returns:
         Tuple[str, str]: A tuple containing the full path of the element in the XML tree, as well as the path without attribute values.
     """
@@ -1554,7 +1472,23 @@ def get_element_path(root, element) -> Tuple[str, str]:
 
 
 def load_rules_into_tenant(xml, cur_tnt, v_logger, predef_countries):
+    """
+    Load security rules from an XML element into a Tenant object.
+
+    This function processes security rules from the XML element and loads them into a NextGenFirewall object associated with the Tenant. It handles various types of matches
+    including source zone, destination zone, source address, destination address, service, service group, schedule, application, url-category, and action.
+
+    Args:
+        xml (Element): XML element containing security rules.
+        cur_tnt (Tenant): Tenant object to load rules into.
+        v_logger (logging.Logger): Logger object for logging.
+        predef_countries (dict): Dictionary mapping predefined country names to country objects.
+    Returns:
+        None
+    """
+
     # Process security rules
+    print("    Security rules")
     cur_ngfw = NextGenFirewall(cur_tnt.name + "_policy", INPUT_LINE_NUM, False)
     cur_tnt.set_next_gen_firewall(cur_ngfw, INPUT_LINE_NUM)
 
@@ -1644,24 +1578,25 @@ def load_config(
     predefined_subfamilies_map: Dict[str, Any],
     predefined_app_tags_map: Dict[str, Any],
     predefined_countries_map: Dict[str, Any],
-    predefined_url_categories_map: Dict[str, Any],
+    _,
 ) -> None:
     """
     Load configuration data from an XML element into a Tenant object.
 
-    This function uses a list of loader functions to load various types of objects (applications, services, etc.) into
-    the Tenant object. If the XML element is None, the function returns without doing anything.
+    This function uses a list of loader functions to load various types of objects (applications, services, etc.) into the Tenant object.
+    If the XML element is None, the function returns without doing anything.
 
     Args:
-        xml (Optional[Element]): XML element containing configuration data. If this is None, the function returns without doing anything.
+        xml (Optional[Element]): XML element containing configuration data. If this is None, the function returns
+        without doing anything.
         tnt (Tenant): Tenant object to load data into.
         v_logger (logging.Logger): Logger object for logging.
         predefined_app_map (Dict[str, Any]): Dictionary mapping predefined application names to application objects.
         predefined_families_map (Dict[str, Any]): Dictionary mapping predefined subfamily names to subfamily objects.
         predefined_subfamilies_map (Dict[str, Any]): Dictionary mapping predefined subfamily names to subfamily objects.
         predefined_countries_map (Dict[str, Any]): Dictionary mapping predefined country names to country objects.
-        predefined_url_categories_map (Dict[str, Any]): Dictionary mapping predefined URL category names to URL category objects.
-
+        predefined_url_categories_map (Dict[str, Any]): Dictionary mapping predefined URL category names to URL
+        category objects.
     Returns:
         None
     """
@@ -1672,12 +1607,11 @@ def load_config(
     object_loaders = [
         load_service_objects,
         load_service_group_objects,
-        load_schedule_objects,
-        load_url_category_objects,
         load_address_objects,
-        load_external_address_group_objects,
-        load_external_url_category_objects,
         load_address_group_objects,
+        load_url_category_objects,
+        load_external_url_category_objects,
+        load_schedule_objects,
     ]
 
     # Iterate through list of object loaders and call each function
@@ -1695,17 +1629,22 @@ def load_config(
     )
     load_application_groups(xml, tnt, v_logger, predefined_app_map)
     load_application_filters(xml, tnt, v_logger, predefined_subfamilies_map)
-    load_rules_into_tenant(xml, tnt, v_logger, predefined_countries_map)
+    if xml.tag == "devices":
+        load_rules_into_tenant(xml, tnt, v_logger, predefined_countries_map)
 
 
 def main(args_list: list) -> bool:
-    """main _summary_
+    """
+    Main function to convert Palo Alto configuration to Versa configuration.
+
+    This function parses command line arguments, sets up the logger, creates the output directory, opens the Palo Alto config file, imports predefined files, populates maps, loads shared and
+    tenant-specific configurations, replaces address and service groups with their respective members, checks the configuration, and writes the Versa configuration file.
 
     Args:
-        args (list): Command line arguments
+        args_list (list): List of command line arguments.
 
     Returns:
-        bool: True if successful, False otherwise
+        bool: True if the conversion is successful, False otherwise.
     """
     tnt_xlate_map: Dict = {}
     predefined_apps: Dict = {}
@@ -1730,7 +1669,12 @@ def main(args_list: list) -> bool:
         print("Reading Versa Template File")
         template_data = get_versa_template_data(args.template_file_name)
         if template_data:
-            args.template_name, args.org_name, args.org_services, args.service_node_groups = template_data
+            (
+                args.template_name,
+                args.org_name,
+                args.org_services,
+                args.service_node_groups,
+            ) = template_data
 
     if args.create_interface_list:
         print("Creating zone to interface file")
@@ -1740,48 +1684,46 @@ def main(args_list: list) -> bool:
         print("Exiting...")
         return False
 
-    print("Importing predefined files...")
+    print("Opening predefined files...")
     predefined_apps_csv_reader, predefined_apps_fh = open_predefined_applications(args)
-    predefined_url_categories_xml_root = open_predefined_URL_categories_XML(args)
-    predefined_countries_csv_reader, predefined_countries_fh = open_predefined_countries_file(args)
-    predefined_app_families_csv_reader, predefined_app_families_fh = open_predefined_families_file(args)
-    predefined_app_subfamilies_csv_reader, predefined_app_subfamilies_fh = open_predefined_subfamilies_file(args)
-    predefined_app_tags_csv_reader, predefined_app_tags_fh = open_predefined_app_tags_file(args)
+    predefined_url_categories_xml_root = open_predefined_url_categories_xml(args)
+    (
+        predefined_countries_csv_reader,
+        predefined_countries_fh,
+    ) = open_predefined_countries_file(args)
+    (
+        predefined_app_families_csv_reader,
+        predefined_app_families_fh,
+    ) = open_predefined_families_file(args)
+    (
+        predefined_app_subfamilies_csv_reader,
+        predefined_app_subfamilies_fh,
+    ) = open_predefined_subfamilies_file(args)
+    (
+        predefined_app_tags_csv_reader,
+        predefined_app_tags_fh,
+    ) = open_predefined_app_tags_file(args)
 
+    print("\nOpening Zone/Interface file")
     zone_interface_csv_reader, zone_interface_fh = open_zone_interface_file(args)
 
-    print("Opening output file...")
+    print("Creating Versa Configuration file...")
     pan_config_file_name, versa_configuration_fh = open_output_files(args)
 
     versa_cfg = VersaConfig("Versa_config_based_on-" + pan_config_file_name)
     versa_cfg.set_logger(v_logger)
 
-    print("Populating Maps...")
-    versa_cfg, tnt_xlate_map, versa_intf_zone_map = populate_zone_interface_map(
-        zone_interface_csv_reader, zone_interface_fh, versa_cfg, tnt_xlate_map
-    )
-    populate_interfaces_networks_zones_map(versa_intf_zone_map, v_logger, versa_cfg, args)
-    predefined_apps, predefined_app_map, versa_cfg = populate_predefined_applications_map(
-        predefined_apps_csv_reader, predefined_apps_fh, versa_cfg
-    )
-    versa_cfg, predefined_url_categories_map = populate_predefined_url_categories_map(
-        predefined_url_categories_xml_root, predefined_apps, versa_cfg
-    )
-    versa_cfg, predefined_countries_map = populate_predefined_countries_map(
-        predefined_countries_csv_reader, predefined_countries_fh, versa_cfg
-    )
-    versa_cfg, predefined_families_map = populate_predefined_families_map(
-        predefined_app_families_csv_reader, predefined_app_families_fh, versa_cfg
-    )
-    versa_cfg, predefined_subfamilies_map = populate_predefined_subfamilies_map(
-        predefined_app_subfamilies_csv_reader, predefined_app_subfamilies_fh, versa_cfg
-    )
-    versa_cfg, predefined_app_tags_map = populate_predefined_app_tags_map(
-        predefined_app_tags_csv_reader, predefined_app_tags_fh, versa_cfg
-    )
+    print("\nPopulating Maps...")
+    versa_cfg, tnt_xlate_map, versa_intf_zone_map = populate_zone_interface_map(zone_interface_csv_reader, zone_interface_fh, versa_cfg, tnt_xlate_map)
+    versa_cfg, predefined_app_map, predefined_apps = populate_predefined_applications_map(predefined_apps_csv_reader, predefined_apps_fh, versa_cfg)
+    versa_cfg, predefined_url_categories_map = populate_predefined_url_categories_map(predefined_url_categories_xml_root, predefined_apps, versa_cfg)
+    versa_cfg, predefined_countries_map = populate_predefined_countries_map(predefined_countries_csv_reader, predefined_countries_fh, versa_cfg)
+    versa_cfg, predefined_families_map = populate_predefined_families_map(predefined_app_families_csv_reader, predefined_app_families_fh, versa_cfg)
+    versa_cfg, predefined_subfamilies_map = populate_predefined_subfamilies_map(predefined_app_subfamilies_csv_reader, predefined_app_subfamilies_fh, versa_cfg)
+    versa_cfg, predefined_app_tags_map = populate_predefined_app_tags_map(predefined_app_tags_csv_reader, predefined_app_tags_fh, versa_cfg)
 
     # Load the shared vsys config into the Provider-DataStore tenant
-    print("Adding tenant to Versa configuration file...")
+    print(f"\nAdding tenant, {args.org_name}, to Versa configuration object...")
     versa_cfg.add_tenant(args.org_name, "0")
     shared_tnt = versa_cfg.get_tenant(args.org_name, "0")
     shared_xml = xml_root.find("./shared")
@@ -1789,6 +1731,7 @@ def main(args_list: list) -> bool:
     versa_cfg.set_tenant_xlate_map(tnt_xlate_map)
 
     print("Loading shared configuration...")
+    load_zones_networks_interfaces(versa_intf_zone_map, v_logger, versa_cfg, args)
     load_config(
         shared_xml,
         shared_tnt,
@@ -1805,6 +1748,7 @@ def main(args_list: list) -> bool:
     cur_tnt.set_shared_tenant(shared_tnt)
     devices_xml = xml_root.find("./devices")
 
+    print(f"\nLoading configuration into tenant, {args.org_name}...")
     # Load objects into tenant
     load_config(
         devices_xml,
@@ -1818,18 +1762,30 @@ def main(args_list: list) -> bool:
         predefined_url_categories_map,
     )
 
-    # Replace address and service groups with their respective members
-    print("Replacing address group with their respective members...")
-    versa_cfg.replace_address_by_address_group()
-    print("Replacing service group with their respective members...")
-    versa_cfg.replace_service_group_by_service_members()
-
     # Check and write configuration
     versa_cfg.check_config(STRICT_CHECKS)
-    print(f"Writing configuration file {versa_configuration_fh.name}")
-    versa_cfg.write_config(tnt_xlate_map, args.template_name, args.device_name, versa_configuration_fh, args)
+    print(f"\nWriting configuration file {versa_configuration_fh.name}")
+    versa_cfg.write_config(
+        tnt_xlate_map,
+        args.template_name,
+        args.device_name,
+        versa_configuration_fh,
+        args,
+    )
+
+    print("Checking configuration file for errors...")
+    lines = versa_configuration_fh.readlines()
+
+    validation_checks = {validate_cfg.check_parentheses: "Parentheses check", validate_cfg.check_indentation: "Indentation check"}
+
+    for check, message in validation_checks.items():
+        if check(lines):
+            print(f"    {message} passed")
+        else:
+            print(f"    {message} failed")
 
     versa_configuration_fh.close()
+
     return True
 
 

@@ -80,6 +80,7 @@ class FirewallRule(ConfigObject):
         self.match_ip_version = ""
         self.match_ip_version_src_line = 0
         self.tag = ""
+        self.tenant = ""
 
     def set_tenant(self, _tnt):
         self.tenant = _tnt
@@ -310,9 +311,9 @@ class FirewallRule(ConfigObject):
             output.append(f'{_indent}    description "{self.desc}";')
         if self.tag:
             output.append(f'{_indent}   tag "{self.tag}";')
-        print('\n'.join(output), file=_cfg_fh)
+        print("\n".join(output), file=_cfg_fh)
 
-    def write_src_match_no_closing_brace(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
+    def write_src_match_no_closing_brace(self, _, _vcfg, _tnt, _cfg_fh, _indent):
         """
         Writes the source match of a firewall rule to a file without a closing brace.
 
@@ -364,9 +365,10 @@ class FirewallRule(ConfigObject):
             regions = " ".join(region for region, region_line in self.src_addr_region_map.items())
             output.append(f"{_indent}                region [ {regions} ];")
 
-        print('\n'.join(output), file=_cfg_fh)
+        if output:
+            print("\n".join(output), file=_cfg_fh)
 
-    def write_dst_match_no_closing_brace(self, output_vd_cfg, _cfg_fh, _indent):
+    def write_dst_match_no_closing_brace(self, _, _cfg_fh, _indent):
         """
         Writes the destination match of a firewall rule to a file without a closing brace.
 
@@ -404,11 +406,10 @@ class FirewallRule(ConfigObject):
             regions = " ".join(region for region in self.dst_addr_region_map.keys())
             output.append(f"{_indent}                region [ {regions} ];")
 
-        output.append("")
+        if output:
+            print("\n".join(output), file=_cfg_fh)
 
-        print('\n'.join(output), file=_cfg_fh)
-
-    def write_set_no_closing_brace(self, output_vd_cfg: bool, _cfg_fh, _indent: str) -> None:
+    def write_set_no_closing_brace(self, _: bool, _cfg_fh, _indent: str) -> None:
         """
         Writes a part of the firewall rule configuration to a file without a closing brace.
 
@@ -426,7 +427,8 @@ class FirewallRule(ConfigObject):
             f"{_indent}                profile Default-Logging-Profile;",
             f"{_indent}            }}",
         ]
-        print('\n'.join(output), file=_cfg_fh)
+        if output:
+            print("\n".join(output), file=_cfg_fh)
 
     def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
         """
@@ -456,7 +458,7 @@ class FirewallRule(ConfigObject):
             if not match_printed:
                 output.append(f"{_indent}        match {{")
                 match_printed = True
-            output.append(self.write_dst_match_no_closing_braceoutput_vd_cfg(_cfg_fh, _indent))
+            output.append(self.write_dst_match_no_closing_brace(output_vd_cfg, _cfg_fh, _indent))
             output.append(f"{_indent}            }}")
 
         if self.match_ip_version:
@@ -469,4 +471,5 @@ class FirewallRule(ConfigObject):
         output.append(f"{_indent}        }}")
         output.append(f"{_indent}    }}")
 
-        print('\n'.join(output), file=_cfg_fh)
+        if output:
+            print("\n".join(output), file=_cfg_fh)

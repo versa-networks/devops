@@ -62,8 +62,8 @@ class Firewall(NetworkFunction):
             rule.replace_service_group_by_service_members(_service_group)
 
     def write_rules(self, output_vd_cfg, _vfcg, _tnt, _cfg_fh, _indent):
-        for r in self.rules:
-            r.write_config(output_vd_cfg, _vfcg, _tnt, _cfg_fh, _indent + "        ")
+        for rule in self.rules:
+            rule.write_config(output_vd_cfg, _vfcg, _tnt, _cfg_fh, _indent + "        ")
 
     def write_config(self, _cfg_fh, _indent):
         """

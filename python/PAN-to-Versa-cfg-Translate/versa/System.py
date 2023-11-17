@@ -31,6 +31,7 @@ class System(ConfigObject):
         self.domain_search_line = None
         self.name_servers = []
         self.name_servers_lines = []
+        self.interface_map = 0
 
     def get_hostname(self):
         return self.hostname

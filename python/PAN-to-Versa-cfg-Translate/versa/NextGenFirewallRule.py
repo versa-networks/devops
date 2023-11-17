@@ -115,21 +115,22 @@ class NextGenFirewallRule(FirewallRule):
         """
         output = []
 
-        set_no_closing_brace_output = super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
-        if set_no_closing_brace_output is not None:
-            output += set_no_closing_brace_output
+        super().write_set_no_closing_brace(output_vd_cfg, _cfg_fh, _indent)
         if self.get_av_profile() or self.get_ips_profile():
             output.append(f"{_indent}            security-profile {{")
 
         if self.get_ips_profile():
             output.append(f"{_indent}                ips {{")
-            output.append(f'{_indent}                    predefined-ips-profile "Versa Recommended Profile";')
+            output.append(
+                f'{_indent}                    predefined-ips-profile "Versa Recommended Profile";'
+            )
             output.append(f"{_indent}                }}")
 
         if self.get_av_profile() or self.get_ips_profile():
             output.append(f"{_indent}            }}")
 
-        print('\n'.join(output), file=_cfg_fh)
+        if output:
+            print("\n".join(output), file=_cfg_fh)
 
     def write_config(self, output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent):
         """
@@ -158,7 +159,9 @@ class NextGenFirewallRule(FirewallRule):
         if any(src_conditions):
             print(f"{_indent}        match {{", file=_cfg_fh)
             match_printed = True
-            super().write_src_match_no_closing_brace(output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent)
+            super().write_src_match_no_closing_brace(
+                output_vd_cfg, _vcfg, _tnt, _cfg_fh, _indent
+            )
             print(f"{_indent}            }}", file=_cfg_fh)
 
         dst_conditions = [self.dst_zone_map, self.dst_addr_map, self.dst_addr_grp_map]
@@ -174,7 +177,9 @@ class NextGenFirewallRule(FirewallRule):
             if not match_printed:
                 print(f"{_indent}        match {{", file=_cfg_fh)
                 match_printed = True
-            print(f"{_indent}            ip-version {self.match_ip_version}", file=_cfg_fh)
+            print(
+                f"{_indent}            ip-version {self.match_ip_version}", file=_cfg_fh
+            )
 
         cur_tnt = _vcfg.get_target_tenant(_tnt)
         sh_tnt = cur_tnt.get_shared_tenant()
@@ -187,16 +192,20 @@ class NextGenFirewallRule(FirewallRule):
                 match_printed = True
             print(f"{_indent}            application {{", file=_cfg_fh)
 
-            predef_app_list = [app for app in self.application_map if app in predef_app_map]
+            predef_app_list = [
+                app for app in self.application_map if app in predef_app_map
+            ]
             user_def_app_list = [
                 app
                 for app in self.application_map
-                if app in cur_tnt.application_map or (sh_tnt is not None and app in sh_tnt.application_map)
+                if app in cur_tnt.application_map
+                or (sh_tnt is not None and app in sh_tnt.application_map)
             ]
             user_def_app_grp_list = [
                 app
                 for app in self.application_map
-                if app in cur_tnt.application_group_map or (sh_tnt is not None and app in sh_tnt.application_group_map)
+                if app in cur_tnt.application_group_map
+                or (sh_tnt is not None and app in sh_tnt.application_group_map)
             ]
 
             if predef_app_list:
@@ -210,7 +219,10 @@ class NextGenFirewallRule(FirewallRule):
                     file=_cfg_fh,
                 )
             if user_def_app_grp_list:
-                print(f"{_indent}                group-list [ {' '.join(user_def_app_grp_list)} ];", file=_cfg_fh)
+                print(
+                    f"{_indent}                group-list [ {' '.join(user_def_app_grp_list)} ];",
+                    file=_cfg_fh,
+                )
 
             print(f"{_indent}            }}", file=_cfg_fh)
 
@@ -221,18 +233,27 @@ class NextGenFirewallRule(FirewallRule):
             print(f"{_indent}            url-category {{", file=_cfg_fh)
 
             predef_uc_list = [
-                uc.replace("-", "_") for uc in self.url_category_map if uc.replace("-", "_") in predef_uc_map
+                uc.replace("-", "_")
+                for uc in self.url_category_map
+                if uc.replace("-", "_") in predef_uc_map
             ]
             user_def_uc_list = [
                 uc
                 for uc in self.url_category_map
-                if uc in cur_tnt.url_category_map or (sh_tnt is not None and uc in sh_tnt.url_category_map)
+                if uc in cur_tnt.url_category_map
+                or (sh_tnt is not None and uc in sh_tnt.url_category_map)
             ]
 
             if predef_uc_list:
-                print(f"{_indent}                predefined [ {' '.join(predef_uc_list)} ];", file=_cfg_fh)
+                print(
+                    f"{_indent}                predefined [ {' '.join(predef_uc_list)} ];",
+                    file=_cfg_fh,
+                )
             if user_def_uc_list:
-                print(f"{_indent}                user-defined [ {' '.join(user_def_uc_list)} ];", file=_cfg_fh)
+                print(
+                    f"{_indent}                user-defined [ {' '.join(user_def_uc_list)} ];",
+                    file=_cfg_fh,
+                )
 
             print(f"{_indent}            }}", file=_cfg_fh)
 

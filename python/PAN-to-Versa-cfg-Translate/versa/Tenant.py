@@ -9,9 +9,9 @@
 #
 
 
+from typing import TextIO, List
 from versa.Address import AddressType
 from versa.Zone import Zone
-from typing import Any, Dict, TextIO, List
 
 
 class Tenant(object):
@@ -59,6 +59,7 @@ class Tenant(object):
         self.nw_zone_map = {}
         self.natpool_map = {}
         self.shared_tnt = None
+        self.desc= None
 
     def get_shared_tenant(self):
         return self.shared_tnt
@@ -66,9 +67,8 @@ class Tenant(object):
     def set_shared_tenant(self, _shared_tnt):
         self.shared_tnt = _shared_tnt
 
-    def set_desc(self, _desc, _desc_src_line):
+    def set_desc(self, _desc, _):
         self.desc = _desc
-        self.desc_src_line = _desc_src_line
 
     def add_application(self, _application, _application_src_line):
         self.application_map[_application.name] = [_application, _application_src_line]
@@ -231,7 +231,6 @@ class Tenant(object):
 
     def set_next_gen_firewall(self, _ngfw, _ngfw_src_line):
         self.ngfw = _ngfw
-        self.ngfw_src_line = _ngfw_src_line
 
     def replace_address_by_address_group(self):
         """
@@ -245,7 +244,7 @@ class Tenant(object):
         Returns:
         None
         """
-        for agname, [ag, ag_line] in self.address_group_map.items():
+        for agname, [_, _] in self.address_group_map.items():
             for _, [addr_grp, _] in self.address_group_map.items():
                 addr_grp.replace_address_by_address_group(agname)
             if self.ngfw is not None:
@@ -269,7 +268,7 @@ class Tenant(object):
             self.address_map[new_address_name] = [address, address_src_line]
 
             # replace the address name in groups that are referring to the current address name
-            for ag, ag_info in self.address_group_map.items():
+            for _, ag_info in self.address_group_map.items():
                 ag_info[0].replace_address(address_name, new_address_name)
 
             # replace the address name in firewall rules that are referring to the current address name
@@ -295,7 +294,7 @@ class Tenant(object):
             self.address_group_map[new_app_group_name] = [address_grp, address_grp_src_line]
 
             # replace the address group name in groups that are referring to the current address group name
-            for agn, (ag, ag_line) in self.address_group_map.items():
+            for agn, (ag, _) in self.address_group_map.items():
                 if agn != app_group_name:
                     ag.replace_address_group(app_group_name, new_app_group_name)
 
@@ -359,12 +358,14 @@ class Tenant(object):
             Exception: If strict_checks is True and an address is not found in the tenant's address map
                        and the shared tenant's address map.
         """
-        for address_group_name, [addr_grp, addr_grp_line] in self.address_group_map.items():
+        for _, [addr_grp, _] in self.address_group_map.items():
             for addr in list(addr_grp.address_map.keys()):
-                addr_found = addr in self.address_map or (
-                    self.shared_tnt is not None and addr in self.shared_tnt.address_map
-                )
-
+                addr_found = any([
+                    addr in self.address_map,
+                    addr in self.address_group_map,
+                    self.shared_tnt is not None and addr in self.shared_tnt.address_map,
+                    self.shared_tnt is not None and addr in self.shared_tnt.address_group_map
+                ])
                 if not addr_found:
                     if strict_checks:
                         raise Exception(
@@ -429,7 +430,7 @@ class Tenant(object):
                 if not is_merged:
                     print(f"{_indent}{intf}", end="", file=_cfg_fh)
 
-    def write_addresses(self, output_vd_cfg: bool, dup_addr_list: List[str], _cfg_fh: TextIO, _indent: str) -> None:
+    def write_addresses(self, output_vd_cfg: bool, dup_addr_set: set, _cfg_fh: TextIO, _indent: str) -> None:
         """
         Writes the addresses to the configuration file.
 
@@ -443,9 +444,9 @@ class Tenant(object):
             None
         """
         for address_name, (addr, _) in self.address_map.items():
-            if address_name not in dup_addr_list:
+            if address_name not in dup_addr_set:
                 addr.write_config(output_vd_cfg, _cfg_fh, _indent)
-                dup_addr_list.append(address_name)
+                dup_addr_set.add(address_name)
 
     def write_address_groups(
         self, output_vd_cfg: bool, dup_addr_grp_list: List[str], _cfg_fh: TextIO, _indent: str
@@ -497,11 +498,11 @@ class Tenant(object):
                 app.write_config(output_vd_cfg, _cfg_fh, _indent)
                 dup_app_list.append(app_name)
 
-    def write_application_groups(self, output_vd_cfg, dup_app_grp_list, _cfg_fh, _indent):
+    def write_application_groups(self, output_vd_cfg, _, _cfg_fh, _indent):
         for app_group_name in list(self.get_application_group_map().keys()):
             self.get_application_group(app_group_name).write_config(output_vd_cfg, _cfg_fh, _indent)
 
-    def write_application_filters(self, output_vd_cfg, dup_app_fltr_list, _cfg_fh, _indent):
+    def write_application_filters(self, output_vd_cfg, _, _cfg_fh, _indent):
         for app_filter_name in list(self.get_application_filter_map().keys()):
             self.get_application_filter(app_filter_name).write_config(output_vd_cfg, _cfg_fh, _indent)
 
@@ -608,7 +609,7 @@ class Tenant(object):
         for attr, label in config_maps.items():
             if len(getattr(self, attr)) > 0:
                 print(f"{_indent}            {label} {{", file=_cfg_fh)
-                for name, (obj, _) in getattr(self, attr).items():
+                for _, (obj, _) in getattr(self, attr).items():
                     obj.write_config(_cfg_fh, _indent + "            ")
                 print(f"{_indent}            }}", file=_cfg_fh)
 

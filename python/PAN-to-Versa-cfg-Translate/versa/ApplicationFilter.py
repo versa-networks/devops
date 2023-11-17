@@ -79,21 +79,3 @@ class ApplicationFilter(ConfigObject):
             print(" ];", file=_cfg_fh)
 
         print(f"{_indent}}}", file=_cfg_fh)
-
-
-"""
-# Unused code
-    predef_apps = [app.upper() for app in self.application_map if app.is_predefined()]
-    userdef_apps = [app for app in self.application_map if not app.is_predefined()]
-
-    if len(self.application_map) > 0:
-        print(f"{_indent}        # src lines: {' '.join(str(line) for line in self.application_map.values())}", file=_cfg_fh)
-
-        if predef_apps:
-            print(f"{_indent}        predefined-application-list [ {' '.join(predef_apps)} ];", file=_cfg_fh)
-
-        if userdef_apps:
-            print(f"{_indent}        user-defined-application-list [ {' '.join(userdef_apps)} ];", file=_cfg_fh)
-
-        print(f"{_indent}    }}", file=_cfg_fh)
-"""
