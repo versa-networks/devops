@@ -57,6 +57,7 @@ User Agent
 
 URLS
 
+Assigned in URLS.xml
 All URL lists will be randomly combined into a single list. The script will work through this single list until all URLs have been attempted then, the lists above will be randomly combined into a new single list. You can comment out any URLs you do not want to use
 
 - `RULE_SPECIFIC_URLS = [url1,url2,url3]` The list of rule URLs under comments for which NGFW rule it should trigger
