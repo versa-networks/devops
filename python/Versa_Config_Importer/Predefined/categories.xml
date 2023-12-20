@@ -1,0 +1,697 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UrlDatabaseInfo>
+
+    <dbinfo>
+        <id>1</id>
+        <cachesize>1000000</cachesize>
+        <dbfile>bcdb.bin</dbfile>
+        <dbtype>brightcloud_md5_db</dbtype>
+        <dbversion>version_3.0.0</dbversion>
+        <dbdate>20120525</dbdate>
+        <dbdatalines>0001000000</dbdatalines>
+        <dbmd5memname>Global.bcdb1</dbmd5memname>
+        <dbaccmemname>Global.bcdb1acc</dbaccmemname>
+        <dbcacheindexname>Global.bcdb1cacheinx</dbcacheindexname>
+    </dbinfo>
+
+
+    <categories>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>uncategorized</subtype>
+            <id>0</id>
+            <DisplayName>Uncategorized</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>real_estate</subtype>
+            <id>1</id>
+            <DisplayName>Real Estate</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>computer_and_internet_security</subtype>
+            <id>2</id>
+            <DisplayName>Computer and Internet Security</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>financial_services</subtype>
+            <id>3</id>
+            <DisplayName>Financial Services</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>business_and_economy</subtype>
+            <id>4</id>
+            <DisplayName>Business and Economy</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>computer_and_internet_info</subtype>
+            <id>5</id>
+            <DisplayName>Computer and Internet Info</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>auctions</subtype>
+            <id>6</id>
+            <DisplayName>Auctions</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>shopping</subtype>
+            <id>7</id>
+            <DisplayName>Shopping</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>cult_and_occult</subtype>
+            <id>8</id>
+            <DisplayName>Cult and Occult</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>travel</subtype>
+            <id>9</id>
+            <DisplayName>Travel</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>abused_drugs</subtype>
+            <id>10</id>
+            <DisplayName>Abused Drugs</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>adult_and_pornography</subtype>
+            <id>11</id>
+            <DisplayName>Adult and Pornography</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>home_and_garden</subtype>
+            <id>12</id>
+            <DisplayName>Home and Garden</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>military</subtype>
+            <id>13</id>
+            <DisplayName>Military</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>social_network</subtype>
+            <id>14</id>
+            <DisplayName>Social Network</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>dead_sites</subtype>
+            <id>15</id>
+            <DisplayName>Dead Sites (db Ops only)</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>stock_advice_and_tools</subtype>
+            <id>16</id>
+            <DisplayName>Stock Advice and Tools</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>training_and_tools</subtype>
+            <id>17</id>
+            <DisplayName>Training and Tools</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>dating</subtype>
+            <id>18</id>
+            <DisplayName>Dating</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>sex_education</subtype>
+            <id>19</id>
+            <DisplayName>Sex Education</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>religion</subtype>
+            <id>20</id>
+            <DisplayName>Religion</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>entertainment_and_arts</subtype>
+            <id>21</id>
+            <DisplayName>Entertainment and Arts</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>personal_sites_and_blogs</subtype>
+            <id>22</id>
+            <DisplayName>Personal sites and Blogs</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>legal</subtype>
+            <id>23</id>
+            <DisplayName>Legal</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>local_information</subtype>
+            <id>24</id>
+            <DisplayName>Local Information</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>streaming_media</subtype>
+            <id>25</id>
+            <DisplayName>Streaming Media</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>job_search</subtype>
+            <id>26</id>
+            <DisplayName>Job Search</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>gambling</subtype>
+            <id>27</id>
+            <DisplayName>Gambling</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>translation</subtype>
+            <id>28</id>
+            <DisplayName>Translation</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>reference_and_research</subtype>
+            <id>29</id>
+            <DisplayName>Reference and Research</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>shareware_and_freeware</subtype>
+            <id>30</id>
+            <DisplayName>Shareware and Freeware</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>peer_to_peer</subtype>
+            <id>31</id>
+            <DisplayName>Peer to Peer</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>marijuana</subtype>
+            <id>32</id>
+            <DisplayName>Marijuana</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>hacking</subtype>
+            <id>33</id>
+            <DisplayName>Hacking</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>games</subtype>
+            <id>34</id>
+            <DisplayName>Games</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>philosophy_and_political_advocacy</subtype>
+            <id>35</id>
+            <DisplayName>Philosophy and Political Advocacy</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>weapons</subtype>
+            <id>36</id>
+            <DisplayName>Weapons</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>pay_to_surf</subtype>
+            <id>37</id>
+            <DisplayName>Pay to Surf</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>hunting_and_fishing</subtype>
+            <id>38</id>
+            <DisplayName>Hunting and Fishing</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>society</subtype>
+            <id>39</id>
+            <DisplayName>Society</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>educational_institutions</subtype>
+            <id>40</id>
+            <DisplayName>Educational Institutions</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>online_greeting_cards</subtype>
+            <id>41</id>
+            <DisplayName>Online Greeting cards</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>sports</subtype>
+            <id>42</id>
+            <DisplayName>Sports</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>swimsuits_and_intimate_apparel</subtype>
+            <id>43</id>
+            <DisplayName>Swimsuits and Intimate Apparel</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>questionable</subtype>
+            <id>44</id>
+            <DisplayName>Questionable</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>kids</subtype>
+            <id>45</id>
+            <DisplayName>Kids</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>hate_and_racism</subtype>
+            <id>46</id>
+            <DisplayName>Hate and Racism</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>personal_storage</subtype>
+            <id>47</id>
+            <DisplayName>Personal Storage</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>violence</subtype>
+            <id>48</id>
+            <DisplayName>Violence</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>keyloggers_and_monitoring</subtype>
+            <id>49</id>
+            <DisplayName>Keyloggers and Monitoring</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>search_engines</subtype>
+            <id>50</id>
+            <DisplayName>Search Engines</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>internet_portals</subtype>
+            <id>51</id>
+            <DisplayName>Internet Portals</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>web_advertisements</subtype>
+            <id>52</id>
+            <DisplayName>Web Advertisements</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>cheating</subtype>
+            <id>53</id>
+            <DisplayName>Cheating</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>gross</subtype>
+            <id>54</id>
+            <DisplayName>Gross</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>web_based_email</subtype>
+            <id>55</id>
+            <DisplayName>Web based email</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>malware_sites</subtype>
+            <id>56</id>
+            <DisplayName>Malware Sites</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>phishing_and_other_frauds</subtype>
+            <id>57</id>
+            <DisplayName>Phishing and Other Frauds</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>proxy_avoid_and_anonymizers</subtype>
+            <id>58</id>
+            <DisplayName>Proxy Avoid and Anonymizers</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>spyware_and_adware</subtype>
+            <id>59</id>
+            <DisplayName>Spyware and Adware</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>music</subtype>
+            <id>60</id>
+            <DisplayName>Music</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>government</subtype>
+            <id>61</id>
+            <DisplayName>Government</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>nudity</subtype>
+            <id>62</id>
+            <DisplayName>Nudity</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>news_and_media</subtype>
+            <id>63</id>
+            <DisplayName>News and Media</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>illegal</subtype>
+            <id>64</id>
+            <DisplayName>Illegal</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>cdns</subtype>
+            <id>65</id>
+            <DisplayName>CDNs</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>internet_communications</subtype>
+            <id>66</id>
+            <DisplayName>Internet Communications</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>bot_nets</subtype>
+            <id>67</id>
+            <DisplayName>Bot Nets</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>abortion</subtype>
+            <id>68</id>
+            <DisplayName>Abortion</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>health_and_medicine</subtype>
+            <id>69</id>
+            <DisplayName>Health and Medicine</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>confirmed_spam_sources</subtype>
+            <id>70</id>
+            <DisplayName>Confirmed SPAM Sources</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>spam_urls</subtype>
+            <id>71</id>
+            <DisplayName>SPAM URLs</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>unconfirmed_spam_sources</subtype>
+            <id>72</id>
+            <DisplayName>Unconfirmed SPAM Sources</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>open_http_proxies</subtype>
+            <id>73</id>
+            <DisplayName>Open HTTP Proxies</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>dynamic_comment</subtype>
+            <id>74</id>
+            <DisplayName>Dynamic Comment</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>parked_domains</subtype>
+            <id>75</id>
+            <DisplayName>Parked Domains</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>alcohol_and_tobacco</subtype>
+            <id>76</id>
+            <DisplayName>Alcohol and Tobacco</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>private_ip_addresses</subtype>
+            <id>77</id>
+            <DisplayName>Private IP Addresses</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>image_and_video_search</subtype>
+            <id>78</id>
+            <DisplayName>Image and Video Search</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>fashion_and_beauty</subtype>
+            <id>79</id>
+            <DisplayName>Fashion and Beauty</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>recreation_and_hobbies</subtype>
+            <id>80</id>
+            <DisplayName>Recreation and Hobbies</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>motor_vehicles</subtype>
+            <id>81</id>
+            <DisplayName>Motor Vehicles</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>web_hosting_sites</subtype>
+            <id>82</id>
+            <DisplayName>Web Hosting Sites</DisplayName>
+        </entity>
+
+        <entity>
+            <group>urlf_def_category</group>
+            <type>pre_defined</type>
+            <subtype>food_and_dining</subtype>
+            <id>83</id>
+            <DisplayName>Food and Dining</DisplayName>
+        </entity>
+
+
+    </categories>
+
+</UrlDatabaseInfo>
+
+

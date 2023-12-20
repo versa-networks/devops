@@ -6,13 +6,13 @@
     "configurations": [
         {
             "name": "Python: Current File",
-            "cwd": "C:\\Users\\RobertKauffman\\GitLab-Devops\\devops\\python\\PAN-to-Versa-cfg-Translate",
+            "cwd": "C:\\Users\\RobertKauffman\\GitLab-Devops\\devops",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-z", ".\\Source_Files\\anyod1-pfwm1-m500-interface-list.csv", "-pc", ".\\Source_Files\\anyod1-pfwm1-m500_11-2-2023.xml", "-T", ".\\Source_Files\\PAN-NGFW-TEMPL.cfg"],
+            //"args": ["-z", ".\\Source_Files\\anyod1-pfwm1-m500-interface-list.csv", "-pc", ".\\Source_Files\\anyod1-pfwm1-m500_11-2-2023.xml", "-T", ".\\Source_Files\\PAN-NGFW-TEMPL.cfg"],
             "env": {
                 "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "5000",
             },

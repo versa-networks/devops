@@ -19,22 +19,22 @@ class ServiceGroup(ConfigObject):
     This class inherits from ConfigObject and adds additional attributes specific to service group configurations, such as service map and service group map.
 
     Args:
-        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, source line, and predefined flag.
+        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, and predefined flag.
     """
 
-    def __init__(self, name, name_src_line, is_predefined):
-        super().__init__(name, name_src_line, is_predefined)
+    def __init__(self, name, is_predefined):
+        super().__init__(name, is_predefined)
         self.service_map = {}
         self.service_group_map = {}
 
-    def add_service(self, _service, _service_src_line):
-        self.service_map[_service] = _service_src_line
+    def add_service(self, _service):
+        self.service_map[_service] = None
 
     def set_service_map(self, _service_map):
         self.service_map = _service_map
 
-    def add_service_group(self, _service_group, _service_group_src_line):
-        self.service_group_map[_service_group] = _service_group_src_line
+    def add_service_group(self, _service_group):
+        self.service_group_map[_service_group] = None
 
     def set_service_group_map(self, _service_group_map):
         self.service_group_map = _service_group_map
@@ -48,9 +48,8 @@ class ServiceGroup(ConfigObject):
             service_group (str): The service group to replace the service with.
         """
         if service_group in self.service_map:
-            addr_grp_line = self.service_map.pop(service_group)
-            self.service_group_map[service_group] = addr_grp_line
-
+            self.service_map.pop(service_group)
+            
     def write_config(self, cfg_fh, indent):
         """
         Writes the configuration of the service group to a file.

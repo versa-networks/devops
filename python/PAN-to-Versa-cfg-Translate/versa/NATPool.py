@@ -24,24 +24,22 @@ class NATPool(ConfigObject):
 
     Args:
         name (str): The name of the NAT pool.
-        name_src_line (int): The line number in the source file where the name is defined.
         is_predefined (bool): Whether the NAT pool is predefined or not.
     """
 
-    def __init__(self, name, name_src_line, is_predefined):
-        super().__init__(name, name_src_line, is_predefined)
+    def __init__(self, name, is_predefined):
+        super().__init__(name, is_predefined)
         self.addr_type = NATPoolType.NONE
         self.addr_value = None
         self.start_ip = None
         self.end_ip = None
 
-    def set_addr_type(self, addr_type, _):
+    def set_addr_type(self, addr_type):
         """
         Sets the address type of the NAT pool.
 
         Args:
             addr_type (NATPoolType): The address type.
-            addr_type_src_line (int): The line number in the source file where the address type is defined.
         """
         self.addr_type = addr_type
 
@@ -51,29 +49,26 @@ class NATPool(ConfigObject):
 
         Args:
             addr_value (str): The address value.
-            addr_value_src_line (int): The line number in the source file where the address value is defined.
         """
         self.addr_value = addr_value
 
-    def set_start_ip(self, start_ip, _):
+    def set_start_ip(self, start_ip):
         """
         Sets the start IP address of the NAT pool.
 
         Args:
             start_ip (str): The start IP address.
-            start_ip_src_line (int): The line number in the source file where the start IP is defined.
         """
         self.start_ip = start_ip
         if self.end_ip is not None:
             self.set_addr_value(self.start_ip + "-" + self.end_ip)
 
-    def set_end_ip(self, end_ip, _):
+    def set_end_ip(self, end_ip):
         """
         Sets the end IP address of the NAT pool.
 
         Args:
             end_ip (str): The end IP address.
-            end_ip_src_line (int): The line number in the source file where the end IP is defined.
         """
         self.end_ip = end_ip
         if self.start_ip is not None:

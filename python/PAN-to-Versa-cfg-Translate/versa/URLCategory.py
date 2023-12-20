@@ -20,46 +20,38 @@ class URLCategory(ConfigObject):
 
     Attributes:
     name (str): The name of the URL category.
-    name_src_line (int): The source line where the name was defined.
     is_predefined (bool): Whether the URL category is predefined or not.
     desc (str): The description of the URL category.
-    desc_line (int): The source line where the description was defined.
     filename (str): The filename of the URL category.
-    filename_line (int): The source line where the filename was defined.
     host_list (list): A list of hosts in the URL category.
     pattern_list (list): A list of patterns in the URL category.
     """
 
-    def __init__(self, name, name_src_line, is_predefined):
+    def __init__(self, name,  is_predefined):
         """
         Initialize a URLCategory instance.
 
         Parameters:
         name (str): The name of the URL category.
-        name_src_line (int): The source line where the name was defined.
         is_predefined (bool): Whether the URL category is predefined or not.
         """
-        super().__init__(name, name_src_line, is_predefined)
+        super().__init__(name, is_predefined)
         self.desc = None
-        self.desc_line = None
         self.filename = None
-        self.filename_line = None
         self.host_list = []
         self.pattern_list = []
 
     def get_description(self):
         return self.desc
 
-    def set_description(self, _desc, _desc_line):
+    def set_description(self, _desc):
         self.desc = _desc
-        self.desc_line = _desc_line
 
     def get_filename(self):
         return self.filename
 
-    def set_filename(self, _filename, _filename_line):
+    def set_filename(self, _filename):
         self.filename = _filename
-        self.filename_line = _filename_line
 
     def add_host(self, _host):
         self.host_list.append(_host)

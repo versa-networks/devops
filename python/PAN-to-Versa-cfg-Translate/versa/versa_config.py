@@ -11,16 +11,18 @@
 from collections import defaultdict
 from versa.System import System
 from versa.Tenant import Tenant
+from attrs import define, field, Factory
 
 
-class VersaConfig(object):
+@define
+class VersaConfig:
     """
     Represents a Versa configuration.
 
     Attributes:
     name (str): The name of the Versa configuration.
     tenant_map (dict): A map of tenants in the configuration.
-    network_interface_map (dict): A map of network interfaces in the configuration.
+    network_to_interfaces_map (dict): A map of network interfaces in the configuration.
     interface_network_map (dict): A map of interfaces to networks in the configuration.
     interface_pair_map (dict): A map of interface pairs in the configuration.
     interface_ptvi_map (dict): A map of interfaces to PTVIs in the configuration.
@@ -37,33 +39,26 @@ class VersaConfig(object):
     logger (Logger): The logger for the configuration.
     """
 
-    def __init__(self, name):
-        """
-        Initialize a VersaConfig instance.
+    name: str = field(type=str)
+    tenant_map: dict = field(type=dict)
+    network_to_interfaces_map: dict = field(type=dict)
+    interface_network_map: dict = field(type=dict)
+    interface_pair_map: dict = field(type=dict)
+    interface_ptvi_map: dict = field(type=dict)
+    vrf_interface_map: dict = field(type=dict)
+    interface_vrf_map: dict = field(type=dict)
+    service_any_map: dict = field(type=dict)
+    system: System = field(type=System)
+    predef_app_map: dict = field(type=dict)
+    predef_url_cat_map: dict = field(type=dict)
+    predef_countries_map: dict = field(type=dict)
+    predef_families_map: dict = field(type=dict)
+    predef_subfamilies_map: dict = field(type=dict)
+    predef_app_tags_map: dict = field(type=dict)
+    tenant_xlate_map: dict = field(type=dict)
+    logger: Logger
 
-        Parameters:
-        name (str): The name of the VersaConfig instance.
-        """
-        self.name = name
-        self.tenant_map = {}
-        self.network_interface_map = {}
-        self.intf_network_map = {}
-        self.intf_pair_map = {}
-        self.intf_ptvi_map = {}
-        self.vrf_interface_map = {}
-        self.intf_vrf_map = {}
-        self.service_any_map = {}
-        self.system = System()
-        self.predef_app_map = {}
-        self.predef_url_cat_map = {}
-        self.predef_countries_map = {}
-        self.predef_families_map = {}
-        self.predef_subfamilies_map = {}
-        self.predef_app_tags_map = {}
-        self.tenant_xlate_map = {}
-        self.logger = None
-
-    def get_target_tenant(self, _tnt):
+    def get_target_tenant_in_tenant_map(self, tnt):
         """
         Gets the target tenant from the tenant map or tenant translation map.
 
@@ -73,73 +68,13 @@ class VersaConfig(object):
         Returns:
             Tenant: The target tenant if found, otherwise None.
         """
-        if _tnt in self.tenant_xlate_map:
-            tgt_tenant = self.tenant_xlate_map[_tnt][0]
+        if tnt in self.tenant_xlate_map:
+            tgt_tenant = self.tenant_xlate_map[tnt][0]
             if tgt_tenant in self.tenant_map:
                 return self.tenant_map[tgt_tenant]
-        if _tnt in self.tenant_map:
-            return self.tenant_map[_tnt]
+        if tnt in self.tenant_map:
+            return self.tenant_map[tnt]
         return None
-
-    def get_tenant_xlate_map(self):
-        return self.tenant_xlate_map
-
-    def set_tenant_xlate_map(self, _tenant_xlate_map):
-        self.tenant_xlate_map = _tenant_xlate_map
-
-    def get_predef_app_map(self):
-        return self.predef_app_map
-
-    def set_predef_app_map(self, _predef_amap):
-        self.predef_app_map = _predef_amap
-
-    def get_predef_url_cat_map(self):
-        return self.predef_url_cat_map
-
-    def set_predef_url_cat_map(self, _predef_uc_map):
-        self.predef_url_cat_map = _predef_uc_map
-
-    def get_predef_countries_map(self):
-        return self.predef_countries_map
-
-    def set_predef_countries_map(self, _predef_countries_map):
-        self.predef_countries_map = _predef_countries_map
-
-    def get_predef_families_map(self):
-        return self.predef_families_map
-
-    def set_predef_families_map(self, _predef_families_map):
-        self.predef_families_map = _predef_families_map
-
-    def get_predef_subfamilies_map(self):
-        return self.predef_subfamilies_map
-
-    def set_predef_subfamilies_map(self, _predef_subfamilies_map):
-        self.predef_subfamilies_map = _predef_subfamilies_map
-
-    def get_predef_app_tags_map(self):
-        return self.predef_app_tags_map
-
-    def set_predef_app_tags_map(self, _predef_app_tags_map):
-        self.predef_app_tags_map = _predef_app_tags_map
-
-    def get_logger(self):
-        return self.logger
-
-    def set_logger(self, _logger):
-        self.logger = _logger
-
-    def get_system(self):
-        return self.system
-
-    def set_name(self, _name):
-        self.name = _name
-
-    def set_service_any(self, _name):
-        self.service_any_map[_name] = True
-
-    def clear_service_any(self, _name):
-        self.service_any_map[_name] = False
 
     def add_interface_to_network(self, network, interface):
         """
@@ -149,12 +84,10 @@ class VersaConfig(object):
             network (str): The name of the network.
             interface (str): The name of the interface.
         """
-        if network not in self.network_interface_map:
-            self.network_interface_map[network] = [interface]
+        if network not in self.network_to_interfaces_map:
+            self.network_to_interfaces_map.network = [interface]
         else:
-            self.network_interface_map[network].append(interface)
-
-        self.intf_network_map[interface] = network
+            self.network_to_interfaces_map.network.append(interface)
 
     def add_interface_to_vrf(self, vrf, interface):
         """
@@ -169,16 +102,6 @@ class VersaConfig(object):
         else:
             self.vrf_interface_map[vrf].append(interface)
 
-        self.intf_vrf_map[interface] = vrf
-
-    def get_vrf_for_interface(self, _interface):
-        if _interface in self.intf_vrf_map:
-            return self.intf_vrf_map[_interface]
-        else:
-            return None
-
-    def get_interfaces_for_vrf(self, _vrf):
-        return self.vrf_interface_map[_vrf]
 
     def find_path_segments_rec(self, paths, tried, tgt_interface, ignore_vrf):
         """
@@ -259,7 +182,7 @@ class VersaConfig(object):
 
     def get_interfaces_for_network(self, _network):
         try:
-            return self.network_interface_map[_network]
+            return self.network_to_interfaces_map[_network]
         except KeyError:
             return None
 
@@ -354,7 +277,7 @@ class VersaConfig(object):
                         interface_map[interface_name].append(unit)
 
         interface_map = defaultdict(list)
-        for network, interfaces in self.network_interface_map.items():
+        for network, interfaces in self.network_to_interfaces_map.items():
             for interface in interfaces:
                 if interface.startswith("vni") and "." in interface:
                     interface_name, unit = interface.split(".")
@@ -380,7 +303,7 @@ class VersaConfig(object):
         print(f"{indents[3]}networks {{", file=_cfg_fh)
         print("    Networks")
 
-        for network, interfaces in self.network_interface_map.items():
+        for network, interfaces in self.network_to_interfaces_map.items():
             vdi_str = "network " if output_vd_cfg else ""
             interfaces_string = " ".join(interfaces)
             network_str = f"{indents[4]}{vdi_str}{network} {{\n{indents[5]}interfaces [ {interfaces_string} ];\n{indents[4]}}}"

@@ -18,27 +18,25 @@ class Zone(ConfigObject):
 
     Attributes:
     name (str): The name of the zone.
-    name_src_line (int): The source line where the name was defined.
     is_predefined (bool): Whether the zone is predefined or not.
     interface_map (dict): A map of interfaces in the zone.
     network_map (dict): A map of networks in the zone.
     """
 
-    def __init__(self, name, name_src_line, is_predefined):
+    def __init__(self, name, is_predefined):
         """
         Initialize a Zone instance.
 
         Parameters:
         name (str): The name of the zone.
-        name_src_line (int): The source line where the name was defined.
         is_predefined (bool): Whether the zone is predefined or not.
         """
-        super().__init__(name, name_src_line, is_predefined)
+        super().__init__(name, is_predefined)
         self.interface_map = {}
         self.network_map = {}
 
-    def add_interface(self, _interface, _interface_src_line):
-        self.interface_map[_interface] = _interface_src_line
+    def add_interface(self, _interface):
+        self.interface_map[_interface] = None
 
     def set_interface_map(self, _interface_map, _):
         self.interface_map = _interface_map
@@ -46,8 +44,8 @@ class Zone(ConfigObject):
     def get_interface_map(self):
         return self.interface_map
 
-    def add_network(self, _network, _network_src_line):
-        self.network_map[_network] = _network_src_line
+    def add_network(self, _network):
+        self.network_map[_network] = None
 
     def set_network_map(self, _network_map, _):
         self.network_map = _network_map

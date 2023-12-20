@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Root>
+    <Traffic_URLS>
+        <GeneralURLs>
+            <!--URLS to browse, may not match to specific rule-->
+            <url>https://digg.com/</url>
+            <url>https://www.yahoo.com</url>
+            <url>https://www.reddit.com</url>
+            <url>http://www.cnn.com</url>
+            <url>http://www.ebay.com</url>
+            <url>https://en.wikipedia.org/wiki/Main_Page</url>
+            <url>https://austin.craigslist.org/</url>
+            <url>https://www.flipkart.com</url>
+            <url>https://www.facebook.com/games/</url>
+            <url>https://www.whatsapp.com</url>
+            <url>https://www.instagram.com</url>
+            <url>https://www.bittorrent.com</url>
+            <url>https://www.kproxy.com</url>
+            <url>https://www.ndtv.com</url>
+            <url>https://www.youtube.com</url>
+            <url>https://www.netflix.com</url>
+            <url>https://versanetworks.sharepoint.com/</url>
+            <url>https://www.office.com/launch/powerpoint</url>
+            <url>https://outlook.office.com/mail/inbox</url>
+            <url>https://www.office.com/launch/excel</url>
+            <url>https://teams.microsoft.com/</url>
+            <url>https://groups.google.com/my-groups</url>
+            <url>https://moz.com/top500</url>
+            <url>https://europa.eu/</url>
+            <url>https://draft.blogger.com</url>
+            <url>https://www.jimdo.com/</url>
+            <url>https://independent.co.uk</url>
+            <url>engadget.com</url>
+            <url>https://en.wikipedia.org/wiki/List_of_most-visited_websites</url>
+            <url>https://trends.netcraft.com/topsites</url>
+        </GeneralURLs>
+        <RuleSpecificURLs>
+            <!--URLs that match to a specific rule-->
+            <Traffic_Generator_Policies>
+                <TGP name="TG-ICMP-Allow">
+                    <!--Allows access to ICMP-->
+                    <action>Allow</action>
+                </TGP>
+                <TGP name="TG-LDAP-Allow">
+                    <!--Allows access to port 389 & 636-->
+                    <action>Allow</action>
+                    <url>https://192.168.1.100:389</url>
+                    <url>https://192.168.1.100:636</url>
+                </TGP>
+                <TGP name="TG-DNS-Allow">
+                    <!-- #Allows access to DNS. No specific URL-->
+                    <action>Allow</action>
+                </TGP>
+                <TGP name="TG-Run-IP-Filter-Profile">
+                    <!--Please place these app/url into TG-Bad-Events Address Group-->
+                    <action>Deny</action>
+                    <url>https://58.96.82.68</url>
+                    <url>https://103.240.252.59</url>
+                    <url>https://103.43.140.104</url>
+                    <url>https://103.48.139.139</url>
+                    <url>https://119.41.206.123</url>
+                    <url>https://15.204.168.1</url>
+                    <url>https://157.245.201.168</url>
+                    <url>https://163.123.143.173</url>
+                    <url>https://193.42.33.70</url>
+                    <url>https://2.56.58.81</url>
+                    <url>https://2.56.58.85</url>
+                    <url>https://2.56.58.88</url>
+                    <url>https://2.56.58.93</url>
+                    <url>https://210.140.43.55</url>
+                    <url>https://219.117.221.11</url>
+                    <url>https://223.73.35.54</url>
+                    <url>https://43.131.61.151</url>
+                    <url>https://43.134.111.101</url>
+                    <url>https://43.153.135.112</url>
+                    <url>https://43.163.198.174</url>
+                    <url>https://45.116.226.132</url>
+                    <url>https://45.116.226.134</url>
+                    <url>https://45.116.226.137</url>
+                    <url>https://45.116.226.138</url>
+                    <url>https://45.117.140.211</url>
+                    <url>https://94.205.22.95</url>
+                    <url>https://103.48.139.91</url>
+                </TGP>
+                <TGP name="TG-Run-DNS-Filter-Profile">
+                    <!--Please place these app/url into Security Polices rule TG-Run-DNS-Filter-Profile-->
+                    <action>Block</action>
+                    <url>https://gitlab.com/</url>
+                    <url>https://www.deezer.com/us/</url>
+                </TGP>
+                <TGP name="TG-Run-AV-Profile">
+                    <!--Please place these app/url into URL Category List TG-AV-URLS-->
+                    <action>Default</action>
+                    <url>https://www.eicar.org/download-anti-malware-testfile/</url>
+                    <url>https://secure.eicar.org/eicar_com.zip</url>
+                    <url>http://http-evader.semantic-gap.de/-BGJhmNoDFOy1TQD0tk0P96wLE-2pTBXgrg==</url>
+                </TGP>
+                <TGP name="TG-Run-File-Filter-Profile">
+                    <!--Please place these app/url into URL Category List TG-File-Filter-URLS-->
+                    <action>Block</action>
+                    <url>https://github.com/nmmapper/python3-nmap/archive/refs/heads/master.zip</url>
+                    <url>https://github.com/nmmapper/python3-nmap/tree/0e3d16637ff2a3f8aa2e10ab7c4255685946e8c5/nmap3</url>
+                    <url>https://github.com/versa-networks/libcli/archive/refs/heads/stable.zip</url>
+                    <url>https://versanetworks.box.com/s/e8p1bxvil4xxbjdh8ardv7l5ame85n5c</url>
+                </TGP>
+                <TGP name="TG-Run-Vulnerability-Profile">
+                    <!--Please place these app/url into URL Category List TG-Vulnerability-URLS-->
+                    <url>http://http-evader.semantic-gap.de/</url>
+                    <url>http://http-evader.semantic-gap.de/#xhr_eicar</url>
+                    <url>http://http-evader.semantic-gap.de/#xhr_novirus</url>
+                    <url>http://http-evader.semantic-gap.de/#js</url>
+                    <url>http://http-evader.semantic-gap.de/#js</url>
+                    <url>http://37.221.199.196</url>
+                    <url>http://http-evader.semantic-gap.de/-BGJhmNoDFOy1TQD0tk0P96wLE-2pTBXgrg==</url>
+                    <url>http://testmyids.com/</url>
+                </TGP>
+                <TGP name="TG-Run-ATP-Profile">
+                    <!--Please place these app/url into URL Category List TG-ATP-URLS-->
+                    <url>https://secure.eicar.org/eicar.com.txt</url>
+                </TGP>
+                <TGP name="TG-Run-CASB-Profile">
+                    <!--Please place these app/url into URL Category List TG-CASB-URLS-->
+                    <url>https://reddit.com/</url>
+                </TGP>
+                <TGP name="TG-Run-DLP-Profile">
+                    <!--Please place these app/url into URL Category List TG-DLP-URLS-->
+                </TGP>
+                <TGP name="TG-Run-URL-Filter-Profile">
+                    <!--Please place these app/url into URL Category List TG-URL-Filter-URLS-->
+                    <action>Block</action>
+                </TGP>
+                <TGP name="TG-QUIC">
+                    <!--Denies access to UDP on port 80 and 443-->
+                    <action>Deny</action>
+                    <url>https://www.facebook.com</url>
+                    <url>https://www.google.com</url>
+                </TGP>
+                <TGP name="TG-Allow-Business-App-Filters">
+                    <!--Allows access to applications in the predefined application group Business-Traffic -->
+                    <action>Allow</action>
+                    <url>https://www.aws.amazon.com/</url>
+                    <url>https://www.facebook.com</url>
+                    <url>https://earth.google.com</url>
+                </TGP>
+                <TGP name="TG-Deny-Non-Business-App-Filters">
+                    <!--Denies access to applications in the predefined application filter Non-Business-Trafic-->
+                    <action>Deny</action>
+                    <!--Amazon-Apps-->
+                    <url>https://www.aws.amazon.com/console/</url>
+                    <url>https://app.chime.aws/meetings</url>
+                    <url>https://www.primevideo.com/</url>
+                    <url>https://music.amazon.in/</url>
+                    <!--Social-Media-Apps-->
+                    <url>https://www.facebook.com</url>
+                    <url>https://tinder.com</url>
+                    <url>http://www.orkut.com/</url>
+                    <!--Facebook_Video-->
+                    <!--Non-Business Apps-->
+                    <url>https://www.01net.com</url>
+                    <url>https://baidu.com</url>
+                    <url>https://www.bitlord.com</url>
+                    <url>https://www.cartoonnetwork.com</url>
+                </TGP>
+                <TGP name="TG-Deny-High-Risk-Apps">
+                    <!--Denies access to applications with a Risks value of 5 -->
+                    <action>Deny</action>
+                    <url>https://www.brightcove.com</url>
+                    <url>https://www.2shared.com/</url>
+                    <url>https://www.4tube.com/</url>
+                    <url>https://www.gigatribe.com/</url>
+                </TGP>
+            </Traffic_Generator_Policies>
+        </RuleSpecificURLs>
+        <ReputationURLs>
+            <!--URLS of specific Reputation-->
+            <Reputation name="Trustworthy">
+                <action>Allow</action>
+                <url>https://cricbuzz.com</url>
+            </Reputation>
+            <Reputation name="Moderate Risk">
+                <action>Alert</action>
+                <url>https://adform.com</url>
+            </Reputation>
+            <Reputation name="Supicious">
+                <action>Block</action>
+                <url>https://www.prochoiceamerica.org/</url>
+            </Reputation>
+            <Reputation name="High Risk">
+                <action>Block</action>
+                <url>https://www.proxify.com/</url>
+            </Reputation>
+        </ReputationURLs>
+        <CategoryURLs>
+            <category name="Business applications">
+                <url>https://www.office.com/launch/powerpoint</url>
+                <url>https://versanetworks.sharepoint.com/</url>
+                <url>https://outlook.office.com/mail/inbox</url>
+                <url>https://www.office.com/launch/excel</url>
+                <url>https://teams.microsoft.com/</url>
+                <url>https://www.mcafee.com/en-in/index.html</url>
+                <url>https://www.webex.com/</url>
+                <url>https://adobe.com</url>
+            </category>
+            <category name="Shopping URLs">
+                <url>https://www.amazon.com</url>
+                <url>https://www.flipkart.com</url>
+                <url>https://www.myntra.com</url>
+            </category>
+            <category name="Social Media URLS">
+                <url>https://www.facebook.com</url>
+                <url>https://www.instagram.com</url>
+                <url>https://www.twitter.com</url>
+                <url>https://www.whatsapp.com</url>
+                <url>https://telegram.org</url>
+            </category>
+            <category name="Job Search URLS">
+                <url>https://www.linkedin.com</url>
+                <url>https://www.naukri.com</url>
+                <url>https://www.monster.com</url>
+            </category>
+            <category name="Google-Apps">
+                <url>https://www.gmail.com</url>
+                <url>https://drive.google.com</url>
+                <url>https://analytics.google.com/analytics/web/</url>
+            </category>
+            <category name="Web-Browsing">
+                <url>https://www.mail2000.co</url>
+                <url>https://mail.ru/</url>
+                <url>https://www.anz.com.au</url>
+            </category>
+            <category name="Auction URLs">
+                <url>https://www.ebay.com</url>
+            </category>
+            <category name="Dating URLs">
+                <url>https://www.match.com</url>
+            </category>
+            <category name="Gambling URLs">
+                <url>https://www.bet365.com</url>
+            </category>
+            <category name="Hacking URLs">
+                <!-- Add URLs here if any -->
+            </category>
+            <category name="Peer to Peer">
+                <!-- Add URLs here if any -->
+            </category>
+            <category name="Proxy avoid and anonymizers">
+                <url>https://www.kproxy.com</url>
+            </category>
+            <category name="Weapons URLs">
+                <url>https://www.grabagun.com</url>
+            </category>
+            <category name="Adult-sites">
+                <url>https://www.playboy.com</url>
+            </category>
+            <category name="Malware URLs">
+                <url>https://astalavista.box.sk</url>
+            </category>
+        </CategoryURLs>
+    </Traffic_URLS>
+    <DOSTrafficProfiles>
+        <!-- Comment out profile you do not want to run-->
+        <Type>TCP Scan</Type>
+        <Type>UDP Scan</Type>
+        <Type>HostSweep Flood</Type>
+        <Type>TCP Flood</Type>
+        <Type>UDP Flood</Type>
+        <Type>ICMP Flood</Type>
+        <Type>SCTP Flood</Type>
+        <Type>Other-IP Flood</Type>
+        <Type>ICMP Fragmention</Type>
+        <Type>ICMP Ping Zero ID</Type>
+        <Type>Non-SYN TCP</Type>
+        <Type>IP Spoofing</Type>
+        <Type>IP Fragmention</Type>
+        <Type>Record-Route</Type>
+        <Type>Strict-SRC-Routing</Type>
+        <Type>Loose-SRC-Routing</Type>
+        <Type>Timestamp</Type>
+    </DOSTrafficProfiles>
+    <IgnoreList>
+        <!-- # List of items to not follow -->
+        <!--Items can be a URL "https://t.co" or simple string to check for "amazon"-->
+        <Ignore>https://t.co</Ignore>
+        <Ignore>t.umblr.com</Ignore>
+        <Ignore>messenger.com</Ignore>
+        <Ignore>itunes.apple.com</Ignore>
+        <Ignore>l.facebook.com</Ignore>
+        <Ignore>bit.ly</Ignore>
+        <Ignore>mediawiki</Ignore>
+        <Ignore>.css</Ignore>
+        <Ignore>.ico</Ignore>
+        <Ignore>.xml</Ignore>
+        <Ignore>intent/tweet</Ignore>
+        <Ignore>twitter.com/share</Ignore>
+        <Ignore>signup</Ignore>
+        <Ignore>login</Ignore>
+        <Ignore>dialog/feed?</Ignore>
+        <Ignore>.png</Ignore>
+        <Ignore>.jpg</Ignore>
+        <Ignore>.json</Ignore>
+        <Ignore>.svg</Ignore>
+        <Ignore>.gif</Ignore>
+        <Ignore>zendesk</Ignore>
+        <Ignore>clickserve</Ignore>
+    </IgnoreList>
+</Root>

@@ -30,20 +30,18 @@ class Service(ConfigObject):
 
     Args:
         name (str): The name of the service.
-        name_src_line (int): The source line of the name.
         is_predefined (bool): A flag indicating whether the service is predefined.
     """
 
-    def __init__(self, name: str, name_src_line: int, is_predefined: bool):
+    def __init__(self, name: str, is_predefined: bool):
         """
         Initializes the instance variables.
 
         Args:
             name (str): The name of the service.
-            name_src_line (int): The source line of the name.
             is_predefined (bool): A flag indicating whether the service is predefined.
         """
-        super().__init__(name, name_src_line, is_predefined)
+        super().__init__(name, is_predefined)
         self.src_port = None
         self.dst_port = None
         self.port = None
@@ -52,11 +50,10 @@ class Service(ConfigObject):
         self.proto_value = None
         self.proto_match_type = ProtoMatchType.NONE
         self.desc = None
-        self.desc_line = None
 
-    def set_description(self, _desc, _desc_line):
+
+    def set_description(self, _desc):
         self.desc = _desc
-        self.desc_line = _desc_line
 
     def set_src_port(self, _src_port, _):
         self.src_port = _src_port
@@ -70,29 +67,27 @@ class Service(ConfigObject):
         self.port = _port
         self.port_match_type = PortMatchType.ANY_PORT_MATCH
 
-    def set_proto(self, proto, proto_src_line: int):
+    def set_proto(self, proto, ):
         """
-        Sets the protocol and the source line of the protocol.
+        Sets the protocol
 
         Args:
             proto (str): The protocol to set.
-            proto_src_line (int): The source line of the protocol.
         """
         proto_lower = proto.lower()
         if proto_lower != "ip":
             if proto_lower == "icmp6":
-                self.set_proto_value(58, proto_src_line)
+                self.set_proto_value(58)
             else:
                 self.proto = proto
                 self.proto_match_type = ProtoMatchType.ENUM_PROTO_MATCH
 
-    def set_proto_value(self, proto_value, _: int):
+    def set_proto_value(self, proto_value):
         """
-        Sets the protocol value and the source line of the protocol value.
+        Sets the protocol value of the protocol value.
 
         Args:
             proto_value (int): The protocol value to set.
-            proto_value_src_line (int): The source line of the protocol value.
         """
         self.proto_value = proto_value
         self.proto_match_type = ProtoMatchType.PROTO_VALUE_MATCH

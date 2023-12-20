@@ -30,51 +30,64 @@ class ApplicationGroup(ConfigObject):
     write_config(output_vd_cfg, _cfg_fh, _indent): Writes the configuration of the application group to a file.
     """
 
-    def __init__(self, name, name_src_line, is_predefined):
-        """
-        Initialize an ApplicationGroup instance.
+    def __init__(self, name, is_predefined, desc=""):
+        super().__init__(name, is_predefined, desc)
+        self._application_map = {}
+        self._application_group_map = {}
 
-        Parameters:
-        name (str): The name of the application group.
-        name_src_line (int): The source line where the name was defined.
-        is_predefined (bool): Whether the application group is predefined or not.
-        """
-        super().__init__(name, name_src_line, is_predefined)
-        self.application_map = {}
-        self.application_group_map = {}
-
-    def add_application(self, application, application_src_line):
+    def add_application(self, application):
         """
         Adds an application to the application map.
 
         Parameters:
         application (str): The name of the application.
-        application_src_line (int): The source line where the application was defined.
         """
-        self.application_map[application] = application_src_line
+        self.application_map[application] = ""
 
-    def get_application_map(self):
+    @property
+    def application_map(self):
         """
         Returns the application map.
 
         Returns:
         dict: The application map.
         """
-        return self.application_map
+        return self._application_map
 
-    def set_application_map(self, _application_map):
-        self.application_map = _application_map
+    @application_map.setter
+    def application_map(self, application_map):
+        """
+        Sets the application map.
 
-    def add_application_group(self, _application_group, _application_group_src_line):
-        self.application_group_map[_application_group] = _application_group_src_line
+        Args:
+        application_map (dict): The new application map.
+        """
+        self._application_map = application_map
+        
+    def add_application_group(self, _application_group):
+        self.application_group_map[_application_group] = ""
 
-    def get_application_group_map(self):
-        return self.application_group_map
+    @property
+    def application_group_map(self):
+        """
+        Returns the application group map.
 
-    def set_application_group_map(self, _application_group_map):
-        self.application_group_map = _application_group_map
+        Returns:
+        dict: The application group map.
+        """
+        return self._application_group_map
 
-    def get_all_app_list(self, app_grp, predef_app_list, user_def_app_list):
+    @application_group_map.setter
+    def application_group_map(self, application_group_map):
+        """
+        Sets the application group map.
+
+        Args:
+        application_group_map (dict): The new application group map.
+        """
+        self._application_group_map = application_group_map
+
+    def get_all_app_list(self, app_grp):
         """
         Populates the provided lists with applications from the given application group.
 
@@ -87,43 +100,38 @@ class ApplicationGroup(ConfigObject):
             predef_app_list: A list to populate with predefined applications.
             user_def_app_list: A list to populate with user-defined applications.
         """
-        for app, _ in app_grp.application_map.items():
-            if app.is_predefined():
-                if app not in predef_app_list:
-                    predef_app_list.append(app)
-            else:
-                if app not in user_def_app_list:
-                    user_def_app_list.append(app)
 
-        for child_app_grp, _ in app_grp.application_group_map.items():
-            self.get_all_app_list(child_app_grp, predef_app_list, user_def_app_list)
+        predef_app_list = [app for app in app_grp.application_map.items() if app.is_predefined()]
+        user_def_app_list = [app for app in app_grp.application_map.items() if not app.is_predefined()]
+        for child_app_grp in app_grp.application_group_map.items():
+            predef_app_list.extend(self.get_all_app_list(child_app_grp))
+            user_def_app_list.extend(self.get_all_app_list(child_app_grp))
+        return list(set(predef_app_list)), list(set(user_def_app_list))
 
-    def write_config(self, output_vd_cfg, _cfg_fh, _indent):
+    def write_config(self, output_vd_cfg, cfg_fh, indent):
         """
         Writes the configuration of the application group to a file.
 
         Parameters:
         output_vd_cfg (bool): If True, prepend "application-group" to the output string.
-        _cfg_fh (file): File handler where the configuration will be written.
-        _indent (str): String of spaces for indentation.
+        cfg_fh (file): File handler where the configuration will be written.
+        indent (str): String of spaces for indentation.
 
         Returns:
         None
         """
         vd_str = "application-group " if output_vd_cfg else ""
 
-        print(f"{_indent}{vd_str}{self.name} {{", file=_cfg_fh)
+        print(f"{indent}{vd_str}{self.name} {{", file=cfg_fh)
 
-        predef_app_list = []
-        user_def_app_list = []
-        self.get_all_app_list(self, predef_app_list, user_def_app_list)
+        predef_app_list, user_def_app_list = self.get_all_app_list(self)
 
-        if predef_app_list:
-            apps = " ".join(a.name.upper() for a in predef_app_list)
-            print(f"{_indent}    predefined-application-list [ {apps} ];", file=_cfg_fh)
-        if user_def_app_list:
-            apps = " ".join(a.name for a in user_def_app_list)
-            print(f"{_indent}    user-defined-application-list [ {apps} ];", file=_cfg_fh)
+        def print_app_list(app_list, list_type):
+            if app_list:
+                apps = " ".join(a.name.upper() if list_type == 'predefined' else a.name for a in app_list)
+                print(f"{indent}    {list_type}-application-list [ {apps} ];", file=cfg_fh)
 
-        print(f"{_indent}}}", file=_cfg_fh)
-        return
+        print_app_list(predef_app_list, 'predefined')
+        print_app_list(user_def_app_list, 'user-defined')
+
+        print(f"{indent}}}", file=cfg_fh)

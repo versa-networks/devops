@@ -47,19 +47,18 @@ class FirewallRule(ConfigObject):
     This class inherits from ConfigObject and adds additional attributes specific to firewall rules, such as source and destination zones, addresses, address groups, and services, as well as the action to be taken when the rule matches.
 
     Args:
-        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, source line, and predefined flag.
+        ConfigObject (class): The base class for configuration objects. It provides common attributes for all configuration objects, such as name, and predefined flag.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
+    def __init__(self, _name, _is_predefined):
         """
         Initializes a new instance of the FirewallRule class.
 
         Args:
             _name (str): The name of the firewall rule.
-            _name_src_line (int): The source line where the name is defined.
             _is_predefined (bool): A flag indicating whether the rule is predefined.
         """
-        super().__init__(_name, _name_src_line, _is_predefined)
+        super().__init__(_name, _is_predefined)
         self.src_zone_map = {}
         self.dst_zone_map = {}
         self.src_addr_map = {}
@@ -70,15 +69,10 @@ class FirewallRule(ConfigObject):
         self.dst_addr_region_map = {}
         self.service_map = {}
         self.action = FirewallRuleAction.DENY
-        self.action_line = 0
         self.schedule = None
-        self.schedule_line = 0
         self.natpool = None
-        self.natpool_line = 0
         self.desc = ""
-        self.desc_src_line = 0
         self.match_ip_version = ""
-        self.match_ip_version_src_line = 0
         self.tag = ""
         self.tenant = ""
 
@@ -91,34 +85,31 @@ class FirewallRule(ConfigObject):
     def set_tag(self, _tag):
         self.tag = _tag
 
-    def set_desc(self, _desc, _desc_src_line):
+    def set_desc(self, _desc):
         self.desc = _desc
-        self.desc_src_line = _desc_src_line
 
     def get_match_ip_version(self):
         return self.match_ip_version
 
-    def set_match_ip_version(self, _match_ip_version, _match_ip_version_src_line):
+    def set_match_ip_version(self, _match_ip_version):
         self.match_ip_version = _match_ip_version
-        self.match_ip_version_src_line = _match_ip_version_src_line
 
     def get_desc(self):
         return self.desc
 
-    def add_src_zone(self, _src_zone, _src_zone_src_line):
+    def add_src_zone(self, _src_zone):
         if _src_zone in self.src_zone_map:
-            self.src_zone_map[_src_zone].extend([_src_zone_src_line])
+            self.src_zone_map[_src_zone].extend(None)
         else:
-            self.src_zone_map[_src_zone] = [_src_zone_src_line]
+            self.src_zone_map[_src_zone] = [None]
 
-    def add_dst_zone(self, _dst_zone: str, _dst_zone_src_line) -> None:
+    def add_dst_zone(self, _dst_zone: str) -> None:
         """Adds a destination zone to the destination zone map.
 
         Args:
             _dst_zone (str): The name of the destination zone.
-            _dst_zone_src_line (int): The source line where the destination zone is defined.
         """
-        self.dst_zone_map.setdefault(_dst_zone, []).append(_dst_zone_src_line)
+        self.dst_zone_map.setdefault(_dst_zone, []).append(None)
 
     def get_src_zone_map(self):
         return self.src_zone_map
@@ -132,11 +123,11 @@ class FirewallRule(ConfigObject):
     def set_dst_zone_map(self, _dst_zone_map):
         self.dst_zone_map = _dst_zone_map
 
-    def add_src_addr(self, _src_addr, _src_addr_src_line):
-        self.src_addr_map[_src_addr] = _src_addr_src_line
+    def add_src_addr(self, _src_addr):
+        self.src_addr_map[_src_addr] = None
 
-    def add_dst_addr(self, _dst_addr, _dst_addr_src_line):
-        self.dst_addr_map[_dst_addr] = _dst_addr_src_line
+    def add_dst_addr(self, _dst_addr):
+        self.dst_addr_map[_dst_addr] = None 
 
     def get_src_addr_map(self):
         return self.src_addr_map
@@ -150,11 +141,11 @@ class FirewallRule(ConfigObject):
     def set_dst_addr_map(self, _dst_addr_map):
         self.dst_addr_map = _dst_addr_map
 
-    def add_src_addr_grp(self, _src_addr_grp, _src_addr_grp_src_line):
-        self.src_addr_grp_map[_src_addr_grp] = _src_addr_grp_src_line
+    def add_src_addr_grp(self, _src_addr_grp):
+        self.src_addr_grp_map[_src_addr_grp] = None
 
-    def add_dst_addr_grp(self, _dst_addr_grp, _dst_addr_grp_src_line):
-        self.dst_addr_grp_map[_dst_addr_grp] = _dst_addr_grp_src_line
+    def add_dst_addr_grp(self, _dst_addr_grp):
+        self.dst_addr_grp_map[_dst_addr_grp] = None
 
     def get_src_addr_grp_map(self):
         return self.src_addr_grp_map
@@ -168,11 +159,11 @@ class FirewallRule(ConfigObject):
     def set_dst_addr_grp_map(self, _dst_addr_grp_map):
         self.dst_addr_grp_map = _dst_addr_grp_map
 
-    def add_src_addr_region(self, _src_addr_region, _src_addr_region_src_line):
-        self.src_addr_region_map[_src_addr_region] = _src_addr_region_src_line
+    def add_src_addr_region(self, _src_addr_region):
+        self.src_addr_region_map[_src_addr_region] = None
 
-    def add_dst_addr_region(self, _dst_addr_region, _dst_addr_region_src_line):
-        self.dst_addr_region_map[_dst_addr_region] = _dst_addr_region_src_line
+    def add_dst_addr_region(self, _dst_addr_region):
+        self.dst_addr_region_map[_dst_addr_region] = None
 
     def get_src_addr_region_map(self):
         return self.src_addr_region_map
@@ -224,18 +215,16 @@ class FirewallRule(ConfigObject):
         if _agname in self.dst_addr_grp_map:
             self.dst_addr_grp_map[_new_agname] = self.dst_addr_grp_map.pop(_agname)
 
-    def add_service(self, _service, _service_src_line):
+    def add_service(self, _service):
         """
         Adds a service to the service map.
 
         Args:
             _service (str): The service to be added. If it's a string, it's used directly. If it's a Service object, its name is used.
-            _service_src_line (int): The source line where the service is defined.
 
         This method checks the type of the _service parameter. If it's a string, it uses it directly. If it's a Service object, it uses its name. Then it adds the service to the service map with the source line as the value.
         """
         _svc = _service if isinstance(_service, str) else _service.name
-        self.service_map[_svc] = _service_src_line
 
     def get_service_map(self):
         return self.service_map
@@ -250,24 +239,19 @@ class FirewallRule(ConfigObject):
             _service_group (ServiceGroup): The service group to be replaced.
         """
         if _service_group.name in self.service_map:
-            svc_grp_line = self.service_map.pop(_service_group.name)
-            self.service_map.update({svc: svc_grp_line for svc in _service_group.service_map.keys()})
+            self.service_map.pop(_service_group.name)
 
     def replace_service(self, _sname, _new_sname):
         if _sname in self.service_map:
-            sline = self.service_map[_sname]
             del self.service_map[_sname]
-            self.service_map[_new_sname] = sline
+            self.service_map[_new_sname] = None
 
-    def set_action(self, _action, _action_line):
+    def set_action(self, _action):
         self.action = _action
-        self.action_line = _action_line
+
 
     def get_action(self):
         return self.action
-
-    def get_action_line(self):
-        return self.action_line
 
     def get_action_string(self):
         return FirewallRuleAction.get_action_string(self.action)
@@ -275,16 +259,15 @@ class FirewallRule(ConfigObject):
     def get_schedule(self):
         return self.schedule
 
-    def set_schedule(self, _schedule, _schedule_line):
+    def set_schedule(self, _schedule):
         self.schedule = _schedule
-        self.schedule_line = _schedule_line
+
 
     def get_natpool(self):
         return self.natpool
 
-    def set_natpool(self, _natpool, _natpool_line):
+    def set_natpool(self, _natpool):
         self.natpool = _natpool
-        self.natpool_line = _natpool_line
 
     def replace_schedule(self, _sname, _new_sname):
         if _sname == self.schedule:
@@ -335,14 +318,14 @@ class FirewallRule(ConfigObject):
             output.append(f"\n{schedule}\n\n")
 
         if len(self.service_map) > 0:
-            services = [svc if isinstance(svc, str) else svc.name for svc, svc_line in self.service_map.items()]
+            services = [svc if isinstance(svc, str) else svc.name for svc in self.service_map.items()]
             output.append(f"{_indent}            services {{")
             output.append(f"{_indent}                services-list [ {' '.join(services)} ];")
             output.append(f"{_indent}            }}")
 
         output.append(f"{_indent}            source {{")
         if len(self.src_zone_map) > 0:
-            zones = " ".join(zone for zone, zone_line in self.src_zone_map.items())
+            zones = " ".join(zone for zone in self.src_zone_map.items())
             output.append(f"{_indent}                zone {{")
             output.append(f"{_indent}                    zone-list [ {zones} ];")
             output.append(f"{_indent}                }}")
@@ -351,18 +334,18 @@ class FirewallRule(ConfigObject):
             output.append(f"{_indent}                address {{")
 
         if len(self.src_addr_map) > 0:
-            addresses = " ".join(addr for addr, addr_line in self.src_addr_map.items())
+            addresses = " ".join(addr for addr in self.src_addr_map.items())
             output.append(f"{_indent}                    address-list [ {addresses} ];")
 
         if len(self.src_addr_grp_map) > 0:
-            addr_groups = " ".join(addr_grp for addr_grp, addr_grp_line in self.src_addr_grp_map.items())
+            addr_groups = " ".join(addr_grp for addr_grp in self.src_addr_grp_map.items())
             output.append(f"{_indent}                    address-group-list [ {addr_groups} ];")
 
         if len(self.src_addr_map) > 0 or len(self.src_addr_grp_map) > 0:
             output.append(f"{_indent}                }}")
 
         if len(self.src_addr_region_map) > 0:
-            regions = " ".join(region for region, region_line in self.src_addr_region_map.items())
+            regions = " ".join(region for region in self.src_addr_region_map.items())
             output.append(f"{_indent}                region [ {regions} ];")
 
         if output:
@@ -384,7 +367,7 @@ class FirewallRule(ConfigObject):
         output.append(f"{_indent}            destination {{")
         if len(self.dst_zone_map) > 0:
             output.append(f"{_indent}                zone {{")
-            zones = " ".join(zone for zone, zone_line in self.dst_zone_map.items())
+            zones = " ".join(zone for zone in self.dst_zone_map.items())
             output.append(f"{_indent}                    zone-list [ {zones} ];")
             output.append(f"{_indent}                }}")
 
@@ -392,11 +375,11 @@ class FirewallRule(ConfigObject):
             output.append(f"{_indent}                address {{")
 
         if len(self.dst_addr_map) > 0:
-            addresses = " ".join(addr for addr, addr_line in self.dst_addr_map.items())
+            addresses = " ".join(addr for addr in self.dst_addr_map.items())
             output.append(f"{_indent}                    address-list [ {addresses} ];")
 
         if len(self.dst_addr_grp_map) > 0:
-            addr_groups = " ".join(addr_grp for addr_grp, addr_grp_line in self.dst_addr_grp_map.items())
+            addr_groups = " ".join(addr_grp for addr_grp in self.dst_addr_grp_map.items())
             output.append(f"{_indent}                    address-group-list [ {addr_groups} ];")
 
         if self.dst_addr_map or self.dst_addr_grp_map:

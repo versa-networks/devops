@@ -24,6 +24,6 @@ class NetworkFunction(ConfigObject):
     and sets the network function type.
     """
 
-    def __init__(self, name: str, name_src_line: int, is_predefined: bool, vnf_type: NetworkFunctionType):
-        super().__init__(name, name_src_line, is_predefined)
+    def __init__(self, name: str, is_predefined: bool, vnf_type: NetworkFunctionType):
+        super().__init__(name, is_predefined)
         self.vnf_type = vnf_type

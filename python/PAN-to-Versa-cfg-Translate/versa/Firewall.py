@@ -25,8 +25,8 @@ class Firewall(NetworkFunction):
         rule_map (dict): A dictionary mapping rule names to rule objects.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
-        super().__init__(_name, _name_src_line, _is_predefined, NetworkFunctionType.STATEFUL_FIREWALL)
+    def __init__(self, _name, _is_predefined):
+        super().__init__(_name, _is_predefined, NetworkFunctionType.STATEFUL_FIREWALL)
         self.rules = []
         self.rule_map = {}
 

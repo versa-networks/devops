@@ -17,6 +17,6 @@ class NextGenFirewall(Firewall):
     and sets the network function type to NEXT_GEN_FIREWALL.
     """
 
-    def __init__(self, _name: str, _name_src_line: int, _is_predefined: bool):
-        super().__init__(_name, _name_src_line, _is_predefined)
+    def __init__(self, _name: str, _is_predefined: bool):
+        super().__init__(_name, _is_predefined)
         self.vnf_type = NetworkFunctionType.NEXT_GEN_FIREWALL

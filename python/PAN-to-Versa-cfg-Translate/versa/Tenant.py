@@ -9,12 +9,14 @@
 #
 
 
+from dataclasses import dataclass,field
 from typing import TextIO, List
-from versa.Address import AddressType
-from versa.Zone import Zone
+#from versa.Address import AddressType
+#from versa.Zone import Zone
 
 
-class Tenant(object):
+@dataclass(slots=True)
+class Tenant:
     """
     Represents a tenant in a multi-tenant system.
 
@@ -23,12 +25,12 @@ class Tenant(object):
 
     Attributes:
         name (str): The name of the tenant.
-        address_map (dict): A map of addresses belonging to the tenant.
-        address_group_map (dict): A map of address groups belonging to the tenant.
-        application_map (dict): A map of applications belonging to the tenant.
-        url_category_map (dict): A map of URL categories belonging to the tenant.
-        schedule_map (dict): A map of schedules belonging to the tenant.
-        service_map (dict): A map of services belonging to the tenant.
+        address_map (list): A map of addresses belonging to the tenant.
+        address_group_map (list): A map of address groups belonging to the tenant.
+        application_map (list): A map of applications belonging to the tenant.
+        url_category_map (list): A map of URL categories belonging to the tenant.
+        schedule_map (list): A map of schedules belonging to the tenant.
+        service_map (list): A map of services belonging to the tenant.
         ngfw (NGFW): The Next-Generation Firewall associated with the tenant.
 
     Methods:
@@ -41,88 +43,35 @@ class Tenant(object):
         write_services_config: Writes the services configuration for the tenant to a file.
     """
 
-    def __init__(self, _name, _name_src_line):
-        self.name = _name
-        self.name_src_line = _name_src_line
-        self.ngfw = None
-        self.address_map = {}
-        self.address_group_map = {}
-        self.application_map = {}
-        self.application_group_map = {}
-        self.application_filter_map = {}
-        self.url_category_map = {}
-        self.schedule_map = {}
-        self.service_map = {}
-        self.service_group_map = {}
-        self.zone_map = {}
-        self.intf_zone_map = {}
-        self.nw_zone_map = {}
-        self.natpool_map = {}
-        self.shared_tnt = None
-        self.desc= None
+    tnt_name: str
+    address_group_map: list = field(default_factory=list)
+    address_map: list = field(default_factory=list)
+    application_filter_map: list = field(default_factory=list)
+    application_group_map: list = field(default_factory=list)
+    application_map: list = field(default_factory=list)
+    desc: str = ""
+    intf_zone_map: list = field(default_factory=list)
+    natpool_map: list = field(default_factory=list)
+    ngfw = None
+    nw_zone_map: list = field(default_factory=list)
+    schedule_map: list = field(default_factory=list)
+    service_group_map: list = field(default_factory=list)
+    service_map: list = field(default_factory=list)
+    shared_tnt = None
+    url_category_map: list = field(default_factory=list)
+    zone_map: list = field(default_factory=list)
 
-    def get_shared_tenant(self):
-        return self.shared_tnt
+    def add_application_to_application_map(self, application):
+        self.application_map.append(application.name)
 
-    def set_shared_tenant(self, _shared_tnt):
-        self.shared_tnt = _shared_tnt
+    def add_application_group_to_app_grp_map(self, application_group):
+        self.application_group_map.append(application_group.name)
 
-    def set_desc(self, _desc, _):
-        self.desc = _desc
+    def add_application_filter_to_app_filter_map(self, application_filter):
+        self.application_filter_map.append(application_filter.name)
 
-    def add_application(self, _application, _application_src_line):
-        self.application_map[_application.name] = [_application, _application_src_line]
-
-    def get_application_map(self):
-        return self.application_map
-
-    def set_application_map(self, _application_map):
-        self.application_map = _application_map
-
-    def get_application(self, _app_name):
-        if _app_name in list(self.application_map.keys()):
-            return self.application_map[_app_name][0]
-        else:
-            return None
-
-    def add_application_group(self, _application_group, _application_group_src_line):
-        self.application_group_map[_application_group.name] = [
-            _application_group,
-            _application_group_src_line,
-        ]
-
-    def get_application_group_map(self):
-        return self.application_group_map
-
-    def set_application_group_map(self, _application_group_map):
-        self.application_group_map = _application_group_map
-
-    def get_application_group(self, _grp_name):
-        if _grp_name in list(self.application_group_map.keys()):
-            return self.application_group_map[_grp_name][0]
-        else:
-            return None
-
-    def add_application_filter(self, _application_filter, _application_filter_src_line):
-        self.application_filter_map[_application_filter.name] = [
-            _application_filter,
-            _application_filter_src_line,
-        ]
-
-    def get_application_filter_map(self):
-        return self.application_filter_map
-
-    def set_application_filter_map(self, _application_filter_map):
-        self.application_filter_map = _application_filter_map
-
-    def get_application_filter(self, _fltr_name):
-        if _fltr_name in list(self.application_filter_map.keys()):
-            return self.application_filter_map[_fltr_name][0]
-        else:
-            return None
-
-    def add_url_category(self, _url_category, _url_category_src_line):
-        self.url_category_map[_url_category.name] = [_url_category, _url_category_src_line]
+    def add_url_category_to_url_cat_map(self, url_category):
+        self.url_category_map.append(url_category.name)
 
     def get_url_category_map(self):
         return self.url_category_map
@@ -130,108 +79,33 @@ class Tenant(object):
     def set_url_category_map(self, _url_category_map):
         self.url_category_map = _url_category_map
 
-    def get_url_category(self, _uc_name):
-        if _uc_name in list(self.url_category_map.keys()):
-            return self.url_category_map[_uc_name][0]
-        else:
-            return None
+    def add_address_group_to_addr_grp_map(self, address_group):
+        self.address_group_map.append(address_group.name)
 
-    def add_address(self, _address, _address_src_line):
-        self.address_map[_address.name] = [_address, _address_src_line]
+    def add_schedule_to_schedule_map(self, schedule):
+        self.schedule_map.append(schedule.name)
 
-    def set_address_map(self, _address_map):
-        self.address_map = _address_map
+    def add_service_to_srv_map(self, service):
+        self.service_map.append(service.name)
 
-    def get_address(self, _app_name):
-        if _app_name in self.address_map:
-            return self.address_map[_app_name][0]
-        else:
-            return None
+    def add_service_group_to_srv_grp_map(self, service_group):
+        self.service_group_map.append(service_group.name)
 
-    def add_address_group(self, _address_group, _address_group_src_line):
-        self.address_group_map[_address_group.name] = [_address_group, _address_group_src_line]
+    def add_zone_interface_to_zone_map(self, zone, intf):
+        if zone not in self.zone_map:
+            self.zone_map[zone] = Zone(zone, False)
+        self.zone_map[zone].add_interface(intf)
+        self.intf_zone_map[intf] = zone
 
-    def set_address_group_map(self, _address_group_map):
-        self.address_group_map = _address_group_map
+    def add_zone_network_to_zone_map(self, zone, nw):
+        if zone not in self.zone_map:
+            self.zone_map[zone] = Zone(zone, False)
+        self.zone_map[zone].add_network(nw)
+        self.nw_zone_map[nw] = zone
 
-    def get_address_group(self, _grp_name):
-        if _grp_name in self.address_group_map:
-            return self.address_group_map[_grp_name][0]
-        else:
-            return None
-
-    def add_schedule(self, _schedule, _schedule_src_line):
-        self.schedule_map[_schedule.name] = [_schedule, _schedule_src_line]
-
-    def set_schedule_map(self, _schedule_map):
-        self.schedule_map = _schedule_map
-
-    def get_schedule(self, _schedule_name):
-        return self.schedule_map[_schedule_name][0]
-
-    def add_service(self, _service, _service_src_line):
-        self.service_map[_service.name] = [_service, _service_src_line]
-
-    def get_service_map(self):
-        return self.service_map
-
-    def set_service_map(self, _service_map):
-        self.service_map = _service_map
-
-    def get_service(self, _service_name):
-        return self.service_map[_service_name][0]
-
-    def add_service_group(self, _service_group, _service_group_src_line):
-        self.service_group_map[_service_group.name] = [_service_group, _service_group_src_line]
-
-    def set_service_group_map(self, _service_group_map):
-        self.service_group_map = _service_group_map
-
-    def get_service_group(self, _service):
-        if _service in self.service_group_map:
-            return self.service_group_map[_service]
-        else:
-            return None
-
-    def add_zone_interface(self, _zone, _intf, _zone_intf_src_line):
-        if _zone not in self.zone_map:
-            self.zone_map[_zone] = Zone(_zone, _zone_intf_src_line, False)
-        self.zone_map[_zone].add_interface(_intf, _zone_intf_src_line)
-        self.intf_zone_map[_intf] = _zone
-
-    def get_zone_for_interface(self, _intf):
-        return self.intf_zone_map[_intf]
-
-    def add_zone_network(self, _zone, _nw, _zone_nw_src_line):
-        if _zone not in self.zone_map:
-            self.zone_map[_zone] = Zone(_zone, _zone_nw_src_line, False)
-        self.zone_map[_zone].add_network(_nw, _zone_nw_src_line)
-        self.nw_zone_map[_nw] = _zone
-
-    def get_zone_for_network(self, _nw):
-        return self.nw_zone_map[_nw]
-
-    def set_zone_map(self, _zone_map):
-        self.zone_map = _zone_map
-
-    def get_zone_map(self):
-        return self.zone_map
-
-    def add_natpool(self, _natpool, _natpool_src_line):
-        self.natpool_map[_natpool.name] = [_natpool, _natpool_src_line]
-
-    def set_natpool_map(self, _natpool_map):
-        self.natpool_map = _natpool_map
-
-    def get_natpool(self, _npname):
-        return self.natpool_map[_npname][0]
-
-    def get_next_gen_firewall(self):
-        return self.ngfw
-
-    def set_next_gen_firewall(self, _ngfw, _ngfw_src_line):
-        self.ngfw = _ngfw
-
+    def add_natpool_to_natpool_map(self, natpool):
+        self.natpool_map.append(natpool.name)
+    
     def replace_address_by_address_group(self):
         """
         Replaces the address by the address group in both the ngfw and the address group map.
@@ -244,8 +118,8 @@ class Tenant(object):
         Returns:
         None
         """
-        for agname, [_, _] in self.address_group_map.items():
-            for _, [addr_grp, _] in self.address_group_map.items():
+        for agname in self.address_group_map:
+            for addr_grp in self.address_group_map:
                 addr_grp.replace_address_by_address_group(agname)
             if self.ngfw is not None:
                 self.ngfw.replace_address_by_address_group(agname)
@@ -263,9 +137,9 @@ class Tenant(object):
         """
         address_info = self.address_map.pop(address_name, None)
         if address_info is not None:
-            address, address_src_line = address_info
+            address = address_info
             address.name = new_address_name
-            self.address_map[new_address_name] = [address, address_src_line]
+            self.address_map[new_address_name] = [address]
 
             # replace the address name in groups that are referring to the current address name
             for _, ag_info in self.address_group_map.items():
@@ -289,9 +163,9 @@ class Tenant(object):
         """
         if app_group_name in self.address_group_map:
             # replace the address group name in address group object and address group map
-            address_grp, address_grp_src_line = self.address_group_map.pop(app_group_name)
+            address_grp = self.address_group_map.pop(app_group_name)
             address_grp.name = new_app_group_name
-            self.address_group_map[new_app_group_name] = [address_grp, address_grp_src_line]
+            self.address_group_map[new_app_group_name] = [address_grp]
 
             # replace the address group name in groups that are referring to the current address group name
             for agn, (ag, _) in self.address_group_map.items():
@@ -315,9 +189,9 @@ class Tenant(object):
         """
         if schedule_name in self.schedule_map:
             # replace the schedule name in schedule object and schedule map
-            schedule, schedule_src_line = self.schedule_map.pop(schedule_name)
+            schedule = self.schedule_map.pop(schedule_name)
             schedule.name = new_schedule_name
-            self.schedule_map[new_schedule_name] = [schedule, schedule_src_line]
+            self.schedule_map[new_schedule_name] = [schedule]
 
             # replace the schedule name in firewall rules that are referring to the current schedule name
             if self.ngfw is not None:
@@ -336,10 +210,9 @@ class Tenant(object):
         """
         if service_name in self.service_map:
             # replace the service name in service object and service map
-            service, service_src_line = self.service_map.pop(service_name)
+            service = self.service_map.pop(service_name)
             service.name = new_service_name
-            self.service_map[new_service_name] = [service, service_src_line]
-
+            self.service_map[new_service_name] = [service]
             # replace the service name in firewall rules that are referring to the current service name
             if self.ngfw is not None:
                 self.ngfw.replace_service(service_name, new_service_name)

@@ -35,6 +35,8 @@ class AddressType(Enum):
     IP_V6_PREFIX = (3, "ipv6-prefix")
     FQDN = (4, "fqdn")
     WILDCARD = (5, "ipv4-wildcard-mask")
+    DYNAMIC_ADDRESS = (6, "dynamic-address")
+    IP_V6_WILDCARD = (7, "ipv6-wildcard-mask")
 
     def __init__(self, num, string):
         self.num = num
@@ -61,10 +63,14 @@ class Address(ConfigObject):
         self.end_ip: str = ""
         self.desc: str = ""
         self.desc_line: int = 0
+        self.tags: List[str] = []
 
     def set_description(self, _desc: str, _desc_line: int):
         self.desc = _desc
         self.desc_line = _desc_line
+
+    def set_tags(self, _tags: List[str]):
+        self.tags = _tags
 
     def set_addr_type(self, _addr_type: AddressType, _: int):
         self.addr_type = _addr_type
@@ -114,4 +120,5 @@ class Address(ConfigObject):
                 config_lines.append(f'{indent}    description "{self.desc}";')
             config_lines.append(f"{indent}}}")
 
-        print('\n'.join(config_lines), file=config_file)
+        if config_lines:
+            print('\n'.join(config_lines), file=config_file)

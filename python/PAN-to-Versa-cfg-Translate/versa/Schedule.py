@@ -25,7 +25,7 @@ class Schedule(ConfigObject):
 
     Args:
         ConfigObject (class): The base class for configuration objects. It provides common attributes for 
-        all configuration objects, such as name, source line, and predefined flag.
+        all configuration objects, such as name, and predefined flag.
     """
 
     def __init__(self, _name, _name_src_line, _is_predefined, _is_recurring):
@@ -34,11 +34,10 @@ class Schedule(ConfigObject):
 
         Args:
             _name (str): The name of the schedule.
-            _name_src_line (int): The source line where the name is defined.
             _is_predefined (bool): A flag indicating whether the schedule is predefined.
             _is_recurring (bool): A flag indicating whether the schedule is recurring.
         """
-        super().__init__(_name, _name_src_line, _is_predefined)
+        super().__init__(_name, _is_predefined)
         self.schedule_type = (
             ScheduleObjectType.RECURRING
             if _is_recurring
@@ -47,16 +46,16 @@ class Schedule(ConfigObject):
         self.non_recur_days_times = []
         self.recur_map = {}
 
-    def add_non_recurring_day_time(self, _day_time, _day_time_src_line):
-        self.non_recur_days_times.append([_day_time, _day_time_src_line])
+    def add_non_recurring_day_time(self, _day_time):
+        self.non_recur_days_times.append([_day_time])
 
-    def add_recurring_day_time(self, _recur_day, _recur_time, _recur_day_time_src_line):
+    def add_recurring_day_time(self, _recur_day, _recur_time):
         if _recur_day in self.recur_map:
-            self.recur_map[_recur_day].append([_recur_time, _recur_day_time_src_line])
+            self.recur_map[_recur_day].append([_recur_time])
         else:
-            self.recur_map[_recur_day] = [[_recur_time, _recur_day_time_src_line]]
+            self.recur_map[_recur_day] = [[_recur_time]]
 
-    def set_recurring_map(self, _recur_map, _recur_map_src_line):
+    def set_recurring_map(self, _recur_map):
         self.recur_map = _recur_map
 
     def lists_are_equal(self, a, b) -> bool:

@@ -24,18 +24,15 @@ class NextGenFirewallRule(FirewallRule):
         url_category_map (dict): A map of URL categories.
         devices_map (dict): A map of devices.
         av_profile (str): The AV profile.
-        av_profile_line (int): The line number where the AV profile is defined.
         ips_profile (str): The IPS profile.
-        ips_profile_line (int): The line number where the IPS profile is defined.
         print_cnt (int): A counter for print operations.
 
     Args:
         _name (str): The name of the firewall rule.
-        _name_src_line (int): The line number where the name is defined.
         _is_predefined (bool): A flag indicating whether the rule is predefined.
     """
 
-    def __init__(self, _name, _name_src_line, _is_predefined):
+    def __init__(self, _name, _is_predefined):
         """
         Initializes a new instance of the NextGenFirewallRule class.
 
@@ -45,21 +42,18 @@ class NextGenFirewallRule(FirewallRule):
 
         Args:
             _name (str): The name of the firewall rule.
-            _name_src_line (int): The line number where the name is defined.
             _is_predefined (bool): A flag indicating whether the rule is predefined.
         """
-        super().__init__(_name, _name_src_line, _is_predefined)
+        super().__init__(_name, _is_predefined)
         self.application_map = {}
         self.url_category_map = {}
         self.devices_map = {}
         self.av_profile = None
-        self.av_profile_line = None
         self.ips_profile = None
-        self.ips_profile_line = None
         self.print_cnt = 0
 
-    def add_application(self, _application, _application_src_line):
-        self.application_map[_application] = _application_src_line
+    def add_application(self, _application):
+        self.application_map[_application] = None
 
     def get_application_map(self):
         return self.application_map
@@ -67,8 +61,8 @@ class NextGenFirewallRule(FirewallRule):
     def set_application_map(self, _application_map):
         self.application_map = _application_map
 
-    def add_url_category(self, _url_category, _url_category_src_line):
-        self.url_category_map[_url_category] = _url_category_src_line
+    def add_url_category(self, _url_category):
+        self.url_category_map[_url_category] = None
 
     def get_url_category_map(self):
         return self.url_category_map
@@ -76,8 +70,8 @@ class NextGenFirewallRule(FirewallRule):
     def set_url_category_map(self, _url_category_map):
         self.url_category_map = _url_category_map
 
-    def add_devices(self, _devices, _devices_src_line):
-        self.devices_map[_devices] = _devices_src_line
+    def add_devices(self, _devices):
+        self.devices_map[_devices] = None
 
     def set_devices_map(self, _devices_map):
         self.devices_map = _devices_map
@@ -88,16 +82,14 @@ class NextGenFirewallRule(FirewallRule):
     def get_av_profile(self):
         return self.av_profile
 
-    def set_av_profile(self, _av_profile, _av_profile_line):
+    def set_av_profile(self, _av_profile):
         self.av_profile = _av_profile
-        self.av_profile_line = _av_profile_line
 
     def get_ips_profile(self):
         return self.ips_profile
 
-    def set_ips_profile(self, _ips_profile, _ips_profile_line):
+    def set_ips_profile(self, _ips_profile):
         self.ips_profile = _ips_profile
-        self.ips_profile_line = _ips_profile_line
 
     def write_set_no_closing_brace(self, output_vd_cfg, _cfg_fh, _indent):
         """

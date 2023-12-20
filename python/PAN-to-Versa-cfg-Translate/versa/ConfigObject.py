@@ -11,36 +11,41 @@
 
 from enum import Enum
 
-
 class ConfigObjectType(Enum):
+    """
+    Enum representing the type of a configuration object.
+    
+    Attributes:
+    PRE_DEFINED (int): Represents a predefined configuration object.
+    USER_DEFINED (int): Represents a user-defined configuration object.
+    """
     PRE_DEFINED = 1
     USER_DEFINED = 2
 
-
 class ConfigObject(object):
     """
-    Represents a configuration object.
+    Class representing a configuration object.
 
     Attributes:
     name (str): The name of the configuration object.
-    name_src_line (int): The source line where the name was defined.
     obj_type (ConfigObjectType): The type of the configuration object.
+    desc (str): The description of the configuration object.
     """
 
-    def __init__(self, name, name_src_line, is_predefined):
+    def __init__(self, name, is_predefined, desc=""):
         """
-        Initialize a ConfigObject instance.
+        Initializes a ConfigObject instance.
 
         Parameters:
         name (str): The name of the configuration object.
-        name_src_line (int): The source line where the name was defined.
-        is_predefined (bool): Whether the configuration object is predefined or not.
+        is_predefined (bool): Indicates whether the configuration object is predefined or not.
+        desc (str): The description of the configuration object. Defaults to an empty string.
         """
-        self.name = name
-        self.name_src_line = name_src_line
-        self.obj_type = ConfigObjectType.PRE_DEFINED if is_predefined else ConfigObjectType.USER_DEFINED
-        self.desc = ""
+        self._name = name
+        self._obj_type = ConfigObjectType.PRE_DEFINED if is_predefined else ConfigObjectType.USER_DEFINED
+        self._desc = desc
 
+    @property
     def is_predefined(self):
         """
         Check if the configuration object is predefined.
@@ -48,34 +53,44 @@ class ConfigObject(object):
         Returns:
         bool: True if the configuration object is predefined, False otherwise.
         """
-        return self.obj_type == ConfigObjectType.PRE_DEFINED
+        return self._obj_type == ConfigObjectType.PRE_DEFINED
 
-    def get_name(self):
+    @property
+    def name(self):
         """
-        Returns the name of the configuration object.
+        Gets the name of the configuration object.
 
         Returns:
         str: The name of the configuration object.
         """
-        return self.name
+        return self._name
 
-    def set_name(self, _name, _name_src_line):
+    @name.setter
+    def name(self, name):
         """
-        Sets the name of the configuration object and the source line where the name was defined.
-
-        Parameters:
-        _name (str): The new name of the configuration object.
-        _name_src_line (int): The source line where the new name was defined.
-        """
-        self.name = _name
-        self.name_src_line = _name_src_line
-
-    def set_desc(self, _desc, _):
-        """
-        Sets the description of the configuration object and the source line where the description was defined.
+        Sets the name of the configuration object.
 
         Parameters:
-        _desc (str): The new description of the configuration object.
-        _desc_src_line (int): The source line where the new description was defined.
+        name (str): The new name of the configuration object.
         """
-        self.desc = _desc
+        self._name = name
+
+    @property
+    def desc(self):
+        """
+        Gets the description of the configuration object.
+
+        Returns:
+        str: The description of the configuration object.
+        """
+        return self._desc
+
+    @desc.setter
+    def desc(self, desc):
+        """
+        Sets the description of the configuration object.
+
+        Parameters:
+        desc (str): The new description of the configuration object.
+        """
+        self._desc = desc
