@@ -21,7 +21,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #Function to get the list of the available spack Packages
 def check_available_spack():
-    url ="https://spack.versanetworks.com/versa-updates?action=get-list-of-available-upgrades&current-version=&current-api-version=11&flavor=premium&update-type=full"
+    url ="https://spack.versanetworks.com/versa-updates?action=get-list-of-available-upgrades&current-version=2000&current-api-version=11&flavor=premium&update-type=full"
     print("\n#  Fetching the list of available spack packages...")
     timeout = 60
     response = requests.get(url, timeout=timeout)
