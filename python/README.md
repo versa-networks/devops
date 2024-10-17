@@ -30,3 +30,5 @@ Script to identify installed Ubuntu version on devices from Versa Director.
 Script to identify CGNATs configured on VOS devices from Versa Director.
 ## VAN Health Monitor 
 Script to monitor Versa Analytics health using session and csrf-tokens.
+## Fetch Interface Details 
+Script to fetch interfaces from VOS monitoring view and create csv inventory file
