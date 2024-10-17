@@ -12,4 +12,8 @@ Is a file where the user can save the desired values for the Variables.
 You declare the variables in this file
 
 ## output.tf
+<<<<<<< HEAD
+File that stores important values for the output in Terrafor. 
+=======
 File that stores important values for the output in Terraform. Currently a placeholder for future development. 
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3

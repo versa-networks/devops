@@ -50,13 +50,21 @@ resource "oci_core_internet_gateway" "versa_internet_gateway" {
     display_name = "versa-IGW"
 }
 
+<<<<<<< HEAD
+resource "oci_core_route_table" "versa_route_table" {
+=======
 resource "oci_core_route_table" "inet_route_table" {
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     #Required
     compartment_id = oci_identity_compartment.versa_compartment.compartment_id
     vcn_id = oci_core_vcn.versa_vcn.id
 
     #Optional
+<<<<<<< HEAD
+    display_name = "Versa Route Table VCN"
+=======
     display_name = "Internet Versa Route Table VCN"
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     route_rules {
         #Required
         network_entity_id = oci_core_internet_gateway.versa_internet_gateway.id
@@ -184,8 +192,13 @@ resource "oci_core_security_list" "tf_public_security_list"{
     source_type = "CIDR_BLOCK"
     protocol    = "17"
     udp_options {
+<<<<<<< HEAD
+        min = 4750
+        max = 4750
+=======
         min = 4790
         max = 4790
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     }
   }
 }
@@ -201,7 +214,11 @@ resource "oci_core_subnet" "mgmt_subnet" {
     #dhcp_options_id = oci_core_dhcp_options.test_dhcp_options.id
     display_name = "versa-mgmt"
     dns_label = "versamgmt"
+<<<<<<< HEAD
+    route_table_id = oci_core_route_table.versa_route_table.id
+=======
     route_table_id = oci_core_route_table.inet_route_table.id
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     #ipv6cidr_block = var.subnet_ipv6cidr_block
     #prohibit_internet_ingress = var.subnet_prohibit_internet_ingress
     #prohibit_public_ip_on_vnic = var.subnet_prohibit_public_ip_on_vnic
@@ -220,7 +237,11 @@ resource "oci_core_subnet" "wan_subnet" {
     #dhcp_options_id = oci_core_dhcp_options.test_dhcp_options.id
     display_name = "versa-wan"
     dns_label = "versawan"
+<<<<<<< HEAD
+    route_table_id = oci_core_route_table.versa_route_table.id
+=======
     route_table_id = oci_core_route_table.inet_route_table.id
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     #ipv6cidr_block = var.subnet_ipv6cidr_block
     #prohibit_internet_ingress = var.subnet_prohibit_internet_ingress
     #prohibit_public_ip_on_vnic = var.subnet_prohibit_public_ip_on_vnic
@@ -274,7 +295,10 @@ resource "oci_core_instance" "vos_instance" {
 
 resource "oci_core_vnic_attachment" "wan_vnic_attachment" {
     #Required
+<<<<<<< HEAD
+=======
     depends_on = [oci_core_instance.vos_instance]
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     create_vnic_details {
         #Optional
         assign_public_ip = "true"
@@ -290,7 +314,10 @@ resource "oci_core_vnic_attachment" "wan_vnic_attachment" {
 
 resource "oci_core_vnic_attachment" "lan_vnic_attachment" {
     #Required
+<<<<<<< HEAD
+=======
     depends_on = [oci_core_vnic_attachment.wan_vnic_attachment]
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     create_vnic_details {
         #Optional
         display_name = "lan_nic"

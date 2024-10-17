@@ -1,8 +1,19 @@
+<<<<<<< HEAD
+{
+  "access-policy": {
+=======
  {
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
     "name": "RULE_NAME",
     "rule-disable": "false",
     "match": {
       "source": {
+<<<<<<< HEAD
+        "zone": {},
+        "address": {
+          "address-list": [
+            "RULE_SRC_LIST"
+=======
         "zone": {RULE_SRC_ZONE},
         "address": {
           "address-list": [
@@ -10,6 +21,7 @@
           ],
           "address-group-list": [
             "RULE_SRC_GROUP_ADDRESS_LIST"
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
           ]
         },
         "site-name": [],
@@ -24,6 +36,12 @@
         }
       },
       "destination": {
+<<<<<<< HEAD
+        "zone": {},
+        "address": {
+          "address-list": [
+            "RULE_DST_LIST"
+=======
         "zone": {RULE_DST_ZONE},
         "address": {
           "address-list": [
@@ -31,17 +49,26 @@
           ],
           "address-group-list": [
             "RULE_DST_GROUP_ADDRESS_LIST"
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
           ]
         },
         "site-name": []
       },
       "services": {
         "predefined-services-list": [
+<<<<<<< HEAD
+          "RULE_SERVICES"
+        ],
+        "services-list": []
+      },
+      "application": {},
+=======
           "RULE_PREDEFINED_SERVICES"
         ],
         "services-list": ["RULE_CUSTOM_SERVICES"]
       },
       "application": {RULE_APPLICATIONS},
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
       "url-reputation": {},
       "ttl": {}
     },
@@ -57,4 +84,9 @@
       "action": "RULE_ACTION",
       "tcp-session-keepalive": "disabled"
     }
+<<<<<<< HEAD
   }
+}
+=======
+  }
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3

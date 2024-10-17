@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+# Terraform Script for Simple Headend in OCI (Oracle Cloud)
+
+This repository is intended to deploy a Simple Headend (1 Director, 1 Analytics cluster (Analytics, Search, Log Forwarder), 2 Controllers and 1 SVNF). in Oracle cloud infrastructure. It is expected that the customer preloads the Versa Images to their Oracle account and creates an API for its user to perform operations. 
+
+Note: This script is currently tailored for ALS nodes. It needs further work for it to be more generic
+=======
 #Terraform Script for Simple Headend in OCI (Oracle Cloud)
 
 This repository is intended to deploy a Versa Headend in a single Oracle Cloud Infrastructure Region with: 
@@ -16,6 +23,7 @@ This script also deploys the necesary subnets for the operations, as well as an 
 
 
 Due to the complexity of managing multiple Oracle Regions with a single script, we recommend to deploy a single script for each region in case you want to deploy a diverse gateway. This script deploys a DRG for inter-region communication. The user would need to build the connectivity between regions manually.
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
 
 ## main.tf
 This is the main module for the script. Describes all the operations needed in Terraform to deploy an Headend.

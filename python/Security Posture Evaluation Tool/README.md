@@ -41,8 +41,13 @@ SNAT-pool config for Cloud-Lookup
 
 #### Latest Version Update:
 
+<<<<<<< HEAD
+**v6.2     **-&gt;  Updated Geo-location based IP list for IP-Filtering
+traffic-gen
+=======
 **v6.3     **-&gt;  Updated IP list for IP-Filtering traffic-gen. A predefined 
 csv file is also available within Tool folder to generate Bad IP Reputation traffic
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
 
 **v6.0     **-&gt;  1) 'Internet Reachability Check' has been included
 prior to traffic generation
@@ -218,6 +223,15 @@ the script
   **Reputation**         **IP Address**
   ---------------------- -----------------
   **Spam Sources**       68.119.100.163
+<<<<<<< HEAD
+                         201.172.172.201
+                         134.119.216.167
+  **Windows Exploits**   206.191.152.37
+  **Botnets**            72.5.161.12
+                         162.217.98.146
+  **Phishing**           157.7.184.33
+                         17.17.17.17
+=======
                          61.177.173.37
                          218.28.190.77
                          185.255.96.99
@@ -232,6 +246,7 @@ the script
                          17.17.17.17
                          210.211.125.204
                          103.13.140.5
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
   **Proxy**              192.95.4.124
 
 ii\. Geo-Location Based

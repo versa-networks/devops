@@ -7,7 +7,10 @@ The script will inspect every access rules for a given CPE on Versa Director and
 4) set.rule.disable  : Disable the rule
 5) set.rule.enable   : Enable the rule
 6) set.tag:XXX       : Tag the rule with the value XXX
+<<<<<<< HEAD
+=======
 7) delete            : Delete the rule
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
 
 In addition the script can execute those action for a subset of the existing rules based on a filter such as:
 
@@ -18,10 +21,14 @@ In addition the script can execute those action for a subset of the existing rul
 5) is.enable            : Match enabled rules
 6) is.disable           : Match disabled rules
 7) has.tag:XXX          : Match rules with the tag value XXX
+<<<<<<< HEAD
+8) none                 : Match any rules
+=======
 8) has.action.allow     : Match rules with the action allow')
 9) has.zone.src:XXX     : Match rules with the source zone XXX')
 10) has.zone.dst:XXX    : Match rules with the destination zone XXX')
 11) none                : Match any rules
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
 
 ## Installation and Dependencies
 You will need python3 as well as differents python package. They can be installed locally with pip3
@@ -43,9 +50,14 @@ Before you get started make sure you have the following information:
 
 ![ALT](./rules-edit.png)
 
+<<<<<<< HEAD
+##  Example
+
+=======
 One you have the settings above, you can use the script following the instruction in the Example section.
 
 ##  Example
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
 I'm putting below a couple of interresting examples to perform mass changes on VOS access policies. 
 Note that by default, ```--user=Administrator``` and  ```--password=versa123```. Make sure you change those variable if required.
    
@@ -70,6 +82,10 @@ Delete all disabled rules from the CPE BRANCH-11 .
 ```
 
 ## How to use the Help command
+<<<<<<< HEAD
+
+=======
+>>>>>>> 542986d30afb78ccc6db2f97bbd644f3231bb1e3
 You can execute the script with the help flag at different level to help you the syntax.
 ```
 % python3 access-rules-edit.py --help
