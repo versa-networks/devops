@@ -11,5 +11,5 @@ vd: "{{ hostvars['director01']['ansible_host'] }}"
 port: 9182
 rest_api: "{{ vd }}:{{port}}"
 base_url: "https://{{ rest_api }}/"
-rest_api_username: Administrator
-rest_api_password: V3rsa@123
+rest_api_username:
+rest_api_password:

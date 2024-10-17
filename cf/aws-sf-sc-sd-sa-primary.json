@@ -1,0 +1,972 @@
+ {
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "WARNING: This template will create three c5.xlarge instances which will be billed at your AWS EC2 rates.  The template creates a minimal Versa Head-end in a new VPC.  It instantiates Versa Director, Versa Analytics single-VM cluster, and a single Versa Controller, as well as all the networking subnets, interfaces, EIPs, etc. needed to connect them together.  Use the Outputs tab on the CloudFormation console to obtain the public IP addresses assigned to each VM.",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": { "default": "Network Parameters for your Head-End" },
+                    "Parameters": ["VPCCIDR"]
+                },
+                {
+                    "Label": { "default": "Secondary Head-End Director Southbound IP" },
+                    "Parameters": [ "DIRSBIP" ]
+                },
+                {
+                    "Label": { "default": "Secondary Head-End Control Network" },
+                    "Parameters": [ "REMOTECONTROL" ]
+                },
+                {
+                    "Label": { "default": "Secondary Head-End MGMT Network" },
+                    "Parameters": [ "REMOTEMGMT" ]
+                },
+                {
+                    "Label": { "default": "AvailabilityZone" },
+                    "Parameters": [ "AZ" ]
+                },
+				{
+					"Label": { "default": "" },
+					"Parameters": ["Owner"]
+				},
+                {
+                    "Label": { "default": "Amazon EC2 Parameters" },
+                    "Parameters": [ "KeyPairName" ]
+                }
+            ],
+            "ParameterLabels": {
+                "KeyPairName": { "default": "Select a key pair to use to login to your instances" }
+            }
+        }
+    },
+    "Parameters": {
+        "KeyPairName": {
+            "Description": "Public/private key pairs allow you to securely connect to your VM instances after they launch.",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        },
+        "AZ": {
+            "Description": "Select existing AvailabilityZone within which to create this stack",
+            "Type": "AWS::EC2::AvailabilityZone::Name"
+        },
+        "VPCCIDR": {
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){2}((0|00|000)\\.)(0|00|000)(\\/(16))$",
+            "ConstraintDescription": "CIDR block for the new VPC be in the format x.x.0.0/16",
+            "Default": "10.234.0.0/16",
+            "Description": "CIDR block for the VPC.   Must be in the format x.x.0.0/16",
+            "Type": "String"
+        },
+        "DIRSBIP": {
+            "Default": "10.235.1.101",
+            "Description": "Secondary Director Southbound/Control IP address",
+            "Type": "String"
+        },
+        "REMOTECONTROL": {
+            "Default": "10.235.1.0/24",
+            "Description": "Secondary VPC control network subnet",
+            "Type": "String"
+        },
+        "REMOTEMGMT": {
+            "Default": "10.235.0.0/24",
+            "Description": "Secondary VPC control network subnet",
+            "Type": "String"
+        },
+        "AnalyticsRootVolumeSize": {
+            "Description": "Analytics root volume size. By default 80 GiB volume will be created. Please provide the input in GiBs",
+            "Type": "String",
+            "Default": "80"
+        },
+		"Owner": {
+			"Default": "",
+			"Description": "Owner of the Stack (Fullname. Example: John Doe)",
+			"Type": "String"
+		}
+    },
+    "Mappings" : {
+		"RegionAndInstanceTypeToAMIID" : {
+			"ap-northeast-1": {
+				"Director" : "ami-5a71523d",
+				"Analytics" : "ami-be7a59d9",
+				"Controller" : "ami-3b7b585c",
+				"FlexVNF" : "ami-5d9c2127"
+			},
+			"sa-east-1": {
+				"Director" : "ami-e30b698f",
+				"Analytics" : "ami-7c0b6910",
+				"Controller" : "ami-a50466c9",
+				"FlexVNF" : "ami-5d9c2127"
+			},
+			"ap-southeast-1": {
+				"Director" : "ami-03fef6cf0d0f6c855",
+				"Analytics" : "ami-0596c83498ff83b63",
+				"Controller" : "ami-07fcabd32d86b217a",
+				"FlexVNF" : "ami-5d9c2127"
+			},
+			"ap-southeast-2": {
+				"Director" : "ami-dcdcd2bf",
+				"Analytics" : "ami-82d8d6e1",
+				"Controller" : "ami-84d8d6e7",
+				"FlexVNF" : "ami-5d9c2127"
+			},
+			"eu-central-1": { 
+				"Director" : "ami-9f2dfef0",
+				"Analytics" : "ami-852dfeea",
+				"Controller" : "ami-152cff7a",
+				"FlexVNF" : "ami-5d9c2127"
+			},
+			"us-east-1": { 
+				"Director" : "ami-3e30bf28",
+				"Analytics" : "ami-3b32bd2d",
+				"Controller" : "ami-2835ba3e",
+				"FlexVNF" : "ami-5d9c2127"
+			},
+			"us-west-1": { 
+				"Director" : "ami-06d43909fa12d9a47",
+				"Analytics" : "ami-028892f5c263520dc",
+				"Controller" : "ami-03878c571f3c1c378",
+				"FlexVNF" : "ami-5d9c2127"
+			},
+			"us-west-2": {
+				"Director" : "ami-0b66b2d650c464da7",
+				"Analytics" : "ami-065a0faaa56857ae0",
+				"Controller" : "ami-04b2f4096be3e51f2",
+				"FlexVNF" : "ami-04b2f4096be3e51f2"
+			}
+		}
+    },
+	"Resources": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "VPCCIDR"
+                },
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true",
+                "Tags": [
+                    { "Key": "Name", "Value": { "Ref": "AWS::StackName" } }
+                ]
+            }
+        },
+          "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+					{ "Key": "Network", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Public" ] ] } }
+				]
+            }
+        },
+        "PublicRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": { "Ref": "VPC" },
+				"Tags": [
+					{ "Key" : "Application", "Value": { "Ref": "AWS::StackName" } },
+					{ "Key" : "Network", "Value" : "Public" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "PublicRouteTable" ] ] } }
+				]
+			}
+        },
+        "PublicRoute": {
+          "Type": "AWS::EC2::Route",
+          "Properties": {
+            "RouteTableId": {
+              "Ref": "PublicRouteTable"
+            },
+            "DestinationCidrBlock": "0.0.0.0/0",
+            "GatewayId": {
+              "Ref": "InternetGateway"
+            }
+          }
+        },
+        "VPCGatewayAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "ManagementSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+               "CidrBlock": {
+                    "Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.0/24" ] ]
+                },
+                "AvailabilityZone" : { "Ref" : "AZ" },
+                "Tags": [
+                    { "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Management Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Management" }
+                ],
+                "MapPublicIpOnLaunch": true
+            }
+        },
+        "AnalyticsInternalSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+               "CidrBlock": {
+                    "Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "10.0/24" ] ]
+                },
+                "AvailabilityZone" : { "Ref" : "AZ" },
+                "Tags": [
+                    { "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Analytics Internal Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Private" }
+                ]
+            }
+        },
+        "ControlSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": {
+                    "Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "1.0/24" ] ]
+                },
+                "AvailabilityZone" : { "Ref" : "AZ" },
+                "Tags": [
+                    { "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Control Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Private" }
+                ]
+            }
+        },
+        "InternetSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": {
+                    "Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "2.0/24" ] ]
+                },
+                "AvailabilityZone" : { "Ref" : "AZ" },
+                "Tags": [
+					{ "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Internet Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Public" }
+                ],
+                "MapPublicIpOnLaunch": true
+            }
+        },
+        "ManagementSubnetRouteTableAssociation": {
+          "Type": "AWS::EC2::SubnetRouteTableAssociation",
+          "Properties": {
+            "SubnetId": {
+              "Ref": "ManagementSubnet"
+            },
+            "RouteTableId": {
+              "Ref": "PublicRouteTable"
+            }
+          }
+        },
+        "InternetSubnetRouteTableAssociation": {
+          "Type": "AWS::EC2::SubnetRouteTableAssociation",
+          "Properties": {
+            "SubnetId": {
+              "Ref": "InternetSubnet"
+            },
+            "RouteTableId": {
+              "Ref": "PublicRouteTable"
+            }
+          }
+        },
+        "DirectorManagementInterface" : {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+             "SubnetId" : { "Ref" : "ManagementSubnet" },
+             "Description" :"Director eth0 management/Northbound Interface",
+             "GroupSet" : [ {"Ref" : "SSHSecurityGroup"} ],
+             "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.101" ] ]
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Management" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Director Management" ] ] } }
+				]
+           }
+        },
+        "DirectorControlInterface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "Director eth1 Southbound/control Interface",
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "1.101" ] ]
+              },
+              "SubnetId": {
+                "Ref": "ControlSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Control" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Director Control" ] ] } }
+				]
+           }
+        },
+        "Analytics1ManagementInterface" : {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+             "SubnetId" : { "Ref" : "ManagementSubnet" },
+             "Description" :"Analytics eth0 management/Northbound Interface",
+             "GroupSet" : [ {"Ref" : "SSHSecurityGroup"} ],
+             "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.102" ] ]
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Management" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Analytics 1 Management" ] ] } }
+				]
+           }
+        },
+        "Analytics1ControlInterface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "Analytics eth1 Southbound/control Interface",
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "1.102" ] ]
+              },
+              "SubnetId": {
+                "Ref": "ControlSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Control" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Analytics 1 Control" ] ] } }
+				]
+           }
+        },
+        "Analytics1InternalInterface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "Analytics eth2 Internal Interface",
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "10.101" ] ]
+              },
+              "SubnetId": {
+                "Ref": "AnalyticsInternalSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Internal" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Analytics 1 Internal" ] ] } }
+				]
+           }
+        },
+        "ControllerManagementInterface" : {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+             "SubnetId" : { "Ref" : "ManagementSubnet" },
+             "Description" :"Controller eth0 management Interface",
+             "GroupSet" : [ {"Ref" : "SSHSecurityGroup"} ],
+             "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.103" ] ]
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Management" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Controller Management" ] ] } }
+				]
+           }
+        },
+        "ControllerControlInterface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "Controller Northbound/control Interface",
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "1.103" ] ]
+              },
+              "SubnetId": {
+                "Ref": "ControlSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Management" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Controller Control" ] ] } }
+				]
+           }
+        },
+        "ControllerInternetInterface" : {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+             "SubnetId" : { "Ref" : "InternetSubnet" },
+             "Description" :"Controller primary Internet Interface",
+             "GroupSet" : [ {"Ref" : "WebSecurityGroup"} ],
+             "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "2.103" ] ]
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Internet"},
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Controller Internet" ] ] } }
+				]
+           }
+        },
+        "FlexVNF1ManagementInterface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "FlexVNF1 Management Interface",
+              "GroupSet" : [ {"Ref" : "SSHSecurityGroup"} ],
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.121" ] ]
+              },
+              "SubnetId": {
+                "Ref": "ManagementSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Management" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "FlexVNF Management" ] ] } }
+				]
+           }
+        },
+        "FlexVNF1Management2Interface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "FlexVNF1 Management Interface",
+              "GroupSet" : [ {"Ref" : "SSHSecurityGroup"} ],
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.131" ] ]
+              },
+              "SubnetId": {
+                "Ref": "ManagementSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Management" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "FlexVNF Management 2" ] ] } }
+				]
+           }
+        },
+        "FlexVNF1ControlInterface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "FlexVNF1 Northbound Interface",
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "1.121" ] ]
+              },
+              "SubnetId": {
+                "Ref": "ControlSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Control" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "FlexVNF Control" ] ] } }
+				]
+           }
+        },
+        "FlexVNF1InternetInterface": {
+           "Type" : "AWS::EC2::NetworkInterface",
+           "Properties" : {
+              "Description" : "FlexVNF1 Internet Interface",
+              "GroupSet" : [ {"Ref" : "BGPIPSECSecurityGroup"} ],
+              "SourceDestCheck" : "false",
+              "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                    { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                    { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "2.121" ] ]
+              },
+              "SubnetId": {
+                "Ref": "InternetSubnet"
+              },
+				"Tags" : [
+					{ "Key" : "Network", "Value" : "Internet"},
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "FlexVNF Internet" ] ] } }
+				]
+           }
+        },
+        "DirectorManagementAddress" : {
+           "Type" : "AWS::EC2::EIP",
+           "Properties" : {
+             "Domain" : "vpc"
+           }
+        },
+        "ControllerInternetAddress" : {
+           "Type" : "AWS::EC2::EIP",
+           "Properties" : {
+             "Domain" : "vpc"
+           }
+        },
+        "FlexVNF1ManagementAddress" : {
+           "Type" : "AWS::EC2::EIP",
+           "Properties" : {
+             "Domain" : "vpc"
+           }
+        },
+        "FlexVNF1InternetAddress" : {
+			"Type" : "AWS::EC2::EIP",
+			"Properties" : {
+				"Domain" : "vpc"
+			}
+        },
+        "AssociateDirectorManagementPort" : {
+           "Type" : "AWS::EC2::EIPAssociation",
+           "Properties" : {
+             "AllocationId" : { "Fn::GetAtt" : [ "DirectorManagementAddress", "AllocationId" ]},
+             "NetworkInterfaceId" : { "Ref" : "DirectorManagementInterface" }
+           }
+        },
+          "AssociateControllerInternetPort" : {
+           "Type" : "AWS::EC2::EIPAssociation",
+           "Properties" : {
+             "AllocationId" : { "Fn::GetAtt" : [ "ControllerInternetAddress", "AllocationId" ]},
+             "NetworkInterfaceId" : { "Ref" : "ControllerInternetInterface" }
+           }
+        },
+        "AssociateFlexVNF1ManagementPort" : {
+           "Type" : "AWS::EC2::EIPAssociation",
+           "Properties" : {
+             "AllocationId" : { "Fn::GetAtt" : [ "FlexVNF1ManagementAddress", "AllocationId" ]},
+             "NetworkInterfaceId" : { "Ref" : "FlexVNF1ManagementInterface" }
+           }
+        },
+        "AssociateFlexVNF1InternetPort" : {
+           "Type" : "AWS::EC2::EIPAssociation",
+           "Properties" : {
+             "AllocationId" : { "Fn::GetAtt" : [ "FlexVNF1InternetAddress", "AllocationId" ]},
+             "NetworkInterfaceId" : { "Ref" : "FlexVNF1InternetInterface" }
+           }
+        },
+        "SSHSecurityGroup" : {
+           "Type" : "AWS::EC2::SecurityGroup",
+           "Properties" : {
+             "VpcId" : { "Ref" : "VPC" },
+             "GroupDescription" : "Open External Ports",
+             "SecurityGroupIngress" : [
+					{ "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "443", "ToPort" : "443", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "2022", "ToPort" : "2022", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "8080", "ToPort" : "8080", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "8443", "ToPort" : "8443", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "9182", "ToPort" : "9182", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "9183", "ToPort" : "9183", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "9090", "ToPort" : "9090", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" } 
+				],
+				"Tags" : [
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "SSHSecurityGroup" ] ] } }
+				]
+           }
+        },
+        "WebSecurityGroup" : {
+           "Type" : "AWS::EC2::SecurityGroup",
+           "Properties" : {
+             "VpcId" : { "Ref" : "VPC" },
+             "GroupDescription" : "Enable HTTP access via user defined port",
+             "SecurityGroupIngress" : [ 
+                    { "IpProtocol" : "udp", "FromPort" : 4500, "ToPort" : 4500, "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "udp", "FromPort" : 4790, "ToPort" : 4790, "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "udp", "FromPort" : 500, "ToPort" : 500, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "udp", "FromPort" : 3002, "ToPort" : 3003, "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "tcp", "FromPort" : 1024, "ToPort" : 1120, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 3000, "ToPort" : 3003, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 9878, "ToPort" : 9878, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 2022, "ToPort" : 2022, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 8443, "ToPort" : 8443, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 22, "ToPort" : 22, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : 50, "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" }],
+				"Tags" : [
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "WebSecurityGroup" ] ] } }
+				]
+           }
+        },
+        "BGPIPSECSecurityGroup" : {
+           "Type" : "AWS::EC2::SecurityGroup",
+           "Properties" : {
+             "VpcId" : { "Ref" : "VPC" },
+             "GroupDescription" : "Enable BGP and IPSEC for Transport",
+             "SecurityGroupIngress" : [
+                    { "IpProtocol" : "udp", "FromPort" : 4500, "ToPort" : 4500, "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "udp", "FromPort" : 4790, "ToPort" : 4790, "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "tcp", "FromPort" : "179", "ToPort" : "179", "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "udp", "FromPort" : 500, "ToPort" : 500, "CidrIp" : "0.0.0.0/0" } ],
+				"Tags" : [
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "BGPIPSECSecurityGroup" ] ] } }
+				]
+           }
+        },
+        "VersaDirector" : {
+          "Type" : "AWS::EC2::Instance",
+          "Properties" : {
+            "ImageId" : { "Fn::FindInMap" : [ "RegionAndInstanceTypeToAMIID", { "Ref" : "AWS::Region" }, "Director" ]},
+            "InstanceType" : "c5.xlarge",
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/sda1",
+                    "Ebs": { "DeleteOnTermination": "true" }
+                }
+            ],
+            "AvailabilityZone" : { "Ref" : "AZ" },
+            "KeyName" : { "Ref" : "KeyPairName" },
+            "NetworkInterfaces" : [ { "NetworkInterfaceId" : {"Ref" : "DirectorManagementInterface"}, "DeviceIndex" : "0" },
+                                    { "NetworkInterfaceId" : {"Ref" : "DirectorControlInterface"}, "DeviceIndex" : "1" }
+            ],
+            "Tags": [ 
+				{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Director" ] ] } },
+				{ "Key" : "Role", "Value" : "Director" },
+				{ "Key" : "Owner", "Value" : { "Ref": "Owner" } }
+			],
+            "UserData": {
+                "Fn::Base64": {
+                  "Fn::Join": [
+                    "",
+                    [
+                    "#cloud-config\n",
+                    "cloud_init_modules:\n",
+                    "  - write-files\n",
+                    "  - set_hostname\n",
+                    "  - update_hostname\n",
+                    "  - users-groups\n",
+                    "  - ssh\n",
+                    "hostname: director-1\n",
+                    "write_files:\n",
+                    "- content: |\n",
+                    "    #writen by cloud-init write-files module\n",
+                    "    auto lo\n",
+                    "    auto eth0\n",
+                    "    iface lo inet loopback\n",
+                    "    iface eth0 inet dhcp\n",
+                    "       up route add -net 0.0.0.0/0 gw ",{"Fn::Join" : [ ".", [
+                          { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                          { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.1" ] ] }," dev eth0\n",
+                    "      up route add -net ",{ "Ref" : "REMOTEMGMT" }," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] }," dev eth0\n",
+                    "    auto eth1\n",
+                    "    iface eth1 inet dhcp\n",
+                    "      up route add -net 10.0.0.0/8 gw ",{ "Fn::GetAtt" : [ "FlexVNF1ControlInterface", "PrimaryPrivateIpAddress" ] }," dev eth1\n",
+                    "      post-up route del default gw ",{"Fn::Join" : [ ".", [
+                          { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                          { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.1" ] ] }," dev eth1\n",
+                    "       up route add -host ",{"Ref" : "DIRSBIP"} ," gw ",{ "Fn::GetAtt" : [ "FlexVNF1ControlInterface", "PrimaryPrivateIpAddress" ] },"\n",
+                    "  path: /etc/network/interfaces\n",
+                    "- content: |\n",
+                    "    #!/bin/bash\n",
+                    "    sed -i -e '$a Match Address ",{ "Fn::GetAtt" : [ "Analytics1ManagementInterface", "PrimaryPrivateIpAddress" ] },"/32' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a Match Address ",{ "Fn::GetAtt" : [ "Analytics1ControlInterface", "PrimaryPrivateIpAddress" ] },"/32' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a Match Address ",{ "Ref" : "REMOTECONTROL" },"' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a Match Address ",{ "Ref" : "REMOTEMGMT" },"' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+		            "    sudo sed -i -e '$a Match all' /etc/ssh/sshd_config\n",
+                    "    sudo route add -host ",{"Ref" : "DIRSBIP"} ," gw ",{ "Fn::GetAtt" : [ "FlexVNF1ControlInterface", "PrimaryPrivateIpAddress" ] },"\n",
+                    "    sudo route add -net  ",{ "Ref" : "REMOTEMGMT" }," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] }," dev eth0\n",
+                    "    sudo sed -i -e 's/versa-director/director-1/g' /etc/hosts\n",
+                    "    sudo rm -rf /var/versa/vnms/data/certs/\n",
+                    "    #sudo /opt/versa/vnms/scripts/vnms-certgen.sh\n",
+                    "    sudo su -c '/opt/versa/vnms/scripts/vnms-certgen.sh --cn director-1 --san director-2 --overwrite' versa > /tmp/cert-gen.log\n",
+                    "    logger generate director self signed cert\n",
+                    "    sudo chown -R versa:versa /var/versa/vnms/data/certs/\n",
+                    "    sudo service ssh restart\n",
+                    "    logger ssh restart\n",
+                    "    sudo /opt/versa/vnms/scripts/vnms-startup.sh --non-interactive\n",
+                    "    logger run vnms-startup.sh \n",
+                    "    sudo su -lc \"vsh restart\" Administrator > /tmp/vsh-restart.log\n",
+                    "    logger vsh restart \n",
+                    "  permissions: \"0755\"\n",
+                    "  path: /tmp/director.sh\n",
+                    "- content: |\n",
+                    "    {\n",
+                    "      \"input\":{\n",
+                    "            \"version\":\"1.0\",\n",
+                    "            \"south-bound-interface\":[\"eth1\"],\n",
+                    "            \"hostname\":\"director-1\"\n",
+                    "        }\n",
+                    "    }\n",
+                    "  path: /opt/versa/etc/setup.json\n",
+                    "cloud_final_modules:\n",
+                    " - runcmd\n",
+                    " - scripts-user\n",
+                    "runcmd:\n",
+                    " - /tmp/director.sh\n",
+                    "\n"
+                     ]
+                  ]
+                }
+            }
+          }
+        },
+        "VersaAnalytics1" : {
+          "Type" : "AWS::EC2::Instance",
+          "Properties" : {
+            "ImageId" : { "Fn::FindInMap" : [ "RegionAndInstanceTypeToAMIID", { "Ref" : "AWS::Region" }, "Analytics" ]},
+            "InstanceType" : "c5.2xlarge",
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/sda1",
+                    "Ebs": {
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": {
+                            "Ref": "AnalyticsRootVolumeSize"
+                        }
+                    }
+                }
+            ],
+            "AvailabilityZone" : { "Ref" : "AZ" },
+            "KeyName" : { "Ref" : "KeyPairName" },
+            "NetworkInterfaces" : [ { "NetworkInterfaceId" : {"Ref" : "Analytics1ManagementInterface"}, "DeviceIndex" : "0" },
+                                    { "NetworkInterfaceId" : {"Ref" : "Analytics1ControlInterface"}, "DeviceIndex" : "1" },
+                                { "NetworkInterfaceId" : {"Ref" : "Analytics1InternalInterface"}, "DeviceIndex" : "2" }
+            ],
+				"Tags" : [
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Analytics1" ] ] } },
+					{ "Key" : "Role", "Value" : "Analytics" },
+					{ "Key" : "Owner", "Value" : { "Ref": "Owner" } } 
+				],
+            "UserData": {
+                "Fn::Base64": {
+                  "Fn::Join": [
+                    "",
+                    [
+                    "#cloud-config\n",
+                    "cloud_init_modules:\n",
+                    "  - write-files\n",
+                    "  - set_hostname\n",
+                    "  - update_hostname\n",
+                    "  - users-groups\n",
+                    "  - ssh\n",
+                    "hostname: analytics-1\n",
+                    "write_files:\n",
+                    "- content: |\n",
+                    "    #writen by cloud-init write-files module\n",
+                    "    auto lo\n",
+                    "    auto eth0\n",
+                    "    iface lo inet loopback\n",
+                    "    iface eth0 inet dhcp\n",
+                    "       up route add -net 0.0.0.0/0 gw ",{"Fn::Join" : [ ".", [
+                          { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                          { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.1" ] ] }," dev eth0\n",
+                    "      up route add -net ",{ "Ref" : "REMOTEMGMT" }," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] }," dev eth0\n",
+                    "    auto eth1\n",
+                    "    iface eth1 inet dhcp\n",
+                    "      up route add -net 10.0.0.0/8 gw ",{ "Fn::GetAtt" : [ "FlexVNF1ControlInterface", "PrimaryPrivateIpAddress" ] }," dev eth1\n",
+                    "      post-up route del default gw ",{"Fn::Join" : [ ".", [
+                          { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                          { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.1" ] ] }," dev eth1\n",
+                    "    auto eth2\n",
+                    "    iface eth2 inet dhcp\n",
+                    "  path: /etc/network/interfaces\n",
+                    "- content: |\n",
+                    "    #!/bin/bash\n",
+                    "    sed -i -e '$a Match Address ",{ "Fn::GetAtt" : [ "DirectorManagementInterface", "PrimaryPrivateIpAddress" ] },"/32' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a Match Address ",{ "Fn::GetAtt" : [ "DirectorControlInterface", "PrimaryPrivateIpAddress" ] },"/32' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a Match Address ",{ "Ref" : "REMOTECONTROL" },"' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a ",{ "Fn::GetAtt" : [ "DirectorControlInterface", "PrimaryPrivateIpAddress" ] }," director-1' /etc/hosts\n",
+                    "    sed -i -e '$a Match Address ",{ "Ref" : "REMOTEMGMT" },"' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+		            "    sudo sed -i -e '$a Match all' /etc/ssh/sshd_config\n",
+                    "    sed -i -e '$a ",{"Ref" : "DIRSBIP"}," director-2' /etc/hosts\n",
+                    "    sudo sed -i -e 's/versa-analytics/analytics-1/g' /etc/hosts\n",
+                    "    sudo route add -net  ",{ "Ref" : "REMOTEMGMT" }," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] }," dev eth0\n",
+                    "    sudo apt-get install -y sshpass\n",
+                    "    logger apt-get install sshpass\n",
+                    "    sudo rm /opt/versa/var/van-app/certificates/versa_director_*\n",
+                    "    sudo service ssh restart\n",
+                    "    logger ssh restart\n",
+                    "    sleep 4m\n",
+                    "    logger sleep 4 minute\n",
+                    "    sudo sshpass -p \"versa123\" scp  -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null admin@",{ "Fn::GetAtt" : [ "DirectorManagementInterface", "PrimaryPrivateIpAddress" ] },":/var/versa/vnms/data/certs/versa_director_client.cer /opt/versa/var/van-app/certificates\n",
+                    "    logger scp director cert using sshpass\n",
+                    "    sudo /opt/versa/scripts/van-scripts/van-vd-cert-install.sh /opt/versa/var/van-app/certificates/versa_director_client.cer director-1\n",
+                    "    sudo /opt/versa/scripts/van-scripts/van-vd-cert-install.sh /opt/versa/var/van-app/certificates/versa_director_client.cer director-2\n",
+                    "    logger install cert\n",
+                    "  permissions: \"0755\"\n",
+                    "  path: /tmp/analytics.sh\n",
+                    "cloud_final_modules:\n",
+                    " - runcmd\n",
+                    " - scripts-user\n",
+                    "runcmd:\n",
+                    " - /tmp/analytics.sh\n",
+                    "\n"
+                     ]
+                  ]
+                }
+            }
+
+          }
+        },
+        "VersaController" : {
+			"Type" : "AWS::EC2::Instance",
+			"Properties" : {
+				"ImageId" : { "Fn::FindInMap" : [ "RegionAndInstanceTypeToAMIID", { "Ref" : "AWS::Region" }, "Controller" ]},
+				"InstanceType" : "c5.xlarge",
+				"BlockDeviceMappings": [
+					{
+						"DeviceName": "/dev/sda1",
+						"Ebs": { "DeleteOnTermination": "true" }
+					}
+				],
+            "AvailabilityZone" : { "Ref" : "AZ" },
+            "KeyName" : { "Ref" : "KeyPairName" },
+            "NetworkInterfaces" : [ { "NetworkInterfaceId" : {"Ref" : "ControllerManagementInterface"}, "DeviceIndex" : "0" },
+                                    { "NetworkInterfaceId" : {"Ref" : "ControllerControlInterface"}, "DeviceIndex" : "1" },
+                                    { "NetworkInterfaceId" : {"Ref" : "ControllerInternetInterface"}, "DeviceIndex" : "2" }
+                                  ],
+				"Tags" : [ 
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Controller" ] ] } },
+					{ "Key" : "Role", "Value" : "Controller" },
+					{ "Key" : "Owner", "Value" : { "Ref": "Owner" } }
+				],
+            "UserData": {
+                "Fn::Base64": {
+                  "Fn::Join": [
+                    "",
+                    [
+                    "#cloud-config\n",
+                    "cloud_init_modules:\n",
+                    "  - write-files\n",
+                    "  - set_hostname\n",
+                    "  - update_hostname\n",
+                    "  - users-groups\n",
+                    "  - ssh\n",
+                    "hostname: controller-1\n",
+                    "write_files:\n",
+                    "- content: |\n",
+                    "    #writen by cloud-init write-files module\n",
+                    "    auto lo\n",
+                    "    auto eth0\n",
+                    "    iface lo inet loopback\n",
+                    "    iface eth0 inet dhcp\n",
+                    "       up route add -host ",{"Ref" : "DIRSBIP"} ," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] }," dev eth0\n",
+                    "       up route add -net ",{ "Ref" : "REMOTEMGMT" }," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] }," dev eth0\n",
+                    "  path: /etc/network/interfaces\n",
+                    "cloud_final_modules:\n",
+                    " - runcmd\n",
+                    " - scripts-user\n",
+                    "runcmd:\n",
+                    " - sed -i -e '$a Match Address ",{ "Fn::GetAtt" : [ "Analytics1ManagementInterface", "PrimaryPrivateIpAddress" ] },"/32' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a Match Address ",{ "Fn::GetAtt" : [ "DirectorManagementInterface", "PrimaryPrivateIpAddress" ] },"/32' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a Match Address ",{ "Fn::GetAtt" : [ "DirectorControlInterface", "PrimaryPrivateIpAddress" ] },"/32' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a Match Address ",{"Ref" : "DIRSBIP"},"/32' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a Match Address ",{ "Ref" : "REMOTECONTROL" },"' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a Match Address ",{ "Ref" : "REMOTEMGMT" },"' /etc/ssh/sshd_config\n",
+                    " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+		            " - sudo sed -i -e '$a Match all' /etc/ssh/sshd_config\n",
+                    " - sudo route add -host ",{"Ref" : "DIRSBIP"} ," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] },"\n",
+                    " - sudo route add -net  ",{ "Ref" : "REMOTEMGMT" }," gw ",{ "Fn::GetAtt" : [ "FlexVNF1Management2Interface", "PrimaryPrivateIpAddress" ] }," dev eth0\n",
+                    " - sudo service ssh restart\n",
+                    "\n"
+                     ]
+                  ]
+                }
+            }
+
+          }
+        },
+        "FlexVNF1" : {
+			"Type" : "AWS::EC2::Instance",
+			"Properties" : {
+				"ImageId" : { "Fn::FindInMap" : [ "RegionAndInstanceTypeToAMIID", { "Ref" : "AWS::Region" }, "FlexVNF" ]},
+				"InstanceType" : "c5.xlarge",
+				"BlockDeviceMappings": [
+					{
+						"DeviceName": "/dev/sda1",
+						"Ebs": { "DeleteOnTermination": "true" }
+					}
+				],
+				"AvailabilityZone" : { "Ref" : "AZ" },
+				"KeyName" : { "Ref" : "KeyPairName" },
+				"NetworkInterfaces" : [ { "NetworkInterfaceId" : {"Ref" : "FlexVNF1ManagementInterface"}, "DeviceIndex" : "0" },
+                                    { "NetworkInterfaceId" : {"Ref" : "FlexVNF1ControlInterface"}, "DeviceIndex" : "1" },
+                                    { "NetworkInterfaceId" : {"Ref" : "FlexVNF1InternetInterface"}, "DeviceIndex" : "2" },
+                                    { "NetworkInterfaceId" : {"Ref" : "FlexVNF1Management2Interface"}, "DeviceIndex" : "3" }
+				],
+				"Tags" : [ 
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "FlexVNF1" ] ] } },
+					{ "Key" : "Role", "Value" : "FlexVNF" },
+					{ "Key" : "Owner", "Value" : { "Ref": "Owner" } }
+				],
+            "UserData": {
+                "Fn::Base64": {
+                  "Fn::Join": [
+                    "",
+                    [
+                    "#cloud-config\n",
+                    "cloud_init_modules:\n",
+                    "  - write-files\n",
+                    "  - set_hostname\n",
+                    "  - update_hostname\n",
+                    "  - users-groups\n",
+                    "  - ssh\n",
+                    "hostname: flex-primary\n",
+                    "\n"
+                     ]
+                  ]
+                }
+            }
+
+          }
+        }
+    },
+    "Outputs": {
+        "VPCID": {
+            "Value": { "Ref": "VPC" },
+            "Description": "VPC ID"
+        },
+        "DirectorSB": {
+			"Description": "Director Southbound Address",
+			"Value": { "Fn::GetAtt" : [ "DirectorControlInterface", "PrimaryPrivateIpAddress" ] }
+        },
+        "AnalyticsSB": {
+			"Description": "Analytics Southbound Address",
+            "Value": { "Fn::GetAtt" : [ "Analytics1ControlInterface", "PrimaryPrivateIpAddress" ] }
+        },
+        "AnalyticsNB": {
+			"Description": "Analytics Northbound Address",
+            "Value": { "Fn::GetAtt" : [ "Analytics1ManagementInterface", "PrimaryPrivateIpAddress" ] }
+        },
+        "ControllerNB": {
+			"Description": "Controller NB Address",
+            "Value": { "Fn::GetAtt" : [ "ControllerControlInterface", "PrimaryPrivateIpAddress" ] }
+        },
+        "DirectorManagementExt": {
+			"Description": "External Management Address of Versa Director",
+			"Value": { "Ref": "DirectorManagementAddress"}
+        },
+        "ControllerInternetInternal": {
+			"Description": "Controller Internet Internal Address",
+            "Value": { "Fn::GetAtt" : [ "ControllerInternetInterface", "PrimaryPrivateIpAddress" ] }
+        },
+        "ControllerInternetExt": {
+			"Description": "Internet Transport Domain Address for the Controller",
+			"Value": { "Ref": "ControllerInternetAddress" }
+        }
+    }
+}

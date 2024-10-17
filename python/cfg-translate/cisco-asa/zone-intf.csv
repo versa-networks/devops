@@ -1,0 +1,5 @@
+#ASA-Interface,Versa-Interface,Versa-Zone,Tenant
+GigabitEthernet0/0,vni-0/0.0,Untrust,ATI
+GigabitEthernet0/1,vni-0/1.0,Intf-LAN-Zone,ATI
+GigabitEthernet0/2,vni-0/2.0,DMZ,ATI
+GigabitEthernet0/3,vni-0/3.0,HA-Zone,ATI

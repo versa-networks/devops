@@ -1,0 +1,596 @@
+
+> show access-control-config
+
+====================[ DC1_ACP ]=====================
+Description               :
+Default Action            : Allow
+Default Policy            : Balanced Security and Connectivity
+Logging Configuration
+    DC                    : Enabled
+    Beginning             : Disabled
+    End                   : Enabled
+Rule Hits                 : 8652940
+Variable Set              : ATI_Variable_Set
+
+===[ Security Intelligence - Network Whitelist ]====
+    Name                  : Global-Whitelist (List)
+    IP Count              : 1
+    Zone                  : any
+
+    Name                  : IPv4-Private-172.31.0.0-21
+    Zone                  : any
+
+    Name                  : IPv4-Private-10.0.0.0-8
+    Zone                  : any
+
+===[ Security Intelligence - Network Blacklist ]====
+Logging Configuration     : Enabled
+    DC                    : Enabled
+
+
+---------------------[ Block ]----------------------
+    Name                  : Attackers (Feed)
+    Zone                  : any
+
+    Name                  : Bogon (Feed)
+    Zone                  : any
+
+    Name                  : Bots (Feed)
+    Zone                  : any
+
+    Name                  : Cryptomining (Feed)
+    Zone                  : any
+
+    Name                  : CnC (Feed)
+    Zone                  : any
+
+    Name                  : Dga (Feed)
+    Zone                  : any
+
+    Name                  : Exploitkit (Feed)
+    Zone                  : any
+
+    Name                  : NHISAC_WannaCry (List)
+    IP Count              : 14
+    Zone                  : any
+
+    Name                  : Malware (Feed)
+    Zone                  : any
+
+    Name                  : Open_proxy (Feed)
+    Zone                  : any
+
+    Name                  : Open_relay (Feed)
+    Zone                  : any
+
+    Name                  : Phishing (Feed)
+    Zone                  : any
+
+    Name                  : Response (Feed)
+    Zone                  : any
+
+    Name                  : Spam (Feed)
+    Zone                  : any
+
+    Name                  : Suspicious (Feed)
+    Zone                  : any
+
+    Name                  : Tor_exit_node (Feed)
+    Zone                  : any
+
+    Name                  : TOR_Nodes_05182017 (List)
+    IP Count              : 6931
+    Zone                  : any
+
+    Name                  : Global-Blacklist (List)
+    IP Count              : 6
+    Zone                  : any
+
+=====[ Security Intelligence - URL Whitelist ]======
+    Name                  : WannaCry_URL (List)
+    URL Count             : 1
+    Zone                  : any
+
+    Name                  : Global-Whitelist-for-URL (List)
+    URL Count             : 0
+    Zone                  : any
+
+=====[ Security Intelligence - URL Blacklist ]======
+Logging Configuration     : Enabled
+    DC                   : Enabled
+
+
+---------------------[ Block ]----------------------
+    Name                  : URL_Attackers (Feed)
+    Zone                  : any
+
+    Name                  : URL_Bogon (Feed)
+    Zone                  : any
+
+    Name                  : URL_Bots (Feed)
+    Zone                  : any
+
+    Name                  : URL Cryptomining (Feed)
+    Zone                  : any
+
+    Name                  : URL_CnC (Feed)
+    Zone                  : any
+
+    Name                  : URL_Dga (Feed)
+    Zone                  : any
+
+    Name                  : URL_Exploitkit (Feed)
+    Zone                  : any
+
+    Name                  : URL_Malware (Feed)
+    Zone                  : any
+
+    Name                  : URL_Open_proxy (Feed)
+    Zone                  : any
+
+    Name                  : URL_Open_relay (Feed)
+    Zone                  : any
+
+    Name                  : URL_Phishing (Feed)
+    Zone                  : any
+
+    Name                  : URL_Response (Feed)
+    Zone                  : any
+
+    Name                  : URL_Spam (Feed)
+    Zone                  : any
+
+    Name                  : URL_Suspicious (Feed)
+    Zone                  : any
+
+    Name                  : URL_Tor_exit_node (Feed)
+    Zone                  : any
+
+    Name                  : Global-Blacklist-for-URL (List)
+    URL Count             : 0
+    Zone                  : any
+
+=======[ Security Intelligence - DNS Policy ]=======
+    Name                  : DNS_Policy
+    Logging Configuration : Enabled
+        DC                : Enabled
+
+
+===============[ Rule Set:  (User) ]================
+
+------[ Rule: Block URL business.officedepot ]------
+    Action                : Block
+      ISE Metadata          :
+
+    Source Networks       : 10.100.140.0/24
+                            10.10.0.0/16
+    URLs
+      URL Entry           : business.officedepot.com
+    Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 0
+    Variable Set          : Default-Set
+
+---------------[ Rule: SSLVPN_Allow ]---------------
+    Action                : Allow
+      ISE Metadata          :
+
+    Source Networks       : DC1_ASA_Inside (10.100.1.1)
+    Destination Networks  : S01VSEC02 (10.100.130.27)
+    Destination Ports     : HTTP (protocol 6, port 80)
+                            HTTPS (protocol 6, port 443)
+    URLs
+    Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Comments
+      Username            : jamie.newberry
+      Timestamp           : 1969-12-31 23:59:59
+      Message             : Web VPN (ASA Internal Trust) Rule update
+    Safe Search           : No
+    Rule Hits             : 21
+    Variable Set          : Default-Set
+
+------------[ Rule: Block_Geo_Inbound ]-------------
+    Action                : Block-with-reset
+      ISE Metadata          :
+
+    Source Networks       : Inbound_Geo_Block (73 countries)
+    URLs
+    Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Comments
+      Username            : jamie.newberry
+      Timestamp           : 1969-12-31 23:59:59
+      Message             : Geolocation Test Rule
+    Safe Search           : No
+    Rule Hits             : 115
+    Variable Set          : Default-Set
+
+------------[ Rule: Block_Geo_Outbound ]------------
+    Action                : Block-with-reset
+      ISE Metadata          :
+
+    Destination Networks  : Outbound_Geo_Block (74 countries)
+    URLs
+    Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 4730
+    Variable Set          : Default-Set
+
+-----------[ Rule: Block_Network_Global ]-----------
+    Action                : Block-with-reset
+      ISE Metadata          :
+
+    Destination Networks  : Badguy001 (104.27.162.88)
+                            Badguy002 (162.251.232.71)
+                            Badguy003 (165.84.230.83)
+                            Badguy004 (178.32.214.75)
+                            Badguy005 (185.165.123.117)
+                            Badguy006 (185.165.123.4)
+                            Badguy007 (195.181.168.208)
+                            Badguy008 (216.151.183.80)
+                            Badguy009 (35.185.3.137)
+                            Badguy010 (64.145.67.254)
+    URLs
+    Logging Configuration
+    DC                    : Disabled
+      Beginning           : Disabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 0
+    Variable Set          : Default-Set
+
+-------------[ Rule: Block_URL_Global ]-------------
+    Action                : Block-with-reset
+      ISE Metadata          :
+
+    URLs
+      URL Entry           : planb4all.com - planb4all.com
+      URL Entry           : upgrademailbox.xyz - upgrademailbox.xyz
+      URL Entry           : ukit.me - ukit.me
+      URL Entry           : oeyatrnmkslas.org - oeyatrnmkslas.org
+      URL Entry           : docs.google.com - https://docs.google.com/forms/d/e/
+1FAIpQLScluAphoTfiJOByV7SatL65KHrBGEFUlFGr-vAB4uj6BhbUdQ/viewform
+      URL Entry           : caspio.com - caspio.com
+      URL Entry           : C0NTACT-USER.GA
+      URL Entry           : view.mail.onedrive.com
+      URL Entry           : business.officedepot.com
+      URL Entry           : https://business.officedepot.com
+      URL Entry           : lawfiirm.com
+      Category            : Hate and Racism
+      Category            : Adult and Pornography
+      Reputation          : Risk unknown
+      Category            : Malware Sites
+      Reputation          : Risk unknown
+      URL Entry           : URL_Phishing (Feed)
+    Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 1292
+    Variable Set          : Default-Set
+
+------------[ Rule: Allow_Apps_Global ]-------------
+    Action                : Allow
+      ISE Metadata          :
+
+    Application           : Skype Tunneling (1126)
+    URLs
+    Logging Configuration
+    DC                    : Disabled
+      Beginning           : Disabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 17421
+    Variable Set          : Default-Set
+
+------------[ Rule: Block_Apps_Global ]-------------
+    Action                : Block-with-reset
+      ISE Metadata          :
+
+    Application           : HBO (2652)
+    Application           : HBO GO (2711)
+    Application           : Spotify (1158)
+    Application           : Category: peer to peer (82)
+    Application           : Tag: BitTorrent (26)
+    Application           : ESPN Video (2933)
+    Application           : NBC (1988)
+    Application           : Netflix (756)
+    Application           : Netflix stream (939)
+    Application           : Pandora (779)
+    URLs
+    Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 5156
+    Variable Set          : Default-Set
+
+--------------[ Rule: Allow_URL_RDS ]---------------
+    Action                : Allow
+      ISE Metadata          :
+
+    Source Networks       : RDS-NT (10.100.140.18-10.100.140.20)
+                            RDS-Omega (10.100.100.111-10.100.100.113)
+                            RDS-URL (10.100.140.0/24)
+    URLs
+      URL Entry           : RDS_NT_Whitelist -     Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 1612433
+    Variable Set          : Default-Set
+
+----------[ Rule: Block_URL_RDS_Deny_All ]----------
+    Action                : Block-with-reset
+      ISE Metadata          :
+
+    Source Networks       : RDS-NT (10.100.140.18-10.100.140.20)
+                            RDS-Omega (10.100.100.111-10.100.100.113)
+                            RDS-URL (10.100.140.0/24)
+    URLs
+      Category            : Adult and Pornography
+      Reputation          : Risk unknown
+      Category            : Hate and Racism
+      Reputation          : Risk unknown
+      Category            : Social Network
+      Reputation          : Risk unknown
+      Category            : SPAM URLs
+      Reputation          : Risk unknown
+      Category            : Web Hosting Sites
+      Reputation          : Risk unknown
+      Category            : Web based email
+      Reputation          : Risk unknown
+      Category            : Web Advertisements
+      Reputation          : Risk unknown
+      Category            : Violence
+      Reputation          : Risk unknown
+      Category            : Unconfirmed SPAM Sources
+      Reputation          : Risk unknown
+      Category            : Swimsuits and Intimate Apparel
+      Reputation          : Risk unknown
+      Category            : Streaming Media
+      Reputation          : Risk unknown
+      Category            : Stock Advice and Tools
+      Reputation          : Risk unknown
+      Category            : Spyware and Adware
+      Reputation          : Risk unknown
+      Category            : Sports
+      Reputation          : Risk unknown
+      Category            : Society
+      Reputation          : Risk unknown
+      Category            : Shopping
+      Reputation          : Risk unknown
+      Category            : Shareware and Freeware
+      Reputation          : Risk unknown
+      Category            : Sex Education
+      Reputation          : Risk unknown
+      Category            : Search Engines
+      Reputation          : Risk unknown
+      Category            : Religion
+      Reputation          : Risk unknown
+      Category            : Recreation and Hobbies
+      Reputation          : Risk unknown
+      Category            : Questionable
+      Reputation          : Risk unknown
+      Category            : Proxy Avoid and Anonymizers
+      Reputation          : Risk unknown
+      Category            : Private IP Addresses
+      Reputation          : Risk unknown
+      Category            : Phishing and Other Frauds
+      Reputation          : Risk unknown
+      Category            : Personal Storage
+      Reputation          : Risk unknown
+      Category            : Personal sites and Blogs
+      Reputation          : Risk unknown
+      Category            : Peer to Peer
+      Reputation          : Risk unknown
+      Category            : Pay to Surf
+      Reputation          : Risk unknown
+      Category            : Parked Domains
+      Reputation          : Risk unknown
+      Category            : Open HTTP Proxies
+      Reputation          : Risk unknown
+      Category            : Nudity
+      Reputation          : Risk unknown
+      Category            : News and Media
+      Reputation          : Risk unknown
+      Category            : Music
+      Reputation          : Risk unknown
+      Category            : Malware Sites
+      Reputation          : Risk unknown
+      Category            : Keyloggers and Monitoring
+      Reputation          : Risk unknown
+      Category            : Job Search
+      Reputation          : Risk unknown
+      Category            : Image and Video Search
+      Reputation          : Risk unknown
+      Category            : Illegal
+      Reputation          : Risk unknown
+      Category            : Gross
+      Reputation          : Risk unknown
+      Category            : Games
+      Reputation          : Risk unknown
+      Category            : Gambling
+      Reputation          : Risk unknown
+      Category            : Confirmed SPAM Sources
+      Reputation          : Risk unknown
+      Category            : Abused Drugs
+      Reputation          : Risk unknown
+      Category            : Auctions
+      Reputation          : Risk unknown
+      Category            : Dead Sites (db Ops only)
+      Reputation          : Risk unknown
+      Category            : Entertainment and Arts
+      Reputation          : Risk unknown
+      Category            : Fashion and Beauty
+      Reputation          : Risk unknown
+      Category            : Food and Dining
+      Reputation          : Risk unknown
+    Logging Configuration
+    DC                    : Enabled
+      Beginning           : Enabled
+      End                 : Disabled
+      Files               : Disabled
+    Safe Search           : No
+    Rule Hits             : 172451
+    Variable Set          : Default-Set
+
+===============[ Advanced Settings ]================
+General Settings
+  Maximum URL Length                  : 1024
+  Interactive Block Bypass Timeout    : 600
+  Identity Policy                     : Identity_Policy
+  Do not retry URL cache miss lookup  : No
+  Threat Intelligence Director Enabled: No
+  Inspect Traffic During Apply        : Yes
+Network Analysis and Intrusion Policies
+  Initial Intrusion Policy            : No Rules Active
+  Initial Variable Set                : ATI_Variable_Set
+  Default Network Analysis Policy     : Network_Analysis_Policy
+Files and Malware Settings
+  File Type Inspect Limit             : 1460
+  Cloud Lookup Timeout                : 2
+  Minimum File Capture Size           : 6144
+  Maximum File Capture Size           : 1048576
+  Max Dynamic Analysis Size           : 104857600
+  Malware Detection Limit             : 10485760
+Transport/Network Layer Preprocessor Settings
+  Detection Settings
+    Ignore VLAN Tracking Connections  : No
+  Maximum Active Responses            : default
+  Minimum Response Seconds            : default
+  Session Termination Log Threshold   : 1048576
+Detection Enhancement Settings
+  Adaptive Profile                    : Disabled
+Performance Settings
+  Event Queue
+    Maximum Queued Events             : 5
+    Disable Reassembled Content Checks: False
+  Performance Statistics
+    Sample time (seconds)             : 300
+    Minimum number of packets         : 0
+    Summary                           : False
+    Log Session/Protocol Distribution : False
+  Regular Expression Limits
+    Match Recursion Limit             : Default
+    Match Limit                       : Default
+  Rule Processing Configuration
+    Logged Events                     : 5
+    Maximum Queued Events             : 8
+    Events Ordered By                 : Content Length
+Intelligent Application Bypass Settings
+    State                                          : Off
+    Bypassable Applications and Filters            : 0 Applications/Filters
+Latency-Based Performance Settings
+  Packet Handling                     : Enabled
+ Threshold (microseconds)          : 256
+ Rule Handling
+    Violations Before Suspending Rule : 3
+    Threshold (microseconds)          : 512
+    Suspension Time                   : 10
+
+============[ HTTP Block Response HTML ]============
+HTTP/1.1 403 Forbidden
+Connection: close
+Content-Length: 807
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>Access Blocked</title>
+<style type="text/css">body sans-serif; h1 null p null strong null</style>
+</head>
+<body>
+<center>
+<br/><br/>
+<img src="https://www.atipt.com/sites/default/files/logo.jpg">
+<br/><br/>
+<font color="red">
+<h1>Website Access Blocked</h1>
+</font>
+<p>
+<br/>
+You are attempting to access a site that has been blocked due to security or con
+tent concerns.
+<br/><br/>
+If you feel this site should not be blocked, please contact the ATI Technical As
+sistance Center at:
+<br><br>
+877-ATI-PTGO (877-284-7846)
+<br><br>
+or submit a request for assitance on the ATI Service Portal:
+<br><br>
+<a href="https://atipt.service-now.com/sp">ATI Service Portal</a>
+<br/>
+</p>
+</center>
+</body>
+</html>
+=============[ Interactive Block HTML ]=============
+HTTP/1.1 200 OK
+Connection: close
+Content-Length: 1000
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>Access Blocked</title>
+<style type="text/css">body sans-serif; h1 null p null strong null</style>
+</head>
+<body>
+<center>
+<br/><br/>
+<img src="https://www.atipt.com/sites/default/files/logo.jpg">
+<br/><br/>
+<font color="red">
+<h1>Website Access Blocked</h1>
+</font>
+<p>
+<b>- PROCEED WITH CAUTION -</b>
+<br/></br>
+You are attempting to access a site that has been blocked due to security or con
+tent concerns.
+<br/><br/>
+You may continue to the site, at your own discretion, by reloading/refreshing th
+e page or clicking the continue button that appears below.
+<br/><br/>
+If you feel this site should not be blocked, please contact the ATI Technical As
+sistance Center at:
+<br/><br/>
+877-ATI-PTGO (877-284-7846)
+<br/><br/>
+or submit a request for assitance on the ATI Service Portal:
+<br/><br/>
+<a href="https://atipt.service-now.com/sp">ATI Service Portal</a>
+<br/>
+</p>
+</center>
+</body>
+</html>

@@ -18,6 +18,7 @@ The following requisites should be met:
 3. curl installed
 4. Director reachable over port 9182
 5. Ubuntu Machine/Windows
+6. Replace Password in the Code with your password @<<Enter Password>>
 
 Working:
 

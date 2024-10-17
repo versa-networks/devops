@@ -1,14 +1,14 @@
 {
     "Admin": {
         "old_dir": {
-            "password": "Versa@123", 
+            "password": "abcd123!",
             "vd_rest_port": 9182, 
             "user": "Administrator", 
             "auth": "QWRtaW5pc3RyYXRvcjpWZXJzYUAxMjM=", 
             "vd_ip": "192.168.185.2"
         }, 
         "new_dir": {
-            "password": "Versa@123", 
+            "password": "abcd123!",
             "vd_rest_port": 9182, 
             "user": "Administrator", 
             "auth": "QWRtaW5pc3RyYXRvcjpWZXJzYUAxMjM=", 

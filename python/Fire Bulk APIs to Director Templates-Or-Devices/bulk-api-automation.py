@@ -19,7 +19,7 @@ data2 = raw_input("Enter API URL: ")
 
 api = []
 for data in d1:
-    api.append('curl -k -d {} --user Administrator:Versa1234@ -X POST {} --insecure -H "Content-Type:application/json" -w "HTTP- %{{http_code}} code\n"'.format(data,data2))
+    api.append('curl -k -d {} --user Administrator:<<Enter Password>> -X POST {} --insecure -H "Content-Type:application/json" -w "HTTP- %{{http_code}} code\n"'.format(data,data2))
 print (api)
 results=[]
 

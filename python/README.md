@@ -26,3 +26,7 @@ This repository provides scripts to help you save time when creating or modifiyi
 Script to identify Template and Director sync status for a tenant.
 ## get_ubuntu_version
 Script to identify installed Ubuntu version on devices from Versa Director.
+## Configured_CGNATs
+Script to identify CGNATs configured on VOS devices from Versa Director.
+## VAN Health Monitor 
+Script to monitor Versa Analytics health using session and csrf-tokens.

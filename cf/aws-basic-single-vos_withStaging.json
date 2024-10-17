@@ -1,0 +1,535 @@
+{
+   "AWSTemplateFormatVersion": "2010-09-09",
+   "Description": " WARNING: This template will create a single FlexVNF on c5.xlarge instance which will be billed at your AWS EC2 rates.  The template creates a VGW to attach to CGW or direct Connect minimal Versa Use the Outputs tab on the CloudFormation console to obtain the public IP addresses assigned to each VM.",
+   "Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [
+				{
+                   "Label": { "default": "Network Parameters for your Head-End" },
+                   "Parameters": [ "VPCCIDR" ]
+				},
+				{
+                   "Label": { "default": "Primary Head-End Director Southbound IP" },
+                   "Parameters": [ "DIRSBIPPRI" ]
+				},
+				{
+                   "Label": { "default": "Secondary Head-End Director Southbound IP" },
+                   "Parameters": [ "DIRSBIPSEC" ]
+				},
+				{
+                   "Label": { "default": "Versa WAN NIC position" },
+                   "Parameters": [ "VersaWanNic" ]
+				},
+				{
+                   "Label": { "default": "Controller WAN IP reachable from Branch WAN Port" },
+                   "Parameters": [ "ControllerIP" ]
+				},
+				{
+                   "Label": { "default": "Loacl Auth Identifier for Staging" },
+                   "Parameters": [ "LocalAuth" ]
+				},
+				{
+                   "Label": { "default": "Remote Auth Identifier for Staging" },
+                   "Parameters": [ "RemoteAuth" ]
+				},
+				{
+                   "Label": { "default": "Serial number of the branch to be configured" },
+                   "Parameters": [ "SerialNum" ]
+				},
+			   	{
+					"Label": { "default": "" },
+					"Parameters": ["Owner"]
+				},
+				{
+                   "Label": { "default": "Amazon EC2 Parameters" },
+                   "Parameters": [ "KeyPairName" ]
+				}
+			],
+			"ParameterLabels": {
+				"KeyPairName": { "default": "Select a key pair to use to login to your instances" }
+			}
+		}
+   },
+	"Parameters": {
+		"KeyPairName": {
+			"Description": "Public/private key pairs allow you to securely connect to your VM instances after they launch.",
+			"Type": "AWS::EC2::KeyPair::KeyName"
+		},
+		"VPCCIDR": {
+			"AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){2}((0|00|000)\\.)(0|00|000)(\\/(16))$",
+			"ConstraintDescription": "CIDR block for the new VPC be in the format x.x.0.0/16",
+			"Default": "10.234.0.0/16",
+			"Description": "CIDR block for the VPC.   Must be in the format x.x.0.0/16",
+			"Type": "String"
+		},
+       "DIRSBIPPRI": {
+           "Default": "10.234.1.101",
+           "Description": "Primary Director Southbound/Control IP address",
+           "Type": "String"
+		},
+		"DIRSBIPSEC": {
+           "Default": "10.235.1.101",
+           "Description": "Secondary Director Southbound/Control IP address",
+           "Type": "String"
+		},
+       "VersaWanNic": {
+           "Default": "0",
+           "Description": "Versa WAN NIC position if its vni-0 or vni-1 or something else. Provide numeric number",
+           "Type": "String"
+		},
+       "ControllerIP": {
+           "Description": "Controller WAN IP address reachable from Branch WAN Port",
+           "Type": "String"
+		},
+       "LocalAuth": {
+           "Description": "Loacl Auth Identifier for Staging",
+           "Type": "String"
+		},
+       "RemoteAuth": {
+           "Description": "Remote Auth Identifier for Staging",
+           "Type": "String"
+		},
+       "SerialNum": {
+           "Description": "Serial number of the branch to be configured",
+           "Type": "String"
+		},
+		"Owner": {
+			"Default": "",
+			"Description": "Owner of the Stack (Fullname. Example: John Doe)",
+			"Type": "String"
+		}
+	},
+    "Mappings" : {
+		"RegionAndInstanceTypeToAMIID" : {
+			"ap-northeast-1": {
+				"Director" : "ami-5a71523d",
+				"Analytics" : "ami-be7a59d9",
+				"FlexVNF" : "ami-3b7b585c"
+			},
+			"sa-east-1": {
+				"Director" : "ami-e30b698f",
+				"Analytics" : "ami-7c0b6910",
+				"FlexVNF" : "ami-a50466c9"
+			},
+			"ap-southeast-1": {
+				"Director" : "ami-03fef6cf0d0f6c855",
+				"Analytics" : "ami-0596c83498ff83b63",
+				"FlexVNF" : "ami-07fcabd32d86b217a"
+			},
+			"ap-southeast-2": {
+				"Director" : "ami-dcdcd2bf",
+				"Analytics" : "ami-82d8d6e1",
+				"FlexVNF" : "ami-84d8d6e7"
+			},
+			"eu-central-1": { 
+				"Director" : "ami-9f2dfef0",
+				"Analytics" : "ami-852dfeea",
+				"FlexVNF" : "ami-152cff7a"
+			},
+			"us-east-1": { 
+				"Director" : "ami-3e30bf28",
+				"Analytics" : "ami-3b32bd2d",
+				"FlexVNF" : "ami-2835ba3e"
+			},
+			"us-west-1": { 
+				"Director" : "ami-06d43909fa12d9a47",
+				"Analytics" : "ami-028892f5c263520dc",
+				"FlexVNF" : "ami-0490ea9e06837b880"
+			},
+			"us-west-2": {
+				"Director" : "ami-0b66b2d650c464da7",
+				"Analytics" : "ami-065a0faaa56857ae0",
+				"FlexVNF" : "ami-04b2f4096be3e51f2"
+			}
+		}
+    },
+	"Resources": {
+		"VPC": {
+			"Type": "AWS::EC2::VPC",
+			"Properties": {
+				"CidrBlock": {
+					"Ref": "VPCCIDR"
+				},
+				"EnableDnsSupport": "true",
+				"EnableDnsHostnames": "true",
+                "Tags": [
+                    { "Key": "Name", "Value": { "Ref": "AWS::StackName" } }
+                ]
+			}
+		},
+       "InternetGateway": {
+           "Type": "AWS::EC2::InternetGateway",
+           "Properties": {
+                "Tags": [
+					{ "Key": "Network", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Public" ] ] } }
+				]
+			}
+		},
+		"PublicRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [
+					{ "Key": "Application", "Value": { "Ref": "AWS::StackName" } },
+					{ "Key" : "Network", "Value" : "Public" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "PublicRouteTable" ] ] } }
+				]
+			}
+       },
+       "PublicRoute": {
+         "Type": "AWS::EC2::Route",
+         "Properties": {
+           "RouteTableId": {
+             "Ref": "PublicRouteTable"
+           },
+           "DestinationCidrBlock": "0.0.0.0/0",
+           "GatewayId": {
+             "Ref": "InternetGateway"
+           }
+         }
+       },
+       "VPCGatewayAttachment": {
+           "Type": "AWS::EC2::VPCGatewayAttachment",
+           "Properties": {
+               "VpcId": {
+                   "Ref": "VPC"
+               },
+               "InternetGatewayId": {
+                   "Ref": "InternetGateway"
+               }
+           }
+       },
+       "ManagementSubnet": {
+           "Type": "AWS::EC2::Subnet",
+           "Properties": {
+               "VpcId": {
+                   "Ref": "VPC"
+               },
+              "CidrBlock": {
+                   "Fn::Join" : [ ".", [
+                   { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                   { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.0/24" ] ]
+               },
+               "AvailabilityZone": {
+                 "Fn::Select": [
+                   "0",
+                   {
+                     "Fn::GetAZs": {
+                       "Ref": "AWS::Region"
+                     }
+                   }
+                 ]
+               },
+                "Tags": [
+                    { "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Management Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Management" }
+                ],
+               "MapPublicIpOnLaunch": true
+           }
+       },
+       "InternetSubnet": {
+           "Type": "AWS::EC2::Subnet",
+           "Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+                   "Fn::Join" : [ ".", [
+                   { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                   { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "1.0/24" ] ]
+				},
+               "AvailabilityZone": {
+                 "Fn::Select": [
+                   "0",
+                   {
+                     "Fn::GetAZs": {
+                       "Ref": "AWS::Region"
+                     }
+                   }
+                 ]
+				},
+                "Tags": [
+					{ "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Internet Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Public" }
+                ],
+				"MapPublicIpOnLaunch": true
+			}
+		},
+       "LANSubnet": {
+           "Type": "AWS::EC2::Subnet",
+           "Properties": {
+               "VpcId": {
+                   "Ref": "VPC"
+               },
+               "CidrBlock": {
+                   "Fn::Join" : [ ".", [
+                   { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                   { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "2.0/24" ] ]
+               },
+               "AvailabilityZone": {
+                 "Fn::Select": [
+                   "0",
+                   {
+                     "Fn::GetAZs": {
+                       "Ref": "AWS::Region"
+                     }
+                   }
+                 ]
+               },
+                "Tags": [
+                    { "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "LAN Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Internal" }
+                ]
+           }
+       },
+       "ManagementSubnetRouteTableAssociation": {
+         "Type": "AWS::EC2::SubnetRouteTableAssociation",
+         "Properties": {
+           "SubnetId": {
+             "Ref": "ManagementSubnet"
+           },
+           "RouteTableId": {
+             "Ref": "PublicRouteTable"
+           }
+         }
+       },
+       "InternetSubnetRouteTableAssociation": {
+         "Type": "AWS::EC2::SubnetRouteTableAssociation",
+         "Properties": {
+           "SubnetId": {
+             "Ref": "InternetSubnet"
+           },
+           "RouteTableId": {
+             "Ref": "PublicRouteTable"
+           }
+         }
+       },
+       "FlexVNFManagementInterface": {
+          "Type" : "AWS::EC2::NetworkInterface",
+          "Properties" : {
+             "Description" : "FlexVNF Management Interface",
+             "GroupSet" : [ {"Ref" : "SSHSecurityGroup"} ],
+             "SourceDestCheck" : "false",
+             "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                   { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                   { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "0.121" ] ]
+             },
+				"Tags": [
+					{ "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "FlexVNFManagementInterface" ] ] } },
+                    { "Key": "Network", "Value": "Management" }
+                ],
+             "SubnetId": {
+               "Ref": "ManagementSubnet"
+             }
+          }
+       },
+       "FlexVNFInternetInterface": {
+          "Type" : "AWS::EC2::NetworkInterface",
+          "Properties" : {
+             "Description" : "FlexVNF Internet Interface",
+             "GroupSet" : [ {"Ref" : "WebSecurityGroup"} ],
+             "SourceDestCheck" : "false",
+             "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                   { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                   { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "1.121" ] ]
+             },
+             "SubnetId": {
+               "Ref": "InternetSubnet"
+             },
+                "Tags": [
+					{ "Key": "Name", "Value": { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "Internet Subnet" ] ] } },
+                    { "Key": "Network", "Value": "Public" }
+                ]
+			}
+		},
+       "FlexVNFLANInterface": {
+          "Type" : "AWS::EC2::NetworkInterface",
+          "Properties" : {
+             "Description" : "FlexVNF LAN Interface",
+             "SourceDestCheck" : "false",
+             "PrivateIpAddress" : {"Fn::Join" : [ ".", [
+                   { "Fn::Select" : [ "0", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] },
+                   { "Fn::Select" : [ "1", { "Fn::Split": [".", {"Ref" : "VPCCIDR"}] }] }, "2.121" ] ]
+             },
+             "SubnetId": {
+               "Ref": "LANSubnet"
+             },
+			 	"Tags" : [
+					{ "Key" : "Network", "Value" : "Internal" },
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "LAN" ] ] } }
+				]
+          }
+       },
+       "FlexVNFManagementAddress" : {
+          "Type" : "AWS::EC2::EIP",
+          "Properties" : {
+            "Domain" : "vpc"
+          }
+       },
+       "FlexVNFInternetAddress" : {
+          "Type" : "AWS::EC2::EIP",
+          "Properties" : {
+            "Domain" : "vpc"
+          }
+       },
+       "AssociateFlexVNFManagementPort" : {
+          "Type" : "AWS::EC2::EIPAssociation",
+          "Properties" : {
+            "AllocationId" : { "Fn::GetAtt" : [ "FlexVNFManagementAddress", "AllocationId" ]},
+            "NetworkInterfaceId" : { "Ref" : "FlexVNFManagementInterface" }
+          }
+       },
+       "AssociateFlexVNFInternetPort" : {
+          "Type" : "AWS::EC2::EIPAssociation",
+          "Properties" : {
+            "AllocationId" : { "Fn::GetAtt" : [ "FlexVNFInternetAddress", "AllocationId" ]},
+            "NetworkInterfaceId" : { "Ref" : "FlexVNFInternetInterface" }
+          }
+       },
+       "SSHSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"VpcId" : { "Ref" : "VPC" },
+				"GroupDescription" : "Enable SSH access via port 22",
+				"SecurityGroupIngress" : [
+					{ "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "2022", "ToPort" : "2022", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "8080", "ToPort" : "8080", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "443", "ToPort" : "443", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : "8443", "ToPort" : "8443", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" }
+				],
+				"Tags" : [
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "SSHSecurityGroup" ] ] } }
+				]
+			}
+		},
+		"WebSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"VpcId" : { "Ref" : "VPC" },
+				"GroupDescription" : "Enable HTTP access via user defined port",
+				"SecurityGroupIngress" : [
+					{ "IpProtocol" : "udp", "FromPort" : 4500, "ToPort" : 4500, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "udp", "FromPort" : 4790, "ToPort" : 4790, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "udp", "FromPort" : 500, "ToPort" : 500, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "udp", "FromPort" : 3002, "ToPort" : 3003, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 1024, "ToPort" : 1120, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 3000, "ToPort" : 3003, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 5201, "ToPort" : 5201, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 9878, "ToPort" : 9878, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 2022, "ToPort" : 2022, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 8443, "ToPort" : 8443, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : "tcp", "FromPort" : 22, "ToPort" : 22, "CidrIp" : "0.0.0.0/0" },
+					{ "IpProtocol" : 50, "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" }
+				],
+				"Tags" : [
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "WebSecurityGroup" ] ] } }
+				]
+			}
+		},
+		"FlexVNF" : {
+			"Type" : "AWS::EC2::Instance",
+			"Properties" : {
+				"ImageId" : { "Fn::FindInMap" : [ "RegionAndInstanceTypeToAMIID", { "Ref" : "AWS::Region" }, "FlexVNF" ]},
+				"InstanceType" : "c5.xlarge",
+				"BlockDeviceMappings": [
+					{
+						"DeviceName": "/dev/sda1",
+						"Ebs": { "DeleteOnTermination": "true" }
+					}
+				],
+				"KeyName" : { "Ref" : "KeyPairName" },
+				"NetworkInterfaces" : [
+					{ "NetworkInterfaceId" : {"Ref" : "FlexVNFManagementInterface"}, "DeviceIndex" : "0" },
+					{ "NetworkInterfaceId" : {"Ref" : "FlexVNFInternetInterface"}, "DeviceIndex" : "1" },
+					{ "NetworkInterfaceId" : {"Ref" : "FlexVNFLANInterface"}, "DeviceIndex" : "2" }
+				],
+				"Tags": [ 
+					{ "Key" : "Name", "Value" : { "Fn::Join" : [ ":", [ { "Ref" : "AWS::StackName" }, "VOS" ] ] } },
+					{ "Key" : "Role", "Value" : "VOS" },
+					{ "Key" : "Owner", "Value" : { "Ref": "Owner" } }
+				],
+				"UserData": {
+				"Fn::Base64": {
+					"Fn::Join": [
+                   "",
+                   [
+                   "#cloud-config\n",
+                   "cloud_init_modules:\n",
+                   "  - write-files\n",
+                   "  - set_hostname\n",
+                   "  - update_hostname\n",
+                   "  - users-groups\n",
+                   "  - ssh\n",
+                   "hostname: flex-primary\n",
+				   "write_files:\n",
+				   "- content: |\n",
+				   "    #writen by cloud-init write-files module\n",
+				   "    #!/bin/bash\n",
+				   "    echo \"versa123\" | sudo /opt/versa/scripts/staging.py -w ",{"Ref" : "VersaWanNic"}," -c ",{"Ref" : "ControllerIP"}," -l ",{"Ref" : "LocalAuth"}," -r ",{"Ref" : "RemoteAuth"}," -n ",{"Ref" : "SerialNum"}," -d\n",
+				   "  permissions: \"0777\"\n",
+				   "  path: /etc/stage_data.sh\n",
+				   "- content: |\n",
+				   "    #writen by cloud-init write-files module\n",
+				   "    #!/bin/bash\n",
+                   "    log_path=\"/etc/bootLog.txt\"\n",
+				   "    crontab -l > /etc/orig_crontab\n",
+                   "    file=\"/var/lib/vs/.serial\"\n",
+                   "    if [ ! -s $file ]; then\n",
+                   "        echo \"Staging not done yet\" >> $log_path\n",
+                   "        echo \"$(date)\" >> $log_path\n",
+                   "            echo \"`date +%M --date='7 minutes'` `date +%H --date='7 minutes` `date +%d --date='7 minutes` `date +%m --date='7 minutes` * sudo bash /etc/stage_data.sh; sudo crontab -l | grep -v stage_data.sh | crontab \" >>  /etc/orig_crontab\n",
+                   "            sudo crontab /etc/orig_crontab\n",
+                   "            echo \"$(date)\" >> $log_path\n",
+                   "    elif [ \"`cat $file`\" == \"Not Specified\" ]; then\n",
+                   "        echo \"Serial Number not set. Continue with Staging.\" >> $log_path\n",
+                   "        echo \"$(date)\" >> $log_path\n",
+                   "            echo \"`date +%M --date='7 minutes'` `date +%H --date='7 minutes` `date +%d --date='7 minutes` `date +%m --date='7 minutes` * sudo bash /etc/stage_data.sh; sudo crontab -l | grep -v stage_data.sh | crontab \" >>  /etc/orig_crontab\n",
+                   "            sudo crontab /etc/orig_crontab\n",
+                   "            echo \"$(date)\" >> $log_path\n",
+                   "    else\n",
+                   "        echo \"Staging already happened. So, skipping this step.\" >> $log_path\n",
+                   "        echo \"$(date)\" >> $log_path\n",
+                   "    fi\n",
+                   "  permissions: \"0777\"\n",
+				   "  path: /etc/stage_data_job.sh\n",
+                   "cloud_final_modules:\n",
+                   " - runcmd\n",
+                   " - scripts-user\n",
+                   "runcmd:\n",
+                   " - sed -i -e '$a Match Address ",{"Ref" : "DIRSBIPPRI"},"/32' /etc/ssh/sshd_config\n",
+                   " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+                   " - sed -i -e '$a Match Address ",{"Ref" : "DIRSBIPSEC"},"/32' /etc/ssh/sshd_config\n",
+                   " - sed -i -e '$a \\    PasswordAuthentication yes' /etc/ssh/sshd_config\n",
+		           " - sudo sed -i -e '$a Match all' /etc/ssh/sshd_config\n",
+                   " - sudo service ssh restart\n",
+				   " - sudo /etc/stage_data_job.sh\n",
+                   "\n"
+							]
+						]
+					}
+				}
+			}
+       }
+
+   },
+	"Outputs": {
+		"VPCID": {
+			"Value": { "Ref": "VPC" },
+			"Description": "VPC ID"
+		},
+		"FlexVNFManagementExt": {
+			"Description": "AWS EIP Management Address for FlexVNF",
+			"Value": { "Ref": "FlexVNFManagementAddress"}
+		},
+		"FlexVNFInternetExt": {
+			"Description": "EIP Internet Address for FlexVNF",
+			"Value": { "Ref": "FlexVNFInternetAddress"}
+		}
+	}
+}

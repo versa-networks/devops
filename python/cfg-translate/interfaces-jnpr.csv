@@ -1,0 +1,6 @@
+3rd-Party-Interface,Zone,Network,Versa-Interface,Paired-Interface,Versa-VRF,Lsys,Enable-UTM,Tenant
+ge-0/0/0.30,Untrust,INTERNET,vni-0/1.30,,junk,default,false,ross
+ge-0/0/0.40,Trust,VLAN-40,vni-0/1.40,,junk,default,false,ross-hq
+ge-0/0/0.50,Trust,VLAN-50,vni-0/1.50,,junk,default,false,ross-hq
+ge-0/0/0.60,Trust,VLAN-60,vni-0/1.60,,junk,default,false,ross-hq
+
