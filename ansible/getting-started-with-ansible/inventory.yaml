@@ -1,0 +1,17 @@
+---
+all:
+  children:
+    controllers:
+      hosts:
+        Controller-1:
+    smallbranches:
+      hosts:
+        SmallBranch-1:
+    mediumbranches:
+      hosts:
+        MediumBranch-1-A:
+        MediumBranch-2-S:
+    branches:
+      children:
+        mediumbranches:
+        smallbranches:
