@@ -1,0 +1,76 @@
+{
+  "protocols": {
+    "bgp": {
+      "rti-bgp": [
+        {
+          "instance-id": "{{bgp_instance}}",
+          "shutdown": "false",
+          "router-id": "{{sdwan_tunnel_ip}}",
+          "local-as": {
+            "as-number": "64514"
+          },
+          "aggregate": {
+            "family": {
+              "inet": {
+                "unicast": {},
+                "multicast": {}
+              },
+              "inet6": {
+                "unicast": {}
+              }
+            }
+          },
+          "graceful-restart": {
+            "helper": "enable"
+          },
+          "prefix-limit": {},
+          "versa-private-tlv": {
+            "site-information": {
+              "announce-local": false,
+              "announce-remote": false
+            }
+          },
+          "family": {},
+          "route-flap": {},
+          "enable-alarms": [
+            null
+          ],
+          "group": [
+            {
+              "name": "{{bgp_group_name}}",
+              "type": "external",
+              "shutdown": "false",
+              "family": {
+                "inet": {
+                  "unicast": {
+                    "prefix-limit-control": {
+                      "action": "drop"
+                    }
+                  }
+                }
+              },
+              "neighbor": [
+                {
+                  "bgp-neighbor-ip": "{{concerto_tunnel_ip}}",
+                  "peer-as": "{{vcg_bgp_asn}}",
+                  "local-as": "{{sdwan_bgp_asn}}",
+                  "local-address": "{{sdwan_tunnel_ip}}",
+                  {% if bgp_password != "" %}
+                    "password": "{{bgp_password}}",
+                  {% endif %}
+                  "shutdown": "false",
+                  "prefix-limit": {
+                    "action": "drop"
+                  }
+                }
+              ],
+              "prefix-limit": {
+                "action": "drop"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

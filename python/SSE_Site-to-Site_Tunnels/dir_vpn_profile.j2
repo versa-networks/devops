@@ -1,0 +1,60 @@
+{
+    "vpn-profile": {
+        "name": "{{vpn_profile_name}}",
+        "vpn-type": "site-to-site",
+        "tunnel-initiate": "automatic",
+        "hardware-accelerator": "any",
+        "routing-instance": "{{trans_vr}}",
+        "tunnel-routing-instance": "{{lan_vr}}",
+        "tunnel-interface": "{{tvi_interface}}.0",
+        "local-auth-info": {
+            "auth-type": "psk",
+            "id-string": "{{sdwan_id_value}}",
+            "id-type": "{{sdwan_id_type}}",
+            "key": "{{shared_key}}"
+            },
+        "peer-auth-info": {
+            "auth-type": "psk",
+            "id-type": "{{vcg_id_type}}",
+            "key": "{{shared_key}}",
+            "id-string": "{{vcg_id_value}}"
+            },
+        "ipsec": {
+            "fragmentation": "pre-fragmentation",
+            "force-nat-t": "disable",
+            "mode": "tunnel",
+            "anti-replay": "enable",
+            "life": {
+                "duration": "{{ipsec_rekey}}"
+            },
+            "hello-interval": {
+                "send-interval": "{{ipsec_hello}}"
+            },
+            "transform": "{{ipsec_transform}}",
+            "pfs-group": "{{ipsec_pfs}}"
+        },
+        "alarms": {
+            "ike-auth-failure": "enable",
+            "ike-state-change": "enable",
+            "ipsec-state-change": "enable"
+        },
+        "ike": {
+            "version": "{{ike_version}}",
+            "lifetime": "{{ike_lifetime}}",
+            "dpd-timeout": "{{dpdt}}",
+            "frag-size": "576",
+            "transform": "{{ike_transform}}",
+            "group": "{{dh_group}}"
+        },
+        "local": {
+            "address": "{{sdwan_int_ip}}",
+            "inet": "{{sdwan_int_ip}}"
+        },
+        "peer": {
+            "address": [
+                "{{vcg_public_ip}}"
+            ],
+            "inet": "{{vcg_public_ip}}"
+        }
+    }
+}

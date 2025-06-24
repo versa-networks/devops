@@ -1,0 +1,60 @@
+  {
+        "attributes": {
+          "tunnel": {
+            "value": {
+              "type": "{{tunnel_type}}",
+              "{{tunnel_type}}": {
+                "authentication": {
+                  "type": "{{ipsec_auth_type}}",
+                  "{{ipsec_auth_type_key}}": {
+                    "local": {
+                      "identityType": "{{local_identity_type}}",
+                      "identityValue": "{{local_identity_value}}",
+                      "shareKey": "{{identity_key}}"
+                    },
+                    "remote": {
+                      "identityType": "{{remote_identity_type}}",
+                      "identityValue": "{{remote_identity_value}}",
+                      "shareKey": "{{identity_key}}"
+                    }
+                  }
+                },
+                "ikeVersion": "{{ike_version}}",
+                "ikeTransform": "{{ike_transform}}",
+                "ikeDHGroup": "{{ike_dh_group}}",
+                "ikeRekeyTime": {
+                  "value": "{{ike_rekey_time}}",
+                  "unitType": "Seconds"
+                },
+                "ikeDPDTimeOut": "{{ike_dpdt_timeout}}",
+                "ipsecTransform": "{{ipsec_transform}}",
+                "ipsecPfsGroup": "{{ipsec_dh_group}}",
+                "ipsecHelloInterval": "{{ipsec_hello_interval}}",
+                "ipsecRekeyTime": {
+                  "value": "{{ipsec_rekey_time}}",
+                  "unitType": "Seconds"
+                }
+              },
+              "addressAndRouting": {
+                "staticRoutes": {{staticRoutes}},
+                "routingProtocol": {
+                    "protocol": "{{protocol}}",
+                    "neighbors": {{neighbor}}
+                },
+                "ipAddress": "{{concerto_tunnel_ip}}",
+                "vpnName": "{{vpnName}}",
+                "mtu": "{{mtu}}"
+              },  
+              "gatewayLinks": {
+                "versaGateway": "{{saseGateway}}",
+                "destinationIPOrFQDN": "{{device_puplic_ip}}"
+              }
+            }
+          }
+        },
+        "enabled": true,
+        "type": "GLOBAL_SETTINGS",
+        "subtype": "SITE_TO_SITE_TUNNELS",
+        "category": null,
+        "name": "{{tunnel_name}}"
+}   

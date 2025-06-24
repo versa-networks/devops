@@ -1,0 +1,4 @@
+device_name,device_template,sdwan_public_ip,sdwan_int_ip,sdwan_tunnel_ip,sdwan_bgp_asn,vcg_tunnel_ip,vcg_bgp_asn
+Branch-31,HA-DIA-Site-01,157.47.61.10,192.168.122.202,169.254.254.2/31,65100,169.254.254.3/31,65000
+Branch-41,HA-DIA-Site-02,157.47.61.11,172.16.255.2,169.254.254.4/31,65101,169.254.254.5/31,65000
+TEST-BRANCH,Test-Sub-1,155.55.55.55,155.55.55.55,169.254.254.6/31,65102,169.254.254.7/31,65000
