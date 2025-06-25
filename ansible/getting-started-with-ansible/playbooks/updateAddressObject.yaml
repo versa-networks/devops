@@ -10,9 +10,6 @@
     - name: password
       prompt: "Director password: "
       private: true
-  vars:
-    username: "Administrator"
-    password: "versa123"
   tasks:
     - name: "Update Address Object"
       ansible.builtin.uri:
