@@ -1,0 +1,7 @@
+---
+# Versa Director base URL
+versa_director: "https://director.my-lab.versa:9182"
+# Organization name
+orgName: "Provider"
+# Address object name to be updated
+addressObjectName: "Test-Address-Object"

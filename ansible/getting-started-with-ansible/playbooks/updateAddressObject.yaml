@@ -1,0 +1,46 @@
+---
+- name: "Update Address Object"
+  hosts: branches
+  connection: local
+  gather_facts: false
+  vars_prompt:
+    - name: username
+      prompt: "Director username: "
+      private: false
+    - name: password
+      prompt: "Director password: "
+      private: true
+  tasks:
+    - name: "Update Address Object"
+      ansible.builtin.uri:
+        url: "{{ versa_director }}/api/config/devices/device/{{ inventory_hostname }}/config/orgs/org-services/{{ orgName }}/objects/addresses/address/%22{{ addressObjectName }}%22"
+        user: "{{ username  }}"
+        password: "{{ password }}"
+        method: "PUT"
+        status_code: 204
+        headers:
+          Accept: "application/json"
+        body_format: json
+        body:
+          address:
+            name: "{{ addressObjectName }}"
+            ipv4-prefix: "{{ address }}"
+        validate_certs: false
+        force_basic_auth: true
+
+    - name: "GET Address Object"
+      ansible.builtin.uri:
+        url: "{{ versa_director }}/api/config/devices/device/{{ inventory_hostname }}/config/orgs/org-services/{{ orgName }}/objects/addresses?deep"
+        user: "{{ username  }}"
+        password: "{{ password }}"
+        method: "GET"
+        status_code: 200
+        return_content: true
+        headers:
+          Accept: "application/json"
+        validate_certs: false
+        force_basic_auth: true
+      register: configuredAddress
+
+    - ansible.builtin.debug:
+        msg: "Address Object details: {{ configuredAddress.json }}"
