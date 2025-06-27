@@ -1,5 +1,5 @@
 # Getting Started with Ansible and Versa
-This directory contains the example files described in the Getting Started With Ansible and Versa documentation. Link: TBA
+This directory contains the example files described in the [Getting Started With Ansible and Versa](https://academy.versa-networks.com/docs/getting-started-with-ansible-and-versa/) Versa Academy article.
 
 ## Install pipenv
 You need to install pipenv to install the python packages required to run the playbook. Please refer to the [pipenv documentation](https://pipenv.pypa.io) how to do that. 
