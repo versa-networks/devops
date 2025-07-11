@@ -15,7 +15,7 @@ Requirements
   - FTP and SMB credentials
   - File name and location
 - The script has files named "ftp-1MB-file.txt" & "smb-1MB-file.txt" which must be present in the same folder where the script is being executed from.  The files can be created using the following linux command 
-	#dd if=/dev/zero of=ftp-1MB-file.txt bs=1M count=1
-	#dd if=/dev/zero of=smb-1MB-file.txt bs=1M count=1
+	- dd if=/dev/zero of=ftp-1MB-file.txt bs=1M count=1
+	- dd if=/dev/zero of=smb-1MB-file.txt bs=1M count=1
 - Update the script with the name and location of the log file.
 
