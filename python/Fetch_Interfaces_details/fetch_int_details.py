@@ -126,7 +126,7 @@ def appliances_VRRP_IP_list(appliances, failed_connection):
         if device_name in failed_connection:
             print(f'Skipping connection to {device_name} as it is not reachable')
             continue
-        VRRP_response = requests.get(connect_url, verify=False,timeout=20,auth=requests.auth.HTTPBasicAuth(args.username,args.password))
+        VRRP_response = requests.get(connect_url, verify=False,timeout=30,auth=requests.auth.HTTPBasicAuth(args.username,args.password))
         if VRRP_response.status_code == 504:
             print(f'ATTENTION! {device_name} didn\'t get VRRP IP due to connection timeout')
             continue 
@@ -141,7 +141,7 @@ def appliances_VRRP_IP_list(appliances, failed_connection):
                     VRRP_IPs[device_name].append(VRRP_IP)
             print(f'VRRP IPs saved for {device_name}')
         else: print(f'{device_name} has no VRRP')    
-        time.sleep(2)
+        time.sleep(3)
     print('VRRP IP address inventory collection completed')
     return VRRP_IPs
 
@@ -151,7 +151,7 @@ def appliances_interfaces(urls_list):
     for json_url, appliance_name in zip(urls_list, appliance_list):
         try:
             
-            json_response = requests.get(json_url, verify=False,timeout=20,auth=requests.auth.HTTPBasicAuth(args.username,args.password))
+            json_response = requests.get(json_url, verify=False,timeout=30,auth=requests.auth.HTTPBasicAuth(args.username,args.password))
             if json_response.status_code == 504:
                 print(f"504 Gateway Timeout for device: {appliance_name}. Appliance is not reachable.")
                 failed_connection.append(appliance_name)
@@ -315,11 +315,11 @@ else:
 
 if (not args.username):
     args.username = input('enter your Versa Director username: ')
-    #args.username = 'Administrator'
+    #args.username = ''
 
 if (not args.password):
     args.password = getpass.getpass('enter your Versa Director password: ')
-    #args.password = 'versa123'
+    #args.password = ''
     
 if (not args.tenant):
     args.tenant = input('enter your Tenant name: ')
