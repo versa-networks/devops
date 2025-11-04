@@ -1,0 +1,10 @@
+project_id        = "<project_id>"
+region            = "eu01"
+server_name       = "versa-prod-server"
+machine_type      = "c2i.16"
+image_id          = "<image_id>"
+versa_mgmt_network_id   = "<network2_id>"
+versa_network_id  = "<network1_id>"
+boot_volume_size  = 100
+boot_volume_type  = "storage_premium_perf1"
+environment       = "production"
