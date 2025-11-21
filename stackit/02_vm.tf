@@ -1,14 +1,16 @@
 resource "stackit_server" "server1" {
   project_id = var.project_id
   boot_volume = {
-    size                  = 100
+    size                  = 1000
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
   availability_zone  = "eu01-1"
   name               = "versa-analytics-analytics-node-1"
+  availability_zone  = "eu01-1"
+  name               = "versa-mgmt-nic-server1"
   machine_type       = var.flavor
   network_interfaces = [stackit_network_interface.lan1.network_interface_id, stackit_network_interface.lan2.network_interface_id]
 }
@@ -16,9 +18,9 @@ resource "stackit_server" "server1" {
 resource "stackit_server" "server2" {
   project_id = var.project_id
   boot_volume = {
-    size                  = 100
+    size                  = 1000
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -33,7 +35,7 @@ resource "stackit_server" "server3" {
   boot_volume = {
     size                  = 150
     source_type           = "image"
-    source_id             = "e50be773-2dde-4ff3-a574-dc0810ce27d4"
+    source_id             = "<Director uploaded image id>"
     performance_class     = "storage_premium_perf0"
     delete_on_termination = true
   }
@@ -46,9 +48,9 @@ resource "stackit_server" "server3" {
 resource "stackit_server" "server4" {
   project_id = var.project_id
   boot_volume = {
-    size                  = 100
+    size                  = 1000
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -61,9 +63,9 @@ resource "stackit_server" "server4" {
 resource "stackit_server" "server5" {
   project_id = var.project_id
   boot_volume = {
-    size                  = 100
+    size                  = 1000
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -78,7 +80,7 @@ resource "stackit_server" "server6" {
   boot_volume = {
     size                  = 200
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -93,7 +95,7 @@ resource "stackit_server" "server7" {
   boot_volume = {
     size                  = 200
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -108,7 +110,7 @@ resource "stackit_server" "server8" {
   boot_volume = {
     size                  = 1000
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -123,7 +125,7 @@ resource "stackit_server" "server9" {
   boot_volume = {
     size                  = 1000
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -138,7 +140,7 @@ resource "stackit_server" "server10" {
   boot_volume = {
     size                  = 200
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }
@@ -153,7 +155,7 @@ resource "stackit_server" "server11" {
   boot_volume = {
     size                  = 200
     source_type           = "image"
-    source_id             = "716ccaf5-0e4d-49a8-8931-4c1ac4d350d0"
+    source_id             = "<image id>"
     performance_class     = "storage_premium_perf14"
     delete_on_termination = true
   }

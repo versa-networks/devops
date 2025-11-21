@@ -44,7 +44,7 @@ resource "stackit_network_interface" "lan5" {
   project_id = var.project_id
   network_id = data.stackit_network.versa-network.network_id
   security   = false
-  name       = "LAN3"
+  name       = "LAN5"
   ipv4       = "10.0.1.13"
 }
 
@@ -52,7 +52,7 @@ resource "stackit_network_interface" "lan6" {
   project_id = var.project_id
   network_id = data.stackit_network.versa-mgmt-network.network_id
   security   = false
-  name       = "LAN4"
+  name       = "LAN6"
   ipv4       = "192.168.1.13"
 }
 
@@ -193,6 +193,16 @@ resource "stackit_public_ip" "director_public_ip" {
 #  project_id           = var.project_id
 #  network_interface_id = stackit_network_interface.lan1.network_interface_id
 #}
+=======
+  ipv4       = "b.b.b.b"
+}
+
+resource "stackit_public_ip" "server1_public_ip" {
+  project_id           = var.project_id
+  network_interface_id = stackit_network_interface.lan1.network_interface_id
+}
+
+>>>>>>> stackit/01_network.tf
 # resource "stackit_public_ip" "server2_public_ip" {
 #     project_id = var.project_id
 #     network_interface_id = stackit_network_interface.lan2.network_interface_id
