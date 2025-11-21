@@ -25,6 +25,12 @@ variable "flavor" {
   default     = "c2i.16"
 }
 
+variable "flavorc2i8" {
+  type        = string
+  description = ""
+  default     = "c2i.8"
+}
+
 variable "versa_network_id" {
   default = "<network1-id>"
 }
