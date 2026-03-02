@@ -1,0 +1,74 @@
+----BEGIN USERS----
+GROUP                                                                                                                                                                             
+MAPPING     LDAP                                                                                                                                                                  
+PROFILE     PROFILE  NAME                                                     DISPLAY NAME     DISTINGUISHED NAME                                       USER PRINCIPAL NAME       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ldap-prof1  ldap-dc  CN=testuser3 space,OU=research,DC=acme,DC=com            testuser3 space  CN=testuser3 space,OU=research,DC=acme,DC=com            testuser3 space@acme.com  
+                     CN=testuser2,OU=research,DC=acme,DC=com                  -                CN=testuser2,OU=research,DC=acme,DC=com                  testuser2@acme.com        
+                     CN=testuser1,OU=research,DC=acme,DC=com                  -                CN=testuser1,OU=research,DC=acme,DC=com                  testuser1@acme.com        
+                     CN=binduser,OU=research,DC=acme,DC=com                   -                CN=binduser,OU=research,DC=acme,DC=com                   -                         
+                     CN=krbtgt,CN=Users,DC=acme,DC=com                        -                CN=krbtgt,CN=Users,DC=acme,DC=com                        -                         
+                     CN=WIN-QACNT3QD5QI,OU=Domain Controllers,DC=acme,DC=com  -                CN=WIN-QACNT3QD5QI,OU=Domain Controllers,DC=acme,DC=com  -                         
+                     CN=Guest,CN=Users,DC=acme,DC=com                         -                CN=Guest,CN=Users,DC=acme,DC=com                         -                         
+                     CN=Administrator,CN=Users,DC=acme,DC=com                 -                CN=Administrator,CN=Users,DC=acme,DC=com                 -                
+
+
+----END USERS----
+
+----BEGIN GROUPS----
+GROUP                                                                                                                             
+MAPPING     LDAP                                                                                                                  
+PROFILE     PROFILE  NAME                                     DISTINGUISHED NAME                                                  
+----------------------------------------------------------------------------------------------------------------------------------
+ldap-prof1  ldap-dc  group1                                   CN=group1,OU=research,DC=acme,DC=com                                
+                     DnsUpdateProxy                           CN=DnsUpdateProxy,CN=Users,DC=acme,DC=com                           
+                     DnsAdmins                                CN=DnsAdmins,CN=Users,DC=acme,DC=com                                
+                     Enterprise Key Admins                    CN=Enterprise Key Admins,CN=Users,DC=acme,DC=com                    
+                     Key Admins                               CN=Key Admins,CN=Users,DC=acme,DC=com                               
+                     Protected Users                          CN=Protected Users,CN=Users,DC=acme,DC=com                          
+                     Cloneable Domain Controllers             CN=Cloneable Domain Controllers,CN=Users,DC=acme,DC=com             
+                     Enterprise Read-only Domain Controllers  CN=Enterprise Read-only Domain Controllers,CN=Users,DC=acme,DC=com  
+                     Read-only Domain Controllers             CN=Read-only Domain Controllers,CN=Users,DC=acme,DC=com             
+                     Denied RODC Password Replication Group   CN=Denied RODC Password Replication Group,CN=Users,DC=acme,DC=com   
+                     Allowed RODC Password Replication Group  CN=Allowed RODC Password Replication Group,CN=Users,DC=acme,DC=com  
+                     Terminal Server License Servers          CN=Terminal Server License Servers,CN=Builtin,DC=acme,DC=com        
+                     Windows Authorization Access Group       CN=Windows Authorization Access Group,CN=Builtin,DC=acme,DC=com     
+                     Incoming Forest Trust Builders           CN=Incoming Forest Trust Builders,CN=Builtin,DC=acme,DC=com         
+                     Pre-Windows 2000 Compatible Access       CN=Pre-Windows 2000 Compatible Access,CN=Builtin,DC=acme,DC=com     
+                     Account Operators                        CN=Account Operators,CN=Builtin,DC=acme,DC=com                      
+                     Server Operators                         CN=Server Operators,CN=Builtin,DC=acme,DC=com                       
+                     RAS and IAS Servers                      CN=RAS and IAS Servers,CN=Users,DC=acme,DC=com                      
+                     Group Policy Creator Owners              CN=Group Policy Creator Owners,CN=Users,DC=acme,DC=com              
+                     Domain Guests                            CN=Domain Guests,CN=Users,DC=acme,DC=com                            
+                     Domain Users                             CN=Domain Users,CN=Users,DC=acme,DC=com                             
+                     Domain Admins                            CN=Domain Admins,CN=Users,DC=acme,DC=com                            
+                     Cert Publishers                          CN=Cert Publishers,CN=Users,DC=acme,DC=com                          
+                     Enterprise Admins                        CN=Enterprise Admins,CN=Users,DC=acme,DC=com                        
+                     Schema Admins                            CN=Schema Admins,CN=Users,DC=acme,DC=com                            
+                     Domain Controllers                       CN=Domain Controllers,CN=Users,DC=acme,DC=com                       
+                     Domain Computers                         CN=Domain Computers,CN=Users,DC=acme,DC=com                         
+                     Storage Replica Administrators           CN=Storage Replica Administrators,CN=Builtin,DC=acme,DC=com         
+                     Remote Management Users                  CN=Remote Management Users,CN=Builtin,DC=acme,DC=com                
+                     Access Control Assistance Operators      CN=Access Control Assistance Operators,CN=Builtin,DC=acme,DC=com    
+                     Hyper-V Administrators                   CN=Hyper-V Administrators,CN=Builtin,DC=acme,DC=com                 
+                     RDS Management Servers                   CN=RDS Management Servers,CN=Builtin,DC=acme,DC=com                 
+                     RDS Endpoint Servers                     CN=RDS Endpoint Servers,CN=Builtin,DC=acme,DC=com                   
+                     RDS Remote Access Servers                CN=RDS Remote Access Servers,CN=Builtin,DC=acme,DC=com              
+                     Certificate Service DCOM Access          CN=Certificate Service DCOM Access,CN=Builtin,DC=acme,DC=com        
+                     Event Log Readers                        CN=Event Log Readers,CN=Builtin,DC=acme,DC=com                      
+                     Cryptographic Operators                  CN=Cryptographic Operators,CN=Builtin,DC=acme,DC=com                
+                     IIS_IUSRS                                CN=IIS_IUSRS,CN=Builtin,DC=acme,DC=com                              
+                     Distributed COM Users                    CN=Distributed COM Users,CN=Builtin,DC=acme,DC=com                  
+                     Performance Log Users                    CN=Performance Log Users,CN=Builtin,DC=acme,DC=com                  
+                     Performance Monitor Users                CN=Performance Monitor Users,CN=Builtin,DC=acme,DC=com              
+                     Network Configuration Operators          CN=Network Configuration Operators,CN=Builtin,DC=acme,DC=com        
+                     Remote Desktop Users                     CN=Remote Desktop Users,CN=Builtin,DC=acme,DC=com                   
+                     Replicator                               CN=Replicator,CN=Builtin,DC=acme,DC=com                             
+                     Backup Operators                         CN=Backup Operators,CN=Builtin,DC=acme,DC=com                       
+                     Print Operators                          CN=Print Operators,CN=Builtin,DC=acme,DC=com                        
+                     Guests                                   CN=Guests,CN=Builtin,DC=acme,DC=com                                 
+                     Users                                    CN=Users,CN=Builtin,DC=acme,DC=com                                  
+                     Administrators                           CN=Administrators,CN=Builtin,DC=acme,DC=com  
+
+
+----END GROUPS----  
