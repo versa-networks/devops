@@ -1,3 +1,4 @@
+
 import os
 import re
 import sys
@@ -526,6 +527,10 @@ def dedupe_predefined_application_list_lines(cfg_text: str) -> str:
 
 
 
+
+# Dedup words in services lists:
+#   services-list            [ word1 word1 word1 ];
+#   predefined-services-list [ word1 word1 word1 ];
 SVC_LIST_LINE_RE = re.compile(r'^(\s*(?:services-list|predefined-services-list)\s*\[)(.*?)(\]\s*;.*)$')
 
 def dedupe_service_list_lines(cfg_text: str) -> str:
@@ -625,10 +630,14 @@ def process_zone_match(
         pop_line(policy_lines, idx)
         return block, policy_lines
 
-    if out_zones:
-        block = block.replace(marker, " ".join(out_zones))
-    else:
-        block = block.replace(marker, "")
+    for j, z in enumerate(out_zones):
+        if marker not in block:
+            break
+        if j > 0:
+            block = duplicate_marker_to_right(block, marker)
+        block = replace_rightmost_marker(block, marker, z)
+
+    block = block.replace(marker, "")
     block = delete_only_delim_lines(block, subsection_begin, subsection_end)
 
     pop_line(policy_lines, idx)
@@ -660,8 +669,8 @@ def process_address_split(
         pop_line(policy_lines, idx)
         return block, policy_lines
 
-    addr_vals = []
-    grp_vals = []
+    wrote_a = False
+    wrote_g = False
 
     for t in targets:
         raw = t.strip()
@@ -669,20 +678,23 @@ def process_address_split(
         is_grp = (raw in addr_group_names) or (cmpv in addr_group_names)
 
         if is_grp:
-            grp_vals.append(cmpv)
+            if marker_grp in block:
+                if wrote_g:
+                    block = duplicate_marker_to_right(block, marker_grp)
+                block = replace_rightmost_marker(block, marker_grp, cmpv)
+                wrote_g = True
         else:
-            addr_vals.append(cmpv)
+            if marker_addr in block:
+                if wrote_a:
+                    block = duplicate_marker_to_right(block, marker_addr)
+                block = replace_rightmost_marker(block, marker_addr, cmpv)
+                wrote_a = True
 
     block = delete_only_delim_lines(block, subsection_begin, subsection_end)
 
-    if addr_vals:
-        block = block.replace(marker_addr, " ".join(addr_vals))
-    else:
+    if not wrote_a:
         block = delete_exact_line_containing(block, placeholder_addr_line)
-
-    if grp_vals:
-        block = block.replace(marker_grp, " ".join(grp_vals))
-    else:
+    if not wrote_g:
         block = delete_exact_line_containing(block, placeholder_grp_line)
 
     block = block.replace(marker_addr, "").replace(marker_grp, "")
@@ -699,13 +711,6 @@ def ldap_extract_cn(dn: str) -> str:
     if "/" in core:
         return core.split("/")[-1]
     return core
-
-
-def quote_if_spaces(val: str) -> str:
-    v = val.strip()
-    if " " in v and not (len(v) >= 2 and v[0] == '"' and v[-1] == '"'):
-        return f'"{v}"'
-    return v
 
 
 def process_source_user(
@@ -769,7 +774,7 @@ def process_source_user(
             grp_num += 1
             block = replace_rightmost_marker(block, "@access-policy-source-group-dn", obj_raw)
             cn = ldap_extract_cn(obj_raw)
-            block = replace_rightmost_marker(block, "@access-policy-source-group-description", quote_if_spaces(cn))
+            block = replace_rightmost_marker(block, "@access-policy-source-group-description", f"\"{cn}\"")
             continue
 
         if k1 in ldap_users or k2 in ldap_users:
@@ -857,24 +862,22 @@ def process_security_profiles(block: str, policy_lines: List[str], logger: loggi
 
 def process_services(block: str, policy_lines: List[str], svc_map: Dict[str, str]) -> Tuple[str, List[str]]:
     idx = find_first_line_with_keyword(policy_lines, " service ")
-    if idx is None:
+    if idx is None or (not os.path.exists(PREDEF_SVC_CONV_FILE)) or (not svc_map):
         block = delete_block_including(block, "/*begin sub-section access-policies-match-services*/", "/*end sub-section access-policies-match-services*/")
         return block, policy_lines
 
     ln = policy_lines[idx]
     targets = parse_list_or_single(extract_after_keyword(ln, " service "))
-
-    NO_OP_VALUES = {"any", "application-default"}
-    effective_targets = [t for t in targets if strip_outer_quotes(t.strip()) not in NO_OP_VALUES]
-
-    if not effective_targets:
+    if not targets or (len(targets) == 1 and strip_outer_quotes(targets[0]) == "any"):
         pop_line(policy_lines, idx)
         block = delete_block_including(block, "/*begin sub-section access-policies-match-services*/", "/*end sub-section access-policies-match-services*/")
         return block, policy_lines
 
     predef, custom = [], []
-    for t in effective_targets:
+    for t in targets:
         t2 = strip_outer_quotes(t)
+        if t2 == "any":
+            continue
         if t2 in svc_map:
             cv = svc_map[t2]
             predef.append(cv if cv else t2)
@@ -947,15 +950,22 @@ def process_applications(block: str, policy_lines: List[str], logger: logging.Lo
             with open(UNSUPPORTED_APPS_FILE, "a", encoding="utf-8") as f:
                 f.write(ln if ln.endswith("\n") else ln + "\n")
 
-    if predef_apps:
-        block = block.replace("@access-policy-predef-applications", " ".join(predef_apps))
-    else:
-        block = delete_exact_line_containing(block, "predefined-application-list [ @access-policy-predef-applications ];")
+    for j, val in enumerate(predef_apps):
+        if "@access-policy-predef-applications" not in block:
+            break
+        if j > 0:
+            block = duplicate_marker_to_right(block, "@access-policy-predef-applications")
+        block = replace_rightmost_marker(block, "@access-policy-predef-applications", val)
 
-    if predef_group_apps:
-        block = block.replace("@access-policy-predef-group-applications", " ".join(predef_group_apps))
-    else:
-        block = delete_exact_line_containing(block, "predefined-group-list       [ @access-policy-predef-group-applications ];")
+    for j, val in enumerate(predef_group_apps):
+        if "@access-policy-predef-group-applications" not in block:
+            break
+        if j > 0:
+            block = duplicate_marker_to_right(block, "@access-policy-predef-group-applications")
+        block = replace_rightmost_marker(block, "@access-policy-predef-group-applications", val)
+
+    block = delete_exact_line_containing(block, "predefined-application-list [ @access-policy-predef-applications ];")
+    block = delete_exact_line_containing(block, "predefined-group-list       [ @access-policy-predef-group-applications ];")
 
     block = block.replace("@access-policy-predef-applications", "")
     block = block.replace("@access-policy-predef-group-applications", "")
@@ -1014,15 +1024,17 @@ def process_url_category(block: str, policy_lines: List[str], logger: logging.Lo
             block = delete_block_including(block, "/*begin sub-section access-policies-match-url-category*/", "/*end sub-section access-policies-match-url-category*/")
             return block, policy_lines
 
-    url_cat_vals = []
+    filled = 0
     for t in targets:
         target = strip_outer_quotes(t.strip())
         if not target or target == "any":
             continue
-        url_cat_vals.append(target)
-
-    if url_cat_vals:
-        block = block.replace("@access-policy-custom-url-category", " ".join(url_cat_vals))
+        if "@access-policy-custom-url-category" not in block:
+            break
+        if filled > 0:
+            block = duplicate_marker_to_right(block, "@access-policy-custom-url-category")
+        block = replace_rightmost_marker(block, "@access-policy-custom-url-category", target)
+        filled += 1
 
     block = block.replace("@access-policy-custom-url-category", "")
     block = delete_only_delim_lines(block, "/*begin sub-section access-policies-match-url-category*/", "/*end sub-section access-policies-match-url-category*/")
@@ -1272,7 +1284,7 @@ def main():
         cfg_text = dedupe_service_list_lines(cfg_text)
         cfg_text = final_cleanup(cfg_text)
 
-        out_path = os.path.join(FINAL_DATA_DIR, f"your-final-template.cfg")
+        out_path = os.path.join(FINAL_DATA_DIR, f"your-final-templte.cfg")
         write_text(out_path, cfg_text)
         logger.info("Wrote output: %s", out_path)
 

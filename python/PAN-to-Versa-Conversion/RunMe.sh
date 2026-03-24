@@ -26,7 +26,8 @@ run_py() {
   ) || exit_code=$?
 
   if [[ $exit_code -ne 0 ]]; then
-    _box_print "WARNING: Script failed (exit code $exit_code):" "$script_path"
+    _box_print "ERROR: Script failed (exit code $exit_code):" "$script_path"
+    exit "$exit_code"
   fi
 
   return 0
@@ -68,8 +69,14 @@ run_py "${SCRIPTS_DIR}/step-3.py"
 run_py "${SCRIPTS_DIR}/step-4.py"
 run_py "${SCRIPTS_DIR}/step-5.py"
 run_py "${SCRIPTS_DIR}/step-6.py"
-run_py "${SCRIPTS_DIR}/step-7.py"
-run_py "${SCRIPTS_DIR}/step-8.py"
+
+LDAP_SOURCE_FILE="${MAIN_DIR}/ldap-source-input.txt"
+if [[ -s "$LDAP_SOURCE_FILE" ]]; then
+  run_py "${SCRIPTS_DIR}/step-7.py"
+  run_py "${SCRIPTS_DIR}/step-8.py"
+else
+  _box_print "SKIPPED: step-7.py and step-8.py" "File '${LDAP_SOURCE_FILE}' does not exist or is empty — LDAP processing steps will be skipped."
+fi
 run_py "${SCRIPTS_DIR}/preconvert-cleanup.py"
 
 

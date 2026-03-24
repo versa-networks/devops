@@ -1,5 +1,3 @@
-
-
 import os
 import re
 import sys
@@ -700,6 +698,8 @@ def main() -> int:
             sys.stderr.flush()
         except Exception:
             pass
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         try:
             tee.close()
         except Exception:
