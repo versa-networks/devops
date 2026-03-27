@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import re
 import sys
 import shutil
@@ -8,9 +7,6 @@ from pathlib import Path
 from typing import Dict, Tuple, Optional, List
 
 
-# =========================
-# Helpers: logging / tee
-# =========================
 class TeeWriter:
     def __init__(self, original_stream, log_fh):
         self.original = original_stream
@@ -46,10 +42,6 @@ def log(msg: str = ""):
 
 
 def prompt_with_timeout(prompt: str, timeout_sec: int = 30, default: str = "") -> str:
-    """
-    Wait for user input up to timeout_sec. If no input, return default.
-    Works on macOS/Linux terminals. If select fails, falls back to blocking input.
-    """
     sys.stdout.write(prompt)
     sys.stdout.flush()
 
@@ -61,7 +53,6 @@ def prompt_with_timeout(prompt: str, timeout_sec: int = 30, default: str = "") -
             return line.rstrip("\n")
         return default
     except Exception:
-        # fallback: blocking
         try:
             line = input()
             return line.strip()
@@ -69,32 +60,20 @@ def prompt_with_timeout(prompt: str, timeout_sec: int = 30, default: str = "") -
             return default
 
 
-# =========================
-# Helpers: text parsing
-# =========================
 ALLOWED_NAME_CHARS_RE = re.compile(r"[^A-Za-z0-9_-]+")
 
 
 def strip_invisible(s: str) -> str:
-    # Step-8 / Step-18: remove carriage returns, remove non-visible characters
     s = s.replace("\r", "")
-    # keep newline handling outside; here we clean line body
     return "".join(ch for ch in s if ch.isprintable() or ch in ("\t", " "))
 
 
 def parse_name_token_span(line: str, keyword_prefix: str) -> Optional[Tuple[int, int, str]]:
-    """
-    Find the object name token after a given prefix, returning (start_idx, end_idx, token_raw).
-    token_raw includes quotes if original was quoted.
-    """
     if not line.startswith(keyword_prefix):
         return None
 
     i = len(keyword_prefix)
 
-    # keyword_prefix may or may not include the required trailing space.
-    # If caller included trailing space, we're already positioned after it.
-    # Otherwise, skip whitespace.
     if i < len(line) and line[i].isspace():
         while i < len(line) and line[i].isspace():
             i += 1
@@ -104,7 +83,6 @@ def parse_name_token_span(line: str, keyword_prefix: str) -> Optional[Tuple[int,
 
     start = i
     if line[i] == '"':
-        # quoted name
         j = i + 1
         while j < len(line) and line[j] != '"':
             j += 1
@@ -114,7 +92,6 @@ def parse_name_token_span(line: str, keyword_prefix: str) -> Optional[Tuple[int,
         token = line[start:end]
         return (start, end, token)
     else:
-        # unquoted: token until whitespace
         j = i
         while j < len(line) and not line[j].isspace():
             j += 1
@@ -124,11 +101,6 @@ def parse_name_token_span(line: str, keyword_prefix: str) -> Optional[Tuple[int,
 
 
 def sanitize_object_name(raw_token: str) -> str:
-    """
-    Allowed characters: alnum, _, -
-    - If quoted and contains spaces: spaces -> _ and remove quotes
-    - Any disallowed char -> _
-    """
     if raw_token.startswith('"') and raw_token.endswith('"') and len(raw_token) >= 2:
         inner = raw_token[1:-1]
         inner = inner.replace(" ", "_")
@@ -141,16 +113,12 @@ def sanitize_object_name(raw_token: str) -> str:
 
 
 def truncate_with_increment_suffix(name: str, max_len: int, counter: int, used: set) -> Tuple[str, int]:
-    """
-    If name > max_len, truncate and add suffix _<counter>.
-    Ensure total length <= max_len, and unique in 'used'.
-    """
     if len(name) <= max_len and name not in used:
         used.add(name)
         return name, counter
 
     while True:
-        suffix = f"_{counter}"  # "_x" where x is incrementing number
+        suffix = f"_{counter}"
         keep_len = max_len - len(suffix)
         if keep_len < 1:
             keep_len = 1
@@ -166,10 +134,6 @@ def truncate_with_increment_suffix(name: str, max_len: int, counter: int, used: 
 
 
 def find_keyword_outside_quotes(line: str, keyword: str) -> List[int]:
-    """
-    Return list of indices where keyword token occurs outside double quotes.
-    Token boundary: preceded/followed by whitespace or common separators.
-    """
     idxs = []
     in_q = False
     i = 0
@@ -198,10 +162,6 @@ def find_keyword_outside_quotes(line: str, keyword: str) -> List[int]:
 
 
 def parse_bracket_content(segment: str) -> Optional[Tuple[str, str, str]]:
-    """
-    Parse first [...] block, respecting quotes.
-    Returns (before_including_[, inside_without_brackets, after_including_]).
-    """
     lb = segment.find("[")
     if lb < 0:
         return None
@@ -222,10 +182,6 @@ def parse_bracket_content(segment: str) -> Optional[Tuple[str, str, str]]:
 
 
 def tokenize_respecting_quotes(s: str) -> List[Tuple[str, bool]]:
-    """
-    Tokenize by whitespace; keep quoted substrings as a single token.
-    Returns (token, was_quoted). Quotes removed from token.
-    """
     out = []
     i = 0
     n = len(s)
@@ -260,30 +216,18 @@ def sanitize_tag_value_token(token: str, was_quoted: bool) -> str:
 
 
 def process_tag_in_line(line: str) -> Tuple[str, Optional[str]]:
-    """
-    Steps 11a-11e:
-      - If tag exists:
-          - if no value -> delete line
-          - if value is quoted multiword -> spaces->_ and remove quotes
-          - if value is bracket list: sanitize each token; quoted tokens spaces->_
-          - otherwise single token sanitize
-      - If can't parse -> unsupported
-    Returns:
-      ("ok", new_line) or ("delete", None) or ("unsupported", None)
-    """
     tag_idxs = find_keyword_outside_quotes(line, "tag")
     if not tag_idxs:
         return "ok", line
 
     ti = tag_idxs[0]
     before = line[:ti]
-    after = line[ti + 3 :]  # after 'tag'
+    after = line[ti + 3 :]
     after_stripped = after.lstrip(" \t")
     ws_prefix_len = len(after) - len(after_stripped)
     ws_prefix = after[:ws_prefix_len]
 
     if after_stripped == "" or after_stripped == "\n":
-        # Step 11d
         return "delete", None
 
     if after_stripped.startswith("["):
@@ -324,13 +268,6 @@ def process_tag_in_line(line: str) -> Tuple[str, Optional[str]]:
 
 
 def protocol_is_valid(line: str) -> bool:
-    """
-    Step-12 (Fortinet): Validate service port lines.
-      tcp-portrange <n>  or  tcp-portrange <n>-<n>
-      udp-portrange <n>  or  udp-portrange <n>-<n>
-      protocol <type>    (e.g. TCP/UDP/SCTP, ICMP, IP — always valid if a type word follows)
-      comment / other    (no port keyword — always valid)
-    """
     if find_keyword_outside_quotes(line, "tcp-portrange"):
         m = re.search(r"\btcp-portrange\s+\d+(?:-\d+)?\b", line)
         return bool(m)
@@ -355,11 +292,6 @@ def next_keyword_after_name(line: str, name_end_idx: int) -> str:
 
 
 def apply_replacements_tokenwise(text: str, replacements: Dict[str, str]) -> str:
-    """
-    Case-sensitive replacements.
-    - quoted keys: direct string replace
-    - unquoted: boundary-aware regex replace
-    """
     keys = sorted(replacements.keys(), key=len, reverse=True)
     for k in keys:
         v = replacements[k]
@@ -376,9 +308,6 @@ def replace_group_name_with_members(text: str, group_name: str, members_phrase: 
     return re.sub(pattern, members_phrase, text)
 
 
-# =========================
-# Main script
-# =========================
 def main():
     scripts_dir = Path(__file__).resolve().parent
     main_dir = scripts_dir.parent
@@ -389,10 +318,8 @@ def main():
     step4_dir = main_dir / "step-4"
     final_dir = main_dir / "final-data"
 
-    # Step-1
     step4_dir.mkdir(parents=True, exist_ok=True)
 
-    # Logging
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file_path = log_dir / "step-4.log"
 
@@ -408,7 +335,6 @@ def main():
         log("Note: Pre-execution text mentioned step-1.log once; using step-4.log per Step-4 instructions.")
         log("")
 
-        # Step-2
         src_pan_rules_default = step3_dir / "step-3_cleaned-forti-rules.txt"
         dst_pan_rules = step4_dir / "step-4_cleaned-forti-rules.txt"
 
@@ -433,7 +359,6 @@ def main():
             else:
                 raise FileNotFoundError("No valid source file provided for step-4_cleaned-forti-rules.txt")
 
-        # Step-3
         log("")
         log("Step-3: Service object name length policy")
         log("Maximum allowed service object name length is 31 characters.")
@@ -455,27 +380,23 @@ def main():
                 max_service_len = 31
         log(f"Using max_service_len = {max_service_len}")
 
-        # Step-4
         log("")
         log("Step-4: Allowed object-name characters are: alphanumeric, underscore '_', hyphen '-'.")
         log("Any unacceptable characters in object names will be replaced with '_'.")
         prompt_with_timeout("Press Enter to continue (or wait 30 seconds)... ", timeout_sec=30, default="")
         log("Continuing...")
 
-        # Files
         extracted_service = step4_dir / "step-4_extracted-service.txt"
         cleaned_service = step4_dir / "step-4_cleaned-service.txt"
         corrected_service = step4_dir / "step-4_corrected-service.txt"
         unsupported_service = step4_dir / "step-4_unsupported-service-config.txt"
 
-        # Step-5a + Step-5
         log("")
         log("Step-5a/5: Removing override lines and extracting 'firewall service custom ' lines.")
         pan_lines = dst_pan_rules.read_text(encoding="utf-8", errors="replace").splitlines(True)
 
-        # 5a: Fortinet has no override concept; pattern never matches but structure preserved
         override_pat = re.compile(r"^firewall service custom\b.*\boverride\s+(no|yes)\s*$")
-        service_extract_prefix = "firewall service custom "  # NOTE: must match space after custom
+        service_extract_prefix = "firewall service custom "
 
         keep_pan: List[str] = []
         svc_lines: List[str] = []
@@ -488,7 +409,6 @@ def main():
                 removed_override += 1
                 continue
 
-            # 5: extract/cut lines preceded with "firewall service custom " (with space)
             if ln2.startswith(service_extract_prefix):
                 svc_lines.append(ln2 + "\n")
                 removed_service += 1
@@ -503,11 +423,9 @@ def main():
         log(f"Updated forti-rules file:        {dst_pan_rules}")
         log(f"Wrote extracted services:      {extracted_service}")
 
-        # Step-6
         shutil.copy2(extracted_service, cleaned_service)
         log(f"Step-6: Copied {extracted_service} -> {cleaned_service}")
 
-        # Step-7..12
         log("")
         log("Step-7..12: Cleaning service object names, tags, and validating protocol format.")
         corrected_service_lines: List[str] = []
@@ -522,16 +440,15 @@ def main():
         in_lines = cleaned_service.read_text(encoding="utf-8", errors="replace").splitlines(True)
         for raw_ln in in_lines:
             ln = raw_ln.rstrip("\n")
-            ln = strip_invisible(ln)  # Step-8
+            ln = strip_invisible(ln)
 
-            span = parse_name_token_span(ln, "firewall service custom")  # name after keyword
+            span = parse_name_token_span(ln, "firewall service custom")
             if not span:
                 unsupported_service_lines.append(ln + "\n")
                 continue
 
             ns, ne, raw_name_token = span
 
-            # map sanitized name consistently across multiple config lines
             if raw_name_token in service_name_map:
                 clean_name = service_name_map[raw_name_token]
             else:
@@ -544,7 +461,6 @@ def main():
                 service_name_map[raw_name_token] = base
                 clean_name = base
 
-            # Step-9: capture lines containing undesirable chars in name BEFORE modifying
             changed = False
             if raw_name_token.startswith('"') and raw_name_token.endswith('"'):
                 changed = True
@@ -557,17 +473,14 @@ def main():
             if changed:
                 corrected_service_lines.append(ln + "\n")
 
-            # apply name replacement
             ln2 = ln[:ns] + clean_name + ln[ne:]
 
-            # Step-10: next keyword after name must be protocol/description/tag
             name_end_idx = ns + len(clean_name)
             nxt = next_keyword_after_name(ln2, name_end_idx)
             if nxt == "" or nxt not in allowed_next:
                 unsupported_service_lines.append(ln2 + "\n")
                 continue
 
-            # Step-11: tag sanitation
             st, new_ln = process_tag_in_line(ln2)
             if st == "delete":
                 continue
@@ -576,7 +489,6 @@ def main():
                 continue
             ln3 = new_ln
 
-            # Step-12: protocol validation (port OR source-port)
             if not protocol_is_valid(ln3):
                 unsupported_service_lines.append(ln3 + "\n")
                 continue
@@ -594,7 +506,6 @@ def main():
         log(f"Wrote: {corrected_service}")
         log(f"Wrote: {unsupported_service}")
 
-        # Step-13
         log("")
         log("Step-13: Updating service object references in step-4_cleaned-forti-rules.txt (case-sensitive).")
         if corrected_service.exists() and corrected_service.stat().st_size > 0:
@@ -622,17 +533,13 @@ def main():
         else:
             log("Corrected-service file is empty; Step-13 skipped.")
 
-        # =========================
-        # Service-group processing
-        # =========================
         extracted_sg = step4_dir / "step-4_extracted-service-group.txt"
         cleaned_sg_step4 = step4_dir / "step-4_cleaned-service-group.txt"
-        cleaned_sg_step2 = step2_dir / "step-4_cleaned-service-group.txt"  # per Step-16 instruction
+        cleaned_sg_step2 = step2_dir / "step-4_cleaned-service-group.txt"
         corrected_sg_name = step4_dir / "step-4_corrected-service-group-name.txt"
-        corrected_sg = step4_dir / "step-4_corrected-service-group.txt"  # to satisfy Step-20 reference
+        corrected_sg = step4_dir / "step-4_corrected-service-group.txt"
         temp_sg = step4_dir / "step-4_temp-service-group.txt"
 
-        # Step-15: extract/cut service-group lines from forti-rules
         log("")
         log("Step-15: Extracting 'firewall service group' lines from forti-rules.")
         pan_lines2 = dst_pan_rules.read_text(encoding="utf-8", errors="replace").splitlines(True)
@@ -651,7 +558,6 @@ def main():
         log(f"Wrote: {extracted_sg}")
         log(f"Updated forti-rules file: {dst_pan_rules}")
 
-        # Step-16: copy extracted sg to ../step-2/... and also to ../step-4/... for subsequent steps
         log("")
         log("Step-16: Copying extracted service-group file per instructions (and keeping step-4 working copy).")
         step2_dir.mkdir(parents=True, exist_ok=True)
@@ -660,7 +566,6 @@ def main():
         log(f"Copied {extracted_sg} -> {cleaned_sg_step2}")
         log(f"Copied {extracted_sg} -> {cleaned_sg_step4}")
 
-        # Step-17..19: sanitize service-group names
         log("")
         log("Step-17..19: Cleaning service-group object names (allowed chars only).")
         sg_name_map: Dict[str, str] = {}
@@ -670,7 +575,7 @@ def main():
         sg_in = cleaned_sg_step4.read_text(encoding="utf-8", errors="replace").splitlines(True)
         for raw_ln in sg_in:
             ln = raw_ln.rstrip("\n")
-            ln = strip_invisible(ln)  # Step-18
+            ln = strip_invisible(ln)
 
             sp = parse_name_token_span(ln, "firewall service group")
             if not sp:
@@ -702,14 +607,13 @@ def main():
 
         cleaned_sg_step4.write_text("".join(cleaned_sg_out), encoding="utf-8")
         corrected_sg_name.write_text("".join(corrected_sg_lines), encoding="utf-8")
-        corrected_sg.write_text("".join(corrected_sg_lines), encoding="utf-8")  # Step-20 refers to this name
+        corrected_sg.write_text("".join(corrected_sg_lines), encoding="utf-8")
 
         log(f"Wrote: {cleaned_sg_step4}")
         log(f"Wrote: {corrected_sg_name}")
         log(f"Wrote: {corrected_sg}")
         log(f"Corrected service-group lines captured: {len(corrected_sg_lines)}")
 
-        # Step-20: update forti-rules references for corrected service-group names
         log("")
         log("Step-20: Updating service-group references in step-4_cleaned-forti-rules.txt (case-sensitive).")
         if corrected_sg.exists() and corrected_sg.stat().st_size > 0:
@@ -728,7 +632,6 @@ def main():
         else:
             log("Corrected service-group file is empty; Step-20 skipped.")
 
-        # Step-21: members lines into temp file
         log("")
         log("Step-21: Building temp file of service-group members lines.")
         temp_lines: List[str] = []
@@ -744,7 +647,6 @@ def main():
         temp_sg.write_text("".join(temp_lines), encoding="utf-8")
         log(f"Wrote {len(temp_lines)} members line(s) to: {temp_sg}")
 
-        # Step-22: expand service-group names with members list inside forti-rules
         log("")
         log("Step-22: Expanding service-group names in forti-rules using member [].")
         pan_text = dst_pan_rules.read_text(encoding="utf-8", errors="replace")
@@ -761,7 +663,7 @@ def main():
             if not mi_list:
                 continue
             mi = mi_list[0]
-            after_members = ln[mi + 6 :].lstrip(" \t")  # "member" is 6 chars
+            after_members = ln[mi + 6 :].lstrip(" \t")
             if not after_members.startswith("["):
                 continue
 
@@ -786,14 +688,12 @@ def main():
         dst_pan_rules.write_text(pan_text, encoding="utf-8")
         log(f"Expanded {expanded} service-group name(s) in {dst_pan_rules}")
 
-        # Step-22: delete temp file
         try:
             temp_sg.unlink(missing_ok=True)
             log(f"Deleted temp file: {temp_sg}")
         except Exception as e:
             log(f"WARNING: Could not delete temp file {temp_sg}: {e}")
 
-        # Step-23 (final naming)
         log("")
         log("Step-23: Copying final cleaned outputs to ../final-data/ with final names.")
         final_dir.mkdir(parents=True, exist_ok=True)

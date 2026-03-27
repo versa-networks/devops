@@ -8,10 +8,6 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
 
-
-
-
-
 class StreamToLogger:
     def __init__(self, logger: logging.Logger, level: int):
         self.logger = logger
@@ -62,10 +58,6 @@ def setup_logger(log_path: str) -> logging.Logger:
     return logger
 
 
-
-
-
-
 def read_lines(path: str) -> List[str]:
     with open(path, "r", encoding="utf-8", errors="replace") as f:
         return f.readlines()
@@ -85,10 +77,6 @@ def safe_copy(src: str, dst: str, logger: logging.Logger) -> None:
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copy2(src, dst)
     logger.info(f"Copied: {src} -> {dst}")
-
-
-
-
 
 
 def transform_pattern_for_versa_regex(src: str) -> str:
@@ -120,10 +108,6 @@ def transform_pattern_for_versa_regex(src: str) -> str:
     return f"\"{s}\"" if did_escape else s
 
 
-
-
-
-
 def normalize_description_always_quoted(desc: str) -> str:
     d = desc.strip()
     if len(d) >= 2 and d[0] == '"' and d[-1] == '"':
@@ -132,11 +116,7 @@ def normalize_description_always_quoted(desc: str) -> str:
     return f"\"{d}\""
 
 
-
-
-
-
-FORTI_PREFIX = "webfilter urlfilter"                    # CHANGED: was "set shared profiles custom-url-category"
+FORTI_PREFIX = "webfilter urlfilter"
 
 def parse_forti_custom_urlf_objects(forti_lines: List[str], logger: logging.Logger) -> Dict[str, List[str]]:
     grouped: Dict[str, List[str]] = {}
@@ -146,7 +126,7 @@ def parse_forti_custom_urlf_objects(forti_lines: List[str], logger: logging.Logg
         line = raw.strip()
         if not line:
             continue
-        if not line.startswith(FORTI_PREFIX):            # CHANGED: was PAN_PREFIX
+        if not line.startswith(FORTI_PREFIX):
             skipped += 1
             continue
 
@@ -157,14 +137,14 @@ def parse_forti_custom_urlf_objects(forti_lines: List[str], logger: logging.Logg
             skipped += 1
             continue
 
-        if len(toks) < 3:                                # CHANGED: was < 5
+        if len(toks) < 3:
             skipped += 1
             continue
 
-        obj = toks[2]                                    # CHANGED: was toks[4]
+        obj = toks[2]
         grouped.setdefault(obj, []).append(line)
 
-    logger.info(f"Parsed Fortinet custom-url-category objects: {len(grouped)} objects")   # CHANGED: was "PAN"
+    logger.info(f"Parsed Fortinet custom-url-category objects: {len(grouped)} objects")
     if skipped:
         logger.info(f"Skipped non-matching/invalid lines: {skipped}")
     return grouped
@@ -190,14 +170,10 @@ def _split_bracket_token(tok: str) -> Tuple[Optional[str], Optional[str], str]:
 
 
 def extract_patterns(lines: List[str], object_name: str, logger: logging.Logger) -> List[str]:
-    """Extract URL patterns from Fortinet urlfilter lines.
-    Fortinet format: webfilter urlfilter <name> entry <N> url <value> type ...
-    CHANGED: was PAN format with 'list [ url1 url2 ... ]'
-    """
     patterns: List[str] = []
 
     for line in lines:
-        if " url " not in f" {line} ":                   # CHANGED: was " list "
+        if " url " not in f" {line} ":
             continue
 
         try:
@@ -205,25 +181,19 @@ def extract_patterns(lines: List[str], object_name: str, logger: logging.Logger)
         except Exception:
             continue
 
-        # find the 'url' keyword after the object name       # CHANGED: was 'list' keyword
         url_i = -1
         for i in range(len(toks)):
-            if toks[i] == "url":                             # CHANGED: was "list"
+            if toks[i] == "url":
                 url_i = i
                 break
         if url_i < 0 or url_i + 1 >= len(toks):
             continue
 
-        # Fortinet has exactly one URL value after 'url'     # CHANGED: was bracket-list parsing
         url_val = toks[url_i + 1]
         if url_val and url_val not in ("[", "]"):
             patterns.append(url_val)
 
     return [p for p in (x.strip() for x in patterns) if p]
-
-
-
-
 
 
 _CAT = r"(?:category|catergory)"
@@ -266,10 +236,6 @@ def remove_only_lines_matching(lines: List[str], patterns: List[re.Pattern]) -> 
             continue
         out.append(ln)
     return out
-
-
-
-
 
 
 SEC_END_ANY_RE = re.compile(rf"/\*end section custom-url-{_CAT}-definition_(\d+|x)\*/")
@@ -371,10 +337,6 @@ def render_section_for_object(template_section: List[str], n: int, obj_name: str
     return sec
 
 
-
-
-
-
 def main() -> int:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     main_dir = os.path.abspath(os.path.join(script_dir, ".."))
@@ -410,8 +372,8 @@ def main() -> int:
     safe_copy(src_final_custom, tmp_custom, logger)
 
 
-    forti_lines = read_lines(tmp_custom)                   # CHANGED: was pan_lines
-    objects = parse_forti_custom_urlf_objects(forti_lines, logger)  # CHANGED: was parse_pan_custom_urlf_objects
+    forti_lines = read_lines(tmp_custom)
+    objects = parse_forti_custom_urlf_objects(forti_lines, logger)
     if not objects:
         logger.warning("No objects found; cleanup and exit.")
         svt_lines = read_lines(svt_path)

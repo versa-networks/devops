@@ -215,9 +215,8 @@ def tokenize_pan_tail(tail: str) -> List[str]:
 
     return [t.strip() for t in tokens if t.strip()]
 
-# ─── CHANGED: prefix from "set shared profiles url-filtering" ───
 def parse_urlf_object_name(line: str) -> Optional[str]:
-    prefix = "webfilter profile"                                     # CHANGED
+    prefix = "webfilter profile"
     if not line.startswith(prefix):
         return None
     rest = line[len(prefix):].lstrip()
@@ -231,34 +230,25 @@ def parse_urlf_object_name(line: str) -> Optional[str]:
     parts = rest.split(None, 1)
     return parts[0] if parts else None
 
-# ─── CHANGED: keyword from "description" to "comment" ───
 MAX_DESC_LEN = 63
 
 def clean_and_truncate_description(raw: str) -> str:
-    """Strip outer quotes, remove non-printable chars, collapse whitespace,
-       truncate inner text to MAX_DESC_LEN chars, re-wrap in double-quotes."""
-    # strip outer double-quotes if present
     inner = raw.strip()
     if inner.startswith('"') and inner.endswith('"'):
         inner = inner[1:-1]
-    # remove embedded double-quotes
     inner = inner.replace('"', '')
-    # remove non-printable / control characters (keep printable ASCII + common extended)
     inner = re.sub(r'[^\x20-\x7E]', '', inner)
-    # collapse multiple spaces into one and strip
     inner = re.sub(r'\s+', ' ', inner).strip()
-    # truncate to max length
     if len(inner) > MAX_DESC_LEN:
         inner = inner[:MAX_DESC_LEN]
-    # return wrapped in double-quotes
     if not inner:
         return None
     return '"' + inner + '"'
 
 def parse_description_value(line: str) -> Optional[str]:
-    if " comment" not in line:                                       # CHANGED
+    if " comment" not in line:
         return None
-    m = re.search(r"\scomment\s+(.*)$", line)                       # CHANGED
+    m = re.search(r"\scomment\s+(.*)$", line)
     if not m:
         return None
     tail = m.group(1).strip()
@@ -286,13 +276,6 @@ def parse_tag_value(line: str) -> Optional[str]:
             return m2.group(1).replace('\\"', '"')
     return tail.split()[0]
 
-# ─── CHANGED: rewritten for Fortinet ftgd-wf + urlfilter-table format ───
-# Fortinet action-to-Versa action mapping:
-#   Fortinet "allow"   -> Versa "allow"
-#   Fortinet "block"   -> Versa "block"
-#   Fortinet "monitor" -> Versa "alert"
-#   Fortinet "warning" -> Versa "justify"
-# Fortinet urlfilter-table references -> Versa "block" user-defined
 FORTI_ACTION_MAP = {
     "allow":   "allow",
     "block":   "block",
@@ -301,8 +284,6 @@ FORTI_ACTION_MAP = {
 }
 
 def classify_action_line(line: str, obj_name: str) -> Optional[Tuple[str, List[str]]]:
-    # ─── Fortinet ftgd-wf line ───
-    # Format: webfilter profile <name> ftgd-wf filter <N> category <id> action <action>
     m = re.search(r"\sftgd-wf\s+filter\s+\d+\s+category\s+(\S+)\s+action\s+(\S+)", line)
     if m:
         cat_id = m.group(1)
@@ -312,9 +293,6 @@ def classify_action_line(line: str, obj_name: str) -> Optional[Tuple[str, List[s
             return (versa_action, [cat_id])
         return None
 
-    # ─── Fortinet urlfilter-table line ───
-    # Format: webfilter profile <name> urlfilter-table "<table-name>"
-    #         or: webfilter profile <name> urlfilter-table <table-name>
     m = re.search(r"\surlfilter-table\s+(.+)$", line)
     if m:
         tail = m.group(1).strip()
@@ -332,12 +310,11 @@ def classify_action_line(line: str, obj_name: str) -> Optional[Tuple[str, List[s
 
     return None
 
-# ─── CHANGED: prefix from "set shared profiles custom-url-category" ───
 def load_custom_category_names(path: str) -> Set[str]:
     names: Set[str] = set()
     if not os.path.isfile(path):
         return names
-    prefix = "webfilter urlfilter"                                   # CHANGED
+    prefix = "webfilter urlfilter"
     with open(path, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
             line = raw.strip()
@@ -356,7 +333,6 @@ def load_custom_category_names(path: str) -> Set[str]:
                     names.add(parts[0])
     return names
 
-# ─── UNCHANGED: mapping file format stays the same (key >> value) ───
 def load_pan_to_versa_mapping(path: str) -> Dict[str, str]:
     mp: Dict[str, str] = {}
     if not os.path.isfile(path):
@@ -366,11 +342,11 @@ def load_pan_to_versa_mapping(path: str) -> Dict[str, str]:
             line = raw.strip()
             if not line or line.startswith("#") or ">>" not in line:
                 continue
-            parts = line.split(">>")                                 # CHANGED: was split(">>", 1)
+            parts = line.split(">>")
             if len(parts) < 2:
                 continue
-            key = parts[0].strip().split()[0]                        # category ID (e.g. "1")
-            right = parts[-1].strip()                                # CHANGED: last segment = Versa name
+            key = parts[0].strip().split()[0]
+            right = parts[-1].strip()
             if key and right:
                 mp[key] = right
     return mp
@@ -527,7 +503,6 @@ def main() -> int:
         cfg_path = os.path.join(base, "final-data", "svt-temp.cfg")
         final_urlf = os.path.join(base, "final-data", "final-urlf-profile.txt")
         final_custom = os.path.join(base, "final-data", "final-custom-urlf-profile.txt")
-        # ─── CHANGED: mapping file name from PAN-to-Versa to Forti-to-Versa ───
         pan_to_versa_path = os.path.join(base, "miscellaneous", "Forti-to-Versa-urlf-categories.txt")
         unknown_path = os.path.join(base, "unknown-urlf-category.txt")
 
@@ -563,7 +538,7 @@ def main() -> int:
         custom_names = load_custom_category_names(final_custom)
         pan_to_versa = load_pan_to_versa_mapping(pan_to_versa_path)
         log(f"Loaded custom-url-category names: {len(custom_names)}")
-        log(f"Loaded Forti->Versa mappings: {len(pan_to_versa)}")           # CHANGED log text
+        log(f"Loaded Forti->Versa mappings: {len(pan_to_versa)}")
 
         sub_x_span = find_block_by_delims_stripped(
             cfg_lines,

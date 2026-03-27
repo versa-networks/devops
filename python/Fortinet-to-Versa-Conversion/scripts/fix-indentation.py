@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
 import os
 import re
 import statistics
 import collections
-
 
 
 def _is_ambiguous_token_line(stripped: str) -> bool:
@@ -38,7 +36,7 @@ def detect_indent_unit(lines):
             continue
         m = re.match(r"[ \t]+", ln)
         if m:
-            s = m.group(0).replace("\t", "    ")  # treat tabs as 4 spaces
+            s = m.group(0).replace("\t", "    ")
             indents.append(len(s))
 
     if not indents:
@@ -73,7 +71,6 @@ def build_reference_indent_stats(base_lines):
         lead_len = len(lead_ws.replace("\t", "    "))
         mp[stripped].append(lead_len)
 
-    # Build stats: count and distribution per line
     stats = {}
     for k, vals in mp.items():
         c = collections.Counter(vals)
@@ -116,13 +113,11 @@ def brace_depth_change(line):
 
 def safe_backup(path):
     bak = path + ".bak"
-    # overwrite previous bak each run (simple and predictable)
     with open(path, "rb") as fsrc:
         data = fsrc.read()
     with open(bak, "wb") as fdst:
         fdst.write(data)
     return bak
-
 
 
 def fix_indentation(base_path, target_path, out_path):
@@ -193,7 +188,7 @@ def main():
 
     base_path = os.path.join(main_dir, "miscellaneous", "base-template.cfg")
     target_path = os.path.join(main_dir, "final-data", "your-final-template.cfg")
-    out_path = target_path  # overwrite in-place
+    out_path = target_path
 
     if not os.path.isfile(base_path):
         raise SystemExit(f"ERROR: missing base template: {base_path}")

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 
 from __future__ import annotations
@@ -52,9 +50,8 @@ def file_exists_and_nonempty(path: str) -> bool:
     return os.path.isfile(path) and os.path.getsize(path) > 0
 
 def input_with_timeout(prompt: str, timeout_sec: int) -> Optional[str]:
-    # No threads: avoids interpreter shutdown crashes when stdin is used from daemon threads.
     try:
-        import select  # POSIX
+        import select
     except Exception:
         select = None
 
@@ -65,7 +62,6 @@ def input_with_timeout(prompt: str, timeout_sec: int) -> Optional[str]:
         pass
 
     if select is None:
-        # Fallback: no timeout support without select; proceed as if no input was provided.
         time.sleep(timeout_sec)
         return None
 
@@ -353,21 +349,11 @@ def apply_mapping_outside_description(line: str, mapping: Dict[str, str]) -> str
     return "".join(out)
 
 def flatten_forti_address_blocks(source_conf_path: str) -> Tuple[List[str], List[str]]:
-    """
-    Read a raw Fortinet config file and flatten:
-      config firewall address  ->  firewall address "name" attr value
-      config firewall addrgrp  ->  firewall addrgrp "name" attr value
-
-    Returns (addr_lines, grp_lines) as lists of flattened strings.
-    """
     ADDR_SECTION = "config firewall address"
     GRP_SECTION  = "config firewall addrgrp"
 
     raw = read_text_file_normalized(source_conf_path)
 
-    # ── join backslash-continuation lines first ──────────────────────────
-    # FortiGate configs sometimes split long "set member ..." lines with
-    # a trailing backslash. Join them into single logical lines before parsing.
     joined: List[str] = []
     buf = ""
     for raw_ln in raw:
@@ -387,13 +373,12 @@ def flatten_forti_address_blocks(source_conf_path: str) -> Tuple[List[str], List
     in_addr  = False
     in_grp   = False
     cur_name: Optional[str] = None
-    depth    = 0          # tracks nested config/end blocks inside an edit entry
+    depth    = 0
 
     for stripped in joined:
         if not stripped or stripped.startswith("#"):
             continue
 
-        # ── section entry ──────────────────────────────────────────────
         low = stripped.lower()
 
         if low == ADDR_SECTION:
@@ -413,14 +398,11 @@ def flatten_forti_address_blocks(source_conf_path: str) -> Tuple[List[str], List
         if not (in_addr or in_grp):
             continue
 
-        # ── end of top-level section ───────────────────────────────────
-        # a bare "end" at depth 0 closes the whole section
         if low == "end" and depth == 0:
             in_addr = in_grp = False
             cur_name = None
             continue
 
-        # ── nested config/end tracking (e.g. config tagging inside edit) ─
         if low.startswith("config "):
             depth += 1
             continue
@@ -428,13 +410,10 @@ def flatten_forti_address_blocks(source_conf_path: str) -> Tuple[List[str], List
             depth -= 1
             continue
 
-        # ignore everything inside nested sub-blocks
         if depth > 0:
             continue
 
-        # ── edit / next at top level ───────────────────────────────────
         if low.startswith("edit "):
-            # extract name: edit "name" or edit name
             rest_edit = stripped[5:].strip()
             if rest_edit.startswith('"'):
                 end_q = rest_edit.find('"', 1)
@@ -447,9 +426,8 @@ def flatten_forti_address_blocks(source_conf_path: str) -> Tuple[List[str], List
             cur_name = None
             continue
 
-        # ── set lines inside an edit entry ────────────────────────────
         if cur_name is not None and low.startswith("set "):
-            attr_val = stripped[4:].strip()   # everything after "set "
+            attr_val = stripped[4:].strip()
             prefix_kw = "firewall address" if in_addr else "firewall addrgrp"
             flat_line = f'{prefix_kw} "{cur_name}" {attr_val}'
             if in_addr:
@@ -461,19 +439,11 @@ def flatten_forti_address_blocks(source_conf_path: str) -> Tuple[List[str], List
 
 
 def flatten_forti_service_blocks(source_conf_path: str) -> Tuple[List[str], List[str]]:
-    """
-    Read a raw Fortinet config file and flatten:
-      config firewall service custom  ->  firewall service custom "name" attr value
-      config firewall service group   ->  firewall service group "name" member [ obj1 obj2 ]
-
-    Returns (svc_lines, grp_lines) as lists of flattened strings.
-    """
     SVC_SECTION = "config firewall service custom"
     GRP_SECTION  = "config firewall service group"
 
     raw = read_text_file_normalized(source_conf_path)
 
-    # join backslash-continuation lines (same as flatten_forti_address_blocks)
     joined: List[str] = []
     buf = ""
     for raw_ln in raw:
@@ -557,10 +527,8 @@ def flatten_forti_service_blocks(source_conf_path: str) -> Tuple[List[str], List
             if in_svc:
                 flat_line = 'firewall service custom "{}" {} {}'.format(cur_name, keyword, value).rstrip()
                 svc_lines.append(flat_line)
-            else:  # in_grp
+            else:
                 if keyword == "member":
-                    # Fortinet: set member obj1 obj2 obj3
-                    # Step-4 expects: member [ obj1 obj2 obj3 ]
                     flat_line = 'firewall service group "{}" member [ {} ]'.format(cur_name, value)
                     grp_lines.append(flat_line)
                 else:
@@ -571,10 +539,6 @@ def flatten_forti_service_blocks(source_conf_path: str) -> Tuple[List[str], List
 
 
 def find_forti_source_conf(main_dir: str, cwd: str) -> Optional[str]:
-    """
-    Locate the raw Fortinet source config file.
-    Looks for source-forti-config.conf in the main directory first.
-    """
     candidates = [
         os.path.join(main_dir, "source-forti-config.conf"),
         os.path.join(cwd, "source-forti-config.conf"),
@@ -660,13 +624,10 @@ def process_static_rest(rest: str) -> Tuple[bool, Optional[str], bool]:
 
     s = rest.strip()
 
-    # Fortinet: "member obj1 obj2 obj3" or member "name with spaces" obj2
-    # Members are space-separated; multi-word names are quoted: "HR & Payroll Servers"
     if re.match(r"^member\s+", s, flags=re.IGNORECASE):
         member_part = s[len("member"):].strip()
         if not member_part:
             return (False, None, False)
-        # Use split_bracket_content to correctly tokenise quoted multi-word names
         toks = split_bracket_content(member_part)
         if not toks:
             return (False, None, False)
@@ -674,7 +635,6 @@ def process_static_rest(rest: str) -> Tuple[bool, Optional[str], bool]:
         changed = False
         for tok, was_quoted in toks:
             if was_quoted:
-                # quoted name may contain spaces — collapse to underscores
                 tok = re.sub(r"\s+", "_", tok.strip())
                 changed = True
             tok2 = sanitize_token_to_allowed(tok, ALLOWED_NAME_CHARS)
@@ -686,7 +646,6 @@ def process_static_rest(rest: str) -> Tuple[bool, Optional[str], bool]:
             return (False, None, False)
         return (True, "member " + " ".join(out_toks), changed)
 
-    # PAN: "static [ obj1 obj2 ]"
     if re.match(r"^static\s+\[", s, flags=re.IGNORECASE):
         lb = s.find("[")
         rb = s.rfind("]")
@@ -735,7 +694,6 @@ def process_dynamic_filter_rest(rest: str) -> Tuple[str, Optional[str]]:
 
     s = rest.strip()
     low = s.lower()
-    # Fortinet uses "filter", PAN uses "dynamic filter"
     if low.startswith("dynamic filter"):
         kw_len = len("dynamic filter")
         out_prefix = "dynamic filter"
@@ -792,8 +750,6 @@ def process_dynamic_filter_rest(rest: str) -> Tuple[str, Optional[str]]:
     tok = sanitize_token_to_allowed(toks[0], ALLOWED_NAME_CHARS)
     return ("keep", f"{out_prefix} {tok}")
 
-# Fortinet address keywords: subnet=ip-netmask, fqdn=fqdn, tagging=tag, comment=description
-# type/start-ip/end-ip are used together for ip-range objects (3 separate flat lines)
 ADDR_ALLOWED_KW = {"subnet", "fqdn", "tagging", "comment", "type", "start-ip", "end-ip", "country"}
 
 def address_cleanup(step2_dir: str, cleaned_addr_path: str, max_len: int) -> Dict[Tuple[str, bool], str]:
@@ -844,21 +800,17 @@ def address_cleanup(step2_dir: str, cleaned_addr_path: str, max_len: int) -> Dic
         kw = parts[0].lower()
 
         if kw == "subnet":
-            # Fortinet: "subnet X.X.X.X/Y" (CIDR) or "subnet X.X.X.X 255.255.255.X" (dotted-mask)
             if len(parts) < 2:
                 invalid_group.add(raw_name)
             elif len(parts) == 3:
-                # Two-token form: IP + dotted mask — validate both are valid IPv4
                 if not (is_valid_ipv4(parts[1]) and is_valid_ipv4(parts[2])):
                     invalid_group.add(raw_name)
             elif not is_valid_ipv4_or_mask(parts[1]):
                 invalid_group.add(raw_name)
         elif kw == "start-ip" or kw == "end-ip":
-            # Individual lines of a Fortinet ip-range object — validate as IPv4
             if len(parts) < 2 or not is_valid_ipv4(parts[1]):
                 invalid_group.add(raw_name)
         elif kw == "fqdn":
-            # Fortinet writes: fqdn "corp.example.com" — strip quotes before validating
             fqdn_val = parts[1].strip('"\'') if len(parts) >= 2 else ""
             if not fqdn_val or not is_valid_fqdn_token(fqdn_val):
                 invalid_group.add(raw_name)
@@ -896,7 +848,6 @@ def address_cleanup(step2_dir: str, cleaned_addr_path: str, max_len: int) -> Dic
         new_rest = rest
 
         if kw == "tagging":
-            # Fortinet equivalent of PAN "tag"
             status, newtag = process_tag_rest(rest)
             if status == "delete":
                 continue
@@ -906,7 +857,6 @@ def address_cleanup(step2_dir: str, cleaned_addr_path: str, max_len: int) -> Dic
             new_rest = newtag
 
         elif kw == "subnet":
-            # Fortinet equivalent of PAN "ip-netmask": add /32 if bare IPv4 with no mask
             token = parts[1] if len(parts) >= 2 else ""
             if is_valid_ipv4(token) and len(parts) == 2:
                 parts2 = parts[:]
@@ -929,7 +879,6 @@ def address_cleanup(step2_dir: str, cleaned_addr_path: str, max_len: int) -> Dic
 
     return name_map
 
-# Fortinet group keywords: member=static, tagging=tag, comment=description, filter=dynamic filter
 GRP_ALLOWED_FIRST = {"member", "tagging", "comment", "filter", "type"}
 
 def group_cleanup(step2_dir: str, cleaned_grp_path: str, max_len: int) -> Dict[Tuple[str, bool], str]:
@@ -1031,7 +980,6 @@ def group_cleanup(step2_dir: str, cleaned_grp_path: str, max_len: int) -> Dict[T
                 continue
 
             if kw == "tagging":
-                # Fortinet equivalent of PAN "tag"
                 status, newtag = process_tag_rest(rest)
                 if status == "delete":
                     continue
@@ -1041,7 +989,6 @@ def group_cleanup(step2_dir: str, cleaned_grp_path: str, max_len: int) -> Dict[T
                 new_rest = newtag
 
             elif kw == "member":
-                # Fortinet equivalent of PAN "static"
                 ok, newr, _changed = process_static_rest(rest)
                 if not ok:
                     out_unsupported.append(orig)
@@ -1257,10 +1204,6 @@ def must_fix_has_payload(path: str) -> bool:
     return False
 
 def append_lines_dedup(path: str, new_lines: List[str]) -> int:
-    """
-    Append unique lines only (avoid duplicates across runs).
-    Returns count appended.
-    """
     existing = set()
     if os.path.isfile(path):
         for ln in read_text_file_normalized(path):
@@ -1287,9 +1230,6 @@ def step_26_process_unsupported_addresses(main_dir: str,
                                          cleaned_group_path: str,
                                          addr_name_map: Dict[Tuple[str, bool], str],
                                          max_len: int) -> int:
-    """
-    26a/26b
-    """
     unsupported_addr = os.path.join(step2_dir, "step-2_unsupported-address-config.txt")
     must_fix_path = os.path.join(main_dir, "must-fix-address-object.txt")
 
@@ -1447,14 +1387,6 @@ def main() -> int:
         print("Press Enter to continue or wait 30s to auto-continue.")
         _ = input_with_timeout("Continue (Enter) > ", 15)
 
-        # ── Fortinet-specific: flatten address/addrgrp blocks from source config ──
-        # In PAN, "set shared address" and "set shared address-group" lines were
-        # already flat in the source file and flowed through step-0/step-1 unchanged.
-        # In Fortinet, these live as block-based "config firewall address / edit / set / next / end"
-        # sections in the raw config. Step-0 only flattened "firewall policy" blocks,
-        # so address/addrgrp lines were never injected into the step-1 output.
-        # We flatten them here and append to the step-2 working file so that the
-        # existing extraction logic (Steps 5 & 16) can find them.
         print("\n[Step 4b] Locating raw Fortinet source config to flatten address/addrgrp blocks...")
         forti_source = find_forti_source_conf(main_dir, cwd)
         if forti_source is None:
@@ -1478,10 +1410,6 @@ def main() -> int:
             append_lines(step2_pan, flat_addr + flat_grp)
             print(f"  Appended {len(flat_addr) + len(flat_grp)} lines to: {step2_pan}")
 
-        # [Step 4c] Flatten service custom and service group blocks from raw Fortinet config.
-        # Same problem as address/addrgrp: step-0 only flattened firewall policy blocks.
-        # Service objects live in "config firewall service custom / group" block sections
-        # and must be flattened here so they flow through step-3 untouched to step-4.
         print("\n[Step 4c] Flattening service custom/group blocks from Fortinet source config...")
         if forti_source:
             flat_svc, flat_svc_grp = flatten_forti_service_blocks(forti_source)

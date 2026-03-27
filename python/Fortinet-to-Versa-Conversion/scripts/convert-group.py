@@ -1,33 +1,3 @@
-#!/usr/bin/env python3
-"""
-convert-group.py (Step-8): Convert Fortinet address-group (addrgrp) objects -> Versa config markers in ../final-data/svt-temp.cfg
-
-Directory model:
-- Script runs from:          ../scripts/
-- Main working directory:    one level above ../scripts/ (../)
-- Log directory:             ../log/
-- Temp directory:            ../temp/
-- Final data directory:      ../final-data/
-- Template source:           ../miscellaneous/base-template.cfg
-
-Logging:
-- EVERYTHING is logged (stdout + stderr) to: ../log/step-8.log
-
-Key logic:
-- CASE-SENSITIVE correlation.
-- member can be:  member target-word  OR  member [ w1 w2 ... ]
-- tagging can be: tagging target-word OR  tagging [ t1 t2 ... ]
-- Description copied with quotes (add quotes if missing).
-- Duplicate template block objects-address-group-definition_x to objects-address-group-definition_n.
-- If NO resolved members (no address-list AND no address-group-list matches) => SKIP inserting block.
-- Cleanup per step 26b/26c/26d.
-
-CRITICAL FIX (your orphan '}' issue):
-- When writing updated_block back, replace the ENTIRE original block range:
-    svt_lines[block_start:block_end+1] = updated_block
-  Not:
-    svt_lines[block_start:block_start+len(updated_block)] = updated_block
-"""
 
 from __future__ import annotations
 
@@ -153,7 +123,6 @@ def parse_static_targets(line: str) -> List[str]:
     m = RE_STATIC_SINGLE.search(line)
     if m:
         return [strip_quotes(m.group(1))]
-    # Fortinet flattened format: member word1 word2 word3 (no brackets)
     m = RE_STATIC_MULTI.search(line)
     if m:
         return shlex_words(m.group(1))
@@ -166,7 +135,6 @@ def parse_tag_targets(line: str) -> List[str]:
     m = RE_TAG_SINGLE.search(line)
     if m:
         return [strip_quotes(m.group(1))]
-    # Fortinet flattened format: tagging word1 word2 (no brackets)
     m = RE_TAG_MULTI.search(line)
     if m:
         return shlex_words(m.group(1))

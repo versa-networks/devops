@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import logging
@@ -153,10 +152,6 @@ def parse_policy_info(line: str) -> Optional[PolicyLineInfo]:
         return None
 
     if line[idx] == '"':
-        # Fortinet flat format: names are always quoted syntactically.
-        # is_quoted=False so "remove_quotes" is never triggered for clean names.
-        # Span covers only the name content inside the quotes so the surrounding
-        # quotes are preserved in the output.
         idx += 1
         end_quote = line.find('"', idx)
         if end_quote == -1:

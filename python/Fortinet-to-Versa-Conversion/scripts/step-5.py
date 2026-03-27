@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import sys
 import shutil
@@ -53,7 +52,6 @@ def prompt_path(prompt: str, timeout_sec: int = 15, default: str = "") -> str:
     while True:
         p = input_with_timeout(prompt, timeout_sec=timeout_sec, default=default).strip()
         if not p:
-            # if timed out (or empty), return default (may be empty)
             return default
         if os.path.isfile(p):
             return p
@@ -68,7 +66,6 @@ def prompt_yes_no(prompt: str, default_yes: bool = True, timeout_sec: int = 15) 
     while True:
         ans = input_with_timeout(f"{prompt} [{default_hint}]: ", timeout_sec=timeout_sec, default="").strip()
         if ans == "":
-            # if user pressed Enter OR timed out, return default
             return default_yes
         ans_l = ans.lower()
         if ans_l in ("y", "yes"):
@@ -82,17 +79,14 @@ def _box_print(*msg_lines: str, width: int = 90) -> None:
     print(border)
     for raw in msg_lines:
         raw = (raw or "").replace("\t", "    ")
-        # wrap long lines
         while len(raw) > inner_w:
             chunk, raw = raw[:inner_w], raw[inner_w:]
             print(f"* {chunk:<{inner_w}} *")
         print(f"* {raw:<{inner_w}} *")
-    # add one blank line inside box for readability
     print(f"* {'':<{inner_w}} *")
     print(border)
 
 def warn_and_wait(message: str, seconds: int = 15) -> None:
-    # Message box + timed "press Enter or wait" behavior
     _box_print(message, f"Press Enter to continue immediately or wait {seconds} seconds...")
     sys.stdout.flush()
 
@@ -114,12 +108,6 @@ def shlex_tokens(line: str) -> List[str]:
         return line.strip().split()
 
 def extract_shared_object_names(src_file: str, object_kind_token: str) -> List[str]:
-    """
-    Extract object names from lines like:
-      firewall service custom <n> ...
-      firewall service group <n> ...
-    object_kind_token must be 'custom' or 'group'
-    """
     names = []
     with open(src_file, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
@@ -133,10 +121,6 @@ def extract_shared_object_names(src_file: str, object_kind_token: str) -> List[s
     return names
 
 def find_security_rules_policy_and_rest(tokens: List[str]) -> Tuple[str, List[str]]:
-    """
-    Locate the first occurrence of: firewall policy <POLICY>
-    Returns (policy, rest_tokens_after_policy) or ("", []) if not found.
-    """
     for i in range(len(tokens) - 2):
         if tokens[i] == "firewall" and tokens[i + 1] == "policy":
             if i + 2 < len(tokens):
@@ -146,15 +130,6 @@ def find_security_rules_policy_and_rest(tokens: List[str]) -> Tuple[str, List[st
     return "", []
 
 def parse_value_list(tokens_after_keyword: List[str]) -> List[str]:
-    """
-    After keyword 'service' or 'application', PAN may have:
-      <word>
-      [ word1 word2 ]
-      [word1 word2]
-      [word1 word2 ]
-      [ word1 word2]
-    This returns a list of names (case preserved).
-    """
     if not tokens_after_keyword:
         return []
 
@@ -189,9 +164,6 @@ def parse_value_list(tokens_after_keyword: List[str]) -> List[str]:
                 break
         return vals
 
-    # Fortinet format: space-separated values without brackets
-    # e.g. service HTTP HTTPS DNS  or  service "SSH" "Custom_HTTPS"
-    # Collect ALL remaining tokens, not just the first one
     for t in tokens_after_keyword:
         t_clean = strip_brackets(t)
         if t_clean:
@@ -199,14 +171,6 @@ def parse_value_list(tokens_after_keyword: List[str]) -> List[str]:
     return vals
 
 def sanitize_description_inner_quotes_line(line: str) -> str:
-    """
-    Remove inner double-quotes inside the outer comments "...".
-    Example:
-      comments "blablbla "word word" blablabla";
-    becomes:
-      comments "blablbla word word blablabla";
-    Only affects lines that contain the substring: comments "
-    """
     key = 'comments "'
     if key not in line:
         return line
@@ -229,10 +193,6 @@ def sanitize_description_inner_quotes_line(line: str) -> str:
     return line[:content_start] + cleaned + line[last_quote:]
 
 def sanitize_file_description_quotes(path: str) -> int:
-    """
-    In-place sanitation of description lines in a file.
-    Returns number of lines modified.
-    """
     if not os.path.isfile(path):
         return 0
 
@@ -252,12 +212,6 @@ def sanitize_file_description_quotes(path: str) -> int:
     return changed
 
 def read_conversion_file(path: str) -> Tuple[List[str], Dict[str, str]]:
-    """
-    Reads a conversion file where each line is:
-      key >> value
-    value may be blank.
-    Returns (order_keys, mapping_current)
-    """
     order: List[str] = []
     cur: Dict[str, str] = {}
     if not os.path.isfile(path):
@@ -292,11 +246,6 @@ def write_conversion_file(path: str, order: List[str], cur: Dict[str, str]) -> N
                 f.write(f"{k} >> \n")
 
 def load_pan_to_versa_map(map_path: str) -> Dict[str, str]:
-    """
-    Reads mapping file lines like:
-      panName >> versaName
-    versaName may be blank.
-    """
     m: Dict[str, str] = {}
     with open(map_path, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
@@ -337,12 +286,6 @@ def conversion_file_has_blanks(conv_path: str) -> bool:
     return False
 
 def build_app_list_ids_map(rules_file: str) -> Dict[str, List[str]]:
-    """
-    Scan rules_file for flattened application list definition lines of the form:
-      application list "<name>" entry <N> application <ID...> action <action>
-    Returns dict: {list_name: [appID, appID, ...]}
-    Lines with 'category' instead of 'application' are ignored.
-    """
     app_map: Dict[str, List[str]] = {}
     with open(rules_file, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
@@ -354,18 +297,15 @@ def build_app_list_ids_map(rules_file: str) -> Dict[str, List[str]]:
             list_name = toks[2]
             if list_name not in app_map:
                 app_map[list_name] = []
-            # Look for "entry" keyword; skip non-entry lines (comment, unknown-application-action etc.)
             try:
                 entry_idx = toks.index("entry")
             except ValueError:
                 continue
-            # After "entry <N>", look for "application" keyword (not "category")
-            after_entry = toks[entry_idx + 2:]   # skip "entry" token and entry number
+            after_entry = toks[entry_idx + 2:]
             try:
                 app_kw_idx = after_entry.index("application")
             except ValueError:
-                continue   # category-only entry — skip
-            # Collect all IDs between "application" and "action"
+                continue
             for t in after_entry[app_kw_idx + 1:]:
                 if t == "action":
                     break
@@ -375,12 +315,6 @@ def build_app_list_ids_map(rules_file: str) -> Dict[str, List[str]]:
 
 
 def replace_app_ids_in_line(line: str, id_to_versa: Dict[str, str]) -> str:
-    """
-    In a line like:
-      firewall policy "Name" application-list "33 15832 23813"
-    replace each numeric ID with its Versa name from id_to_versa.
-    IDs with no mapping are kept as-is (numeric).
-    """
     marker = 'application-list "'
     idx = line.find(marker)
     if idx == -1:
@@ -439,7 +373,6 @@ def main() -> int:
             print("       Put the file at ../step-4/step-4_cleaned-forti-rules.txt and rerun.")
             return 2
 
-    # Remove lines where service = ALL, ANY, or NONE (Fortinet wildcards -> no specific service defined)
     _IGNORED_SERVICES = {"ALL", "ANY", "NONE"}
     all_removed = 0
     kept_lines = []
@@ -452,7 +385,7 @@ def main() -> int:
                 values = parse_value_list(rest[1:])
                 if values and all(v.upper() in _IGNORED_SERVICES for v in values if v):
                     all_removed += 1
-                    continue      # drop this line from the file
+                    continue
             kept_lines.append(raw)
     with open(rules_dst, "w", encoding="utf-8") as f:
         f.writelines(kept_lines)
@@ -461,11 +394,6 @@ def main() -> int:
     step4_service = os.path.join(step4_dir, "step-4_cleaned-service.txt")
     step5_service_out = os.path.join(step5_dir, "step-5_extracted-service.txt")
 
-    # Load predefined service names from Forti-to-Versa-services.txt so we can
-    # exclude them from service_names_set.  In Fortinet, config firewall service custom
-    # contains BOTH user-defined custom objects AND built-in predefined services
-    # (HTTP, HTTPS, SSH, DNS ...).  Without this exclusion, predefined names would
-    # match service_names_set and never reach predef-service-conversion.txt.
     svc_map_candidates_early = [
         os.path.join(main_dir, "miscellaneous", "Forti-to-Versa-services.txt"),
         os.path.join(main_dir, "miscellaneous", "Fortinet-to-Versa-services.txt"),
@@ -531,7 +459,7 @@ def main() -> int:
             for v in values:
                 if not v:
                     continue
-                if v.upper() in _IGNORED_SERVICES:  # ALL / ANY / NONE -> no specific service -> skip
+                if v.upper() in _IGNORED_SERVICES:
                     continue
                 total_service_refs += 1
 
@@ -579,44 +507,35 @@ def main() -> int:
     else:
         print("INFO: predef-service-conversion.txt does not exist or is empty; skipping service mapping prompt.")
 
-    # ── Steps 8-10: Application list resolution & conversion ────────────────
-    # Phase A: Build {list_name -> [appID, ...]} from definition lines in rules file
     print("INFO: scanning application list definitions...")
     app_list_ids = build_app_list_ids_map(rules_dst)
     print(f"OK: found {len(app_list_ids)} application list definition(s).")
 
-    # Phase B: Rewrite rules file (pass 1)
-    # - Policy lines with application-list: replace list name with resolved IDs (drop if no IDs)
-    # - application list definition lines: remove from file (used for lookup only)
     rewrite1 = []
     policies_resolved = 0
     policies_dropped  = 0
     defn_lines_removed = 0
     seen_ids: set = set()
-    all_referenced_ids: List[str] = []   # ordered, deduplicated
+    all_referenced_ids: List[str] = []
 
     with open(rules_dst, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
             line = raw.rstrip("\n")
             toks = shlex_tokens(line)
 
-            # Drop application list definition lines
             if len(toks) >= 2 and toks[0] == "application" and toks[1] == "list":
                 defn_lines_removed += 1
                 continue
 
-            # Check for policy line containing application-list keyword
             policy, rest = find_security_rules_policy_and_rest(toks)
             if policy and rest and rest[0] == "application-list" and len(rest) >= 2:
                 list_name = rest[1]
                 ids = app_list_ids.get(list_name, [])
                 if not ids:
-                    # No app IDs (category-only or list not found) -> drop this line
                     policies_dropped += 1
                     print(f"  DROP: policy '{policy}' application-list '{list_name}' "
                           f"has no app IDs (category-only or unknown) - line removed")
                     continue
-                # Replace list name with space-separated IDs
                 old_marker = f'application-list "{list_name}"'
                 new_marker = f'application-list "{" ".join(ids)}"'
                 new_line   = line.replace(old_marker, new_marker, 1)
@@ -637,7 +556,6 @@ def main() -> int:
     print(f"  - {policies_dropped} application-list line(s) dropped (no app IDs)")
     print(f"  - {defn_lines_removed} application list definition line(s) removed")
 
-    # Phase C: Write predef-application-conversion.txt
     predef_app_conv = os.path.join(main_dir, "predef-application-conversion.txt")
     order_app, cur_app = read_conversion_file(predef_app_conv)
 
@@ -654,7 +572,6 @@ def main() -> int:
     else:
         print("INFO: no application IDs found in any policy rule; predef-application-conversion.txt not created.")
 
-    # Phase D: Ask user, apply Forti-to-Versa mapping
     if is_file_nonempty(predef_app_conv):
         do_map_apps = prompt_yes_no(
             'Convert Fortinet application IDs to Versa predefined applications using '
@@ -679,7 +596,6 @@ def main() -> int:
             for p in app_map_candidates:
                 print(f"  - {p}")
 
-        # Phase E: Rewrite rules file (pass 2) — replace numeric IDs with Versa names
         _, id_to_versa = read_conversion_file(predef_app_conv)
         id_to_versa_mapped = {k: v for k, v in id_to_versa.items() if v.strip()}
 
@@ -697,7 +613,6 @@ def main() -> int:
             f.writelines(rewrite2)
         print(f"OK: replaced numeric application IDs with Versa names in: {rules_dst}")
 
-        # Phase F: Warn if any IDs still unmapped
         if conversion_file_has_blanks(predef_app_conv):
             pending_warnings.append(
                 "WARNING: There are Fortinet predefined applications that weren't matched to Versa equivalent. "

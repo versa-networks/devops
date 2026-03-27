@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 import logging
 import re
@@ -15,10 +14,10 @@ MAIN_DIR = SCRIPT_DIR.parent
 LOG_DIR = MAIN_DIR / "log"
 LOG_FILE = LOG_DIR / "step-0.log"
 
-DEFAULT_SOURCE = MAIN_DIR / "source-forti-config.conf"            # CHANGED: FortiGate config file
+DEFAULT_SOURCE = MAIN_DIR / "source-forti-config.conf"
 
 STEP0_DIR = MAIN_DIR / "step-0"
-CLEANED_FILE = STEP0_DIR / "step-0_cleaned-forti-rules.txt"       # CHANGED: reflects FortiGate source
+CLEANED_FILE = STEP0_DIR / "step-0_cleaned-forti-rules.txt"
 
 ZONE_OUT = MAIN_DIR / "zone-conversion.txt"
 APP_OUT = STEP0_DIR / "predef-application-conversion.txt"
@@ -136,22 +135,15 @@ def resolve_source_path(user_entry: Optional[str], logger: logging.Logger) -> Pa
     logger.info("User provided source path: %s", p)
     return p
 
-# CHANGED: matches FortiGate flattened format: firewall policy "NAME" <remainder>
-#          was: r'\bsecurity rules\s+("([^"]+)"|(\S+))'
 SEC_RULE_RE = re.compile(r'\bfirewall policy\s+("([^"]+)"|(\S+))')
 
-# CHANGED: Fortinet UTM/security profile attribute keywords
-#          was: r'^profile-setting profiles (file-blocking|virus|spyware|vulnerability)\b'
 PROFILE_RE = re.compile(r'^(av-profile|webfilter-profile|ips-sensor|application-list|dnsfilter-profile|ssl-ssh-profile|profile-group)\b')
 
-# CHANGED: Fortinet uses 'logtraffic' where PAN uses 'log-setting'
-#          was: r'\blog-setting\b'
 LOG_SETTING_RE = re.compile(r'\blogtraffic\b')
 
 ALLOWED_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 def extract_policy_remainder(line: str):
-    # Unchanged — SEC_RULE_RE update above is all that is needed here
     m = SEC_RULE_RE.search(line)
     if not m:
         return None, None
@@ -160,12 +152,11 @@ def extract_policy_remainder(line: str):
     return policy_name, remainder
 
 def tokenize_list_tail(tail: str):
-    # CHANGED: also strip surrounding quotes from each token (FortiGate quotes values)
     out = []
     for tok in tail.split():
         if tok == "[" or tok == "]":
             continue
-        t = tok.strip().strip("[]\"'")      # added strip of " and '
+        t = tok.strip().strip("[]\"'")
         if t:
             out.append(t)
     return out
@@ -178,12 +169,10 @@ def warn_if_undesirable(logger: logging.Logger, token: str, context: str, lineno
         )
 
 def normalize_tokens(tokens):
-    # CHANGED: also strip surrounding quotes (FortiGate quotes values e.g. "always", "ALL")
     return [t.strip().strip("[]\"'") for t in tokens if t.strip().strip("[]\"'")]
 
 def should_remove_security_rules_line(remainder: str):
 
-    # CHANGED: 'logtraffic' is Fortinet's equivalent of PAN's 'log-setting' (step-9)
     if LOG_SETTING_RE.search(remainder):
         return True, "step-9 contains logtraffic"
 
@@ -191,50 +180,23 @@ def should_remove_security_rules_line(remainder: str):
     if not toks:
         return False, ""
 
-    # CHANGED: Fortinet uses "all" where PAN uses "any" (catch-all / default value)
     if toks[-1] == "all":
         return True, "step-8 endswith all"
 
-    # CHANGED: 'service ALL' is Fortinet's equivalent of PAN's 'service application-default'
     if len(toks) >= 2 and toks[-2:] == ["service", "ALL"]:
         return True, "step-8 endswith service ALL"
 
-    # CHANGED: 'utm-status disable' = no security profiles applied
-    #          equivalent of PAN's 'profile-setting group Drop_Default'
     if len(toks) >= 2 and toks[-2:] == ["utm-status", "disable"]:
         return True, "step-8 endswith utm-status disable"
 
-    # CHANGED: 'status enable' is the default enabled state
-    #          equivalent of PAN's 'target negate no'
     if len(toks) >= 2 and toks[-2:] == ["status", "enable"]:
         return True, "step-8 endswith status enable"
 
-    # CHANGED: 'schedule always' = always-on / universal schedule
-    #          equivalent of PAN's 'rule-type universal'
     if len(toks) >= 2 and toks[-2:] == ["schedule", "always"]:
         return True, "step-8 endswith schedule always"
 
     return False, ""
 
-# NEW FUNCTION: converts FortiGate block-style policy config into flat per-attribute lines.
-#
-# FortiGate 'config firewall policy' blocks look like:
-#     config firewall policy
-#         edit 1
-#             set name "PolicyName"
-#             set srcintf "wan1"
-#             set dstintf "internal"
-#             ...
-#         next
-#     end
-#
-# Each block is expanded into one flat line per attribute:
-#     firewall policy "PolicyName" srcintf wan1
-#     firewall policy "PolicyName" dstintf internal
-#     ...
-#
-# This allows all downstream functions (clean_in_place, extract_outputs) to work
-# exactly as before without structural changes.
 def flatten_fortigate_config(source_path: Path, flat_path: Path, logger: logging.Logger) -> None:
 
     logger.info("Flattening FortiGate block config: %s -> %s", source_path, flat_path)
@@ -244,8 +206,8 @@ def flatten_fortigate_config(source_path: Path, flat_path: Path, logger: logging
 
     flat_lines = []
     in_policy_block = False
-    current_name = None        # policy name (from 'set name'); falls back to edit id
-    policy_attrs = []          # accumulated (keyword, raw_value) pairs for current policy
+    current_name = None
+    policy_attrs = []
 
     for raw in lines:
         stripped = raw.strip()
@@ -258,12 +220,10 @@ def flatten_fortigate_config(source_path: Path, flat_path: Path, logger: logging
             continue
 
         if stripped.startswith("edit "):
-            # Start of a new policy entry; use edit-id as name until 'set name' is seen
             current_name = stripped[5:].strip().strip('"')
             policy_attrs = []
 
         elif stripped == "next":
-            # End of policy entry — emit one flat line per collected attribute
             if current_name is not None:
                 for kw, val in policy_attrs:
                     flat_lines.append('firewall policy "{}" {} {}\n'.format(current_name, kw, val))
@@ -281,7 +241,6 @@ def flatten_fortigate_config(source_path: Path, flat_path: Path, logger: logging
             keyword = parts[0]
             value = parts[1] if len(parts) > 1 else ""
             if keyword == "name":
-                # Override edit-id with the real policy name
                 current_name = value.strip('"')
             else:
                 policy_attrs.append((keyword, value))
@@ -292,37 +251,6 @@ def flatten_fortigate_config(source_path: Path, flat_path: Path, logger: logging
 
     logger.info("Flattening complete: %d policy attribute lines written.", len(flat_lines))
 
-# NEW FUNCTION: converts 'config application list' blocks into flat per-entry lines,
-# then APPENDS them to the same flat_path already written by flatten_fortigate_config.
-#
-# FortiGate 'config application list' blocks have two nesting levels:
-#
-#     config application list
-#         edit "App_Control_Standard"           <- list name
-#             set comment "..."
-#             set unknown-application-action block
-#             config entries                    <- sub-block
-#                 edit 1                        <- entry id
-#                     set category 2 6
-#                     set action block
-#                     set log enable
-#                 next
-#                 edit 2
-#                     set application 15832
-#                     set action block
-#                 next
-#             end                               <- exit sub-block
-#         next                                  <- exit list entry
-#     end                                       <- exit config block
-#
-# Each entry is emitted as one flat line combining category/application + action:
-#   application list "App_Control_Standard" comment "..."
-#   application list "App_Control_Standard" unknown-application-action block
-#   application list "App_Control_Standard" entry 1 category 2 6 action block
-#   application list "App_Control_Standard" entry 2 application 15832 action block
-#
-# Lines are APPENDed so they follow the firewall policy lines in the cleaned file.
-# They do NOT match SEC_RULE_RE so they pass through clean_in_place unchanged (kept).
 def flatten_application_list(source_path: Path, flat_path: Path, logger: logging.Logger) -> None:
 
     logger.info("Appending 'config application list' entries from: %s", source_path)
@@ -332,21 +260,19 @@ def flatten_application_list(source_path: Path, flat_path: Path, logger: logging
 
     flat_lines = []
 
-    in_applist_block  = False   # inside 'config application list'
-    in_entries_block  = False   # inside nested 'config entries'
-    current_list_name = None    # name from 'edit "name"' at list level
-    list_top_attrs    = []      # top-level set attrs (comment, unknown-application-action, ...)
-    current_entry_id  = None    # edit N inside 'config entries'
-    entry_attrs       = {}      # accumulates set keyword->value for current entry
+    in_applist_block  = False
+    in_entries_block  = False
+    current_list_name = None
+    list_top_attrs    = []
+    current_entry_id  = None
+    entry_attrs       = {}
 
     for raw in lines:
         stripped = raw.strip()
 
-        # Skip comment lines
         if stripped.startswith("#"):
             continue
 
-        # ---- detect block start ----
         if stripped == "config application list":
             in_applist_block = True
             in_entries_block = False
@@ -357,10 +283,8 @@ def flatten_application_list(source_path: Path, flat_path: Path, logger: logging
         if not in_applist_block:
             continue
 
-        # ---- inside application list block ----
 
         if stripped == "config entries":
-            # Enter the nested entries sub-block
             in_entries_block = True
             current_entry_id = None
             entry_attrs = {}
@@ -369,14 +293,11 @@ def flatten_application_list(source_path: Path, flat_path: Path, logger: logging
         if in_entries_block:
 
             if stripped.startswith("edit "):
-                # New entry inside 'config entries'
                 current_entry_id = stripped[5:].strip().strip('"')
                 entry_attrs = {}
 
             elif stripped == "next":
-                # Emit one flat line per entry, combining category/application + action
                 if current_entry_id is not None and current_list_name is not None:
-                    # Build the entry summary: prefer 'category' over 'application'
                     subject = entry_attrs.get("category") or entry_attrs.get("application", "")
                     kw      = "category" if "category" in entry_attrs else "application"
                     action  = entry_attrs.get("action", "")
@@ -394,7 +315,6 @@ def flatten_application_list(source_path: Path, flat_path: Path, logger: logging
                 entry_attrs = {}
 
             elif stripped == "end":
-                # Exit the nested entries sub-block, back to list level
                 in_entries_block = False
                 current_entry_id = None
                 entry_attrs = {}
@@ -408,15 +328,12 @@ def flatten_application_list(source_path: Path, flat_path: Path, logger: logging
                     entry_attrs[kw] = val
 
         else:
-            # Top level of the list entry (outside 'config entries')
 
             if stripped.startswith("edit "):
-                # Start of a new named list entry
                 current_list_name = stripped[5:].strip().strip('"')
                 list_top_attrs = []
 
             elif stripped == "next":
-                # Emit top-level attribute lines, then reset for next list entry
                 for kw, val in list_top_attrs:
                     flat_lines.append(
                         'application list "{}" {} {}\n'.format(current_list_name, kw, val)
@@ -425,7 +342,6 @@ def flatten_application_list(source_path: Path, flat_path: Path, logger: logging
                 list_top_attrs = []
 
             elif stripped == "end":
-                # Exit the entire 'config application list' block
                 in_applist_block = False
 
             elif stripped.startswith("set "):
@@ -440,7 +356,6 @@ def flatten_application_list(source_path: Path, flat_path: Path, logger: logging
         logger.info("No 'config application list' entries found — nothing appended.")
         return
 
-    # APPEND to the existing flat file (firewall policy lines already written there)
     with flat_path.open("a", encoding="utf-8") as out:
         for line in flat_lines:
             out.write(line)
@@ -457,12 +372,8 @@ def copy_source_to_step0(source_path: Path, logger: logging.Logger) -> None:
     logger.info("  from: %s", source_path)
     logger.info("  to:   %s", CLEANED_FILE)
 
-    # CHANGED: call flatten instead of shutil.copy2 — FortiGate blocks must be
-    #          converted to flat lines before clean_in_place / extract_outputs can run.
-    #          was: shutil.copy2(source_path, CLEANED_FILE)
     flatten_fortigate_config(source_path, CLEANED_FILE, logger)
 
-    # NEW: also flatten 'config application list' blocks and append to same cleaned file
     flatten_application_list(source_path, CLEANED_FILE, logger)
 
     logger.info("Flatten complete.")
@@ -507,7 +418,7 @@ def clean_in_place(logger: logging.Logger) -> None:
 
     logger.info("Cleaning summary:")
     logger.info("  Total lines read:               %d", total)
-    logger.info("  Lines with 'firewall policy':   %d", sec_rules)  # CHANGED label
+    logger.info("  Lines with 'firewall policy':   %d", sec_rules)
     logger.info("  Lines removed:                  %d", removed)
     for k in sorted(reasons.keys()):
         logger.info("    %s: %d", k, reasons[k])
@@ -543,12 +454,11 @@ def extract_outputs(logger: logging.Logger) -> None:
 
             sec_rules += 1
 
-            # CHANGED: FortiGate uses 'dstintf' / 'srcintf' instead of PAN's 'to' / 'from'
             if remainder.startswith("dstintf ") or remainder.startswith("srcintf "):
                 zone_lines += 1
                 kw = remainder.split(None, 1)[0]
                 tail = remainder[len(kw):].strip()
-                tokens = tokenize_list_tail(tail)   # quotes already stripped by tokenize_list_tail
+                tokens = tokenize_list_tail(tail)
 
                 logger.info("Line %d: policy='%s' keyword='%s' zoneTokens=%s", lineno, policy_name, kw, tokens)
                 for t in tokens:
@@ -558,12 +468,10 @@ def extract_outputs(logger: logging.Logger) -> None:
                         continue
                     zones_seen[t] = None
 
-            # CHANGED: FortiGate uses 'service' where PAN used 'application'
-            #          (service objects are the closest FortiGate equivalent)
             if remainder.startswith("service "):
                 app_lines += 1
                 tail = remainder[len("service"):].strip()
-                tokens = tokenize_list_tail(tail)   # quotes already stripped by tokenize_list_tail
+                tokens = tokenize_list_tail(tail)
 
                 logger.info("Line %d: policy='%s' keyword='service' serviceTokens=%s", lineno, policy_name, tokens)
                 for t in tokens:
@@ -595,11 +503,11 @@ def extract_outputs(logger: logging.Logger) -> None:
 
     logger.info("Extraction summary:")
     logger.info("  Total lines read:               %d", total)
-    logger.info("  Lines with 'firewall policy':   %d", sec_rules)  # CHANGED label
+    logger.info("  Lines with 'firewall policy':   %d", sec_rules)
     logger.info("  Zone lines matched:             %d", zone_lines)
     logger.info("  Unique zones written:           %d", len(zones_seen))
     logger.info("  Zone duplicates skipped:        %d", zone_dupes)
-    logger.info("  Service lines matched:          %d", app_lines)  # CHANGED label
+    logger.info("  Service lines matched:          %d", app_lines)
     logger.info("  Unique services written:        %d", len(apps_seen))
     logger.info("  Service duplicates skipped:     %d", app_dupes)
     logger.info("  Security profile lines:         %d", prof_lines)

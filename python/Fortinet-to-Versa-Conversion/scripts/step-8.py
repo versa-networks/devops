@@ -138,9 +138,6 @@ class TokenSpan :
         return self .new if self .new is not None else self .raw 
 
 def parse_identity_tokens (line :str )->List [TokenSpan ]:
-    # Fortinet uses 'groups' and 'users' keywords (instead of PAN 'source-user').
-    # Tokens are space-separated quoted or unquoted values to end-of-line; no [ ] brackets.
-    # We must find the keyword only OUTSIDE of quoted strings to avoid false matches in comments.
     n =len (line )
     in_q =False 
     esc =False 
@@ -367,8 +364,6 @@ def extract_username_from_slash_login (raw_token :str )->Optional [str ]:
     return t .rsplit ("/",1 )[-1 ].strip ()
 
 def is_simple_name_token (raw_token :str )->bool :
-    # Fortinet groups/users fields contain simple names (not DN, AD, canonical, or slash formats).
-    # Any token that didn't match the other formats is treated as a plain name for CN lookup.
     t =strip_outer_quotes (raw_token ).strip ()
     if not t :
         return False 
@@ -453,8 +448,6 @@ def process_rules_file (rules_path :Path ,dn_index :Dict [str ,str ],cn_index :D
                         counters .dn_casefixed +=1 
                         log (f"Step4: case-fix DN: {dn_content}  -->  {ref_tok}")
                 else :
-                    # Full DN not in index (OUs/DCs may differ between environments).
-                    # Fallback: extract the CN value and try cn_index for a CN-only match.
                     cn_val =extract_cn_value_from_dn (dn_content )
                     if cn_val is not None :
                         ck =cn_val .casefold ()
@@ -571,9 +564,6 @@ def process_rules_file (rules_path :Path ,dn_index :Dict [str ,str ],cn_index :D
                     append_not_found (LDAP_USERS_NOT_FOUND ,line ,username )
                     log (f"SlashLogin: username NOT FOUND -> {username}")
 
-            # Fortinet simple name loop: plain group/user names from 'groups'/'users' fields.
-            # Tokens are simple names (e.g. "RAVPN_intern", "Oswald Martin") -- look them up
-            # directly as CN values in the LDAP reference and replace with the full DN string.
             for t in tokens :
                 cur =t .value 
                 if not is_simple_name_token (cur ):

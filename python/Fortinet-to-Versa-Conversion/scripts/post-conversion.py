@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import re
 import sys
@@ -16,7 +15,6 @@ def remove_illegal_xml_controls(s: str) -> tuple[str, int]:
 
 
 def remove_comment_markers(s: str) -> tuple[str, int]:
-    """Remove entire lines that are section markers like /* begin sub-section ... */"""
     pattern = re.compile(r"^[ \t]*/\*.*?\*/[ \t]*\n?", re.MULTILINE)
     found = pattern.findall(s)
     if not found:
@@ -48,18 +46,10 @@ def default_output_path(input_path: str) -> str:
 
 
 def default_input_path() -> str:
-    # IMPORTANT: resolve relative to CURRENT WORKING DIRECTORY (where wrapper runs from)
-    # so "../final-data/your-final-template.cfg" is based on runtime CWD.
     return os.path.abspath(os.path.join(os.getcwd(), "..", "final-data", "your-final-template.cfg"))
 
 
 def main():
-    # Usage:
-    #   python3 post-conversion-optional.py
-    #   python3 post-conversion-optional.py [input_file] [output_file] [mode]
-    #
-    # If no input_file is provided, we default to:
-    #   ../final-data/your-final-template.cfg  (relative to runtime CWD)
 
     in_path = default_input_path() if len(sys.argv) < 2 else sys.argv[1]
     out_path = sys.argv[2] if len(sys.argv) >= 3 else default_output_path(in_path)

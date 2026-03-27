@@ -138,15 +138,12 @@ def replace_or_delete_line_with_marker(block: str, marker: str, replacement: Opt
     return block.replace(marker, replacement)
 
 def _netmask_to_prefix(netmask: str) -> int:
-    """Convert dotted-decimal netmask to prefix length integer."""
     bits = 0
     for octet in netmask.split("."):
         bits += bin(int(octet)).count("1")
     return bits
 
 def _forti_subnet_to_cidr(value: str) -> str:
-    """Convert Fortinet 'x.x.x.x y.y.y.y' subnet to CIDR 'x.x.x.x/n'.
-    If value already contains '/' it is returned as-is."""
     value = value.strip()
     if "/" in value:
         return value
@@ -236,7 +233,7 @@ def parse_address_objects(lines: List[str], logger: logging.Logger) -> List[Dict
                 obj_type = "ip-range"
 
             if keyword == "subnet":
-                raw = rest.split()[0] if rest else None          # take only first token (ip part)
+                raw = rest.split()[0] if rest else None
                 ip_value = _forti_subnet_to_cidr(rest) if rest else None
             elif keyword == "fqdn":
                 fqdn_value = rest if rest else None
@@ -253,7 +250,6 @@ def parse_address_objects(lines: List[str], logger: logging.Logger) -> List[Dict
                 else:
                     tag_content = rest.strip() if rest else None
 
-        # Assemble Fortinet start-ip + end-ip into the hyphen-separated range value
         if obj_type == "ip-range" and _start_ip and _end_ip:
             range_value = f"{_start_ip}-{_end_ip}"
         elif obj_type == "ip-range" and _start_ip:

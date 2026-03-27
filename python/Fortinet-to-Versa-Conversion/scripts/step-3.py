@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 
 from __future__ import annotations
@@ -13,7 +12,6 @@ from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Set, Tuple
 
 class _StreamToLogger:
-    """Redirect writes to a logger, so *all* stdout/stderr is logged."""
     def __init__(self, logger: logging.Logger, level: int):
         self.logger = logger
         self.level = level
@@ -58,8 +56,8 @@ def setup_logging(log_path: Path) -> logging.Logger:
     logger.info(f"Logging to: {log_path}")
     return logger
 
-_RG_ADDR_GROUP = re.compile(r'^firewall\s+addrgrp\s+(".*?"|\S+)')          # FORTI: was ^set\s+shared\s+address-group\s+
-_RG_ADDR       = re.compile(r'^firewall\s+address\s+(".*?"|\S+)')              # FORTI: was ^set\s+shared\s+address\s+
+_RG_ADDR_GROUP = re.compile(r'^firewall\s+addrgrp\s+(".*?"|\S+)')
+_RG_ADDR       = re.compile(r'^firewall\s+address\s+(".*?"|\S+)')
 
 def _strip_quotes(s: str) -> str:
     s = s.strip()
@@ -113,19 +111,19 @@ def extract_keyword_values(line: str, keyword: str) -> List[str]:
 def referenced_in_rules(obj_name: str, rules_lines: List[str]) -> bool:
     
     for ln in rules_lines:
-        if "srcaddr" not in ln and "dstaddr" not in ln:                     # FORTI: was "source" / "destination"
+        if "srcaddr" not in ln and "dstaddr" not in ln:
             continue
-        if obj_name in extract_keyword_values(ln, "srcaddr"):               # FORTI: was "source"
+        if obj_name in extract_keyword_values(ln, "srcaddr"):
             return True
-        if obj_name in extract_keyword_values(ln, "dstaddr"):               # FORTI: was "destination"
+        if obj_name in extract_keyword_values(ln, "dstaddr"):
             return True
     return False
 
 def referenced_in_group_static(obj_name: str, group_lines: List[str]) -> bool:
     for ln in group_lines:
-        if "member" not in ln:                                              # FORTI: was "static"
+        if "member" not in ln:
             continue
-        if obj_name in extract_keyword_values(ln, "member"):               # FORTI: was "static"
+        if obj_name in extract_keyword_values(ln, "member"):
             return True
     return False
 
@@ -296,11 +294,11 @@ def main() -> int:
     logger.info(f"Main dir:   {main_dir}")
     logger.info("NOTE: Correlation is CASE-SENSITIVE (exact match).")
 
-    src_rules = step2_dir / "step-2_cleaned-forti-rules.txt"               # FORTI: was step-2_cleaned-pan-rules.txt
+    src_rules = step2_dir / "step-2_cleaned-forti-rules.txt"
     src_ag    = step2_dir / "step-2_cleaned-address-group.txt"
     src_a     = step2_dir / "step-2_cleaned-address.txt"
 
-    dst_rules = step3_dir / "step-3_cleaned-forti-rules.txt"               # FORTI: was step-3_cleaned-pan-rules.txt
+    dst_rules = step3_dir / "step-3_cleaned-forti-rules.txt"
     dst_ag    = step3_dir / "step-3_cleaned-address-group.txt"
     dst_a     = step3_dir / "step-3_cleaned-address.txt"
 

@@ -5,8 +5,6 @@ from datetime import datetime
 from typing import Optional, List, Dict, Set
 
 
-
-
 SCRIPT_DIR = Path.cwd().resolve()
 MAIN_DIR = SCRIPT_DIR.parent
 FINAL_DATA_DIR = MAIN_DIR / "final-data"
@@ -20,8 +18,6 @@ UNRESOLVED_OUT_PATH = MAIN_DIR / "unresolved-objects-configuration.txt"
 LOG_PATH = LOG_DIR / "pre-convert-object-cleanup.log"
 
 
-
-
 RE_ADDR_GRP = re.compile(r'^\s*firewall\s+addrgrp\s+("([^"]+)"|(\S+))\b')
 RE_ADDR = re.compile(r'^\s*firewall\s+address\s+("([^"]+)"|(\S+))\b')
 
@@ -31,11 +27,8 @@ RE_POLICY = re.compile(r'\bfirewall\s+policy\s+("([^"]+)"|(\S+))\b')
 RE_DISABLED = re.compile(r'\bstatus\b\s+(\S+)')
 
 
-
 RE_TAIL_SOURCE = re.compile(r'^srcaddr(\s+|$)')
 RE_TAIL_DEST = re.compile(r'^dstaddr(\s+|$)')
-
-
 
 
 def log(msg: str) -> None:
@@ -43,8 +36,6 @@ def log(msg: str) -> None:
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(f"[{ts}] {msg}\n")
-
-
 
 
 def load_object_names(path: Path, regex: re.Pattern) -> Set[str]:
@@ -63,8 +54,6 @@ def load_object_names(path: Path, regex: re.Pattern) -> Set[str]:
     return names
 
 
-
-
 def extract_policy_name(line: str) -> Optional[str]:
     m = RE_POLICY.search(line)
     if not m:
@@ -73,8 +62,6 @@ def extract_policy_name(line: str) -> Optional[str]:
 
 def extract_policy_match(line: str) -> Optional[re.Match]:
     return RE_POLICY.search(line)
-
-
 
 
 def get_immediate_keyword_after_policy(line: str, policy_m: re.Match) -> Optional[str]:
@@ -119,8 +106,6 @@ def annotate_unresolved_in_line(line: str, unresolved_targets: Set[str]) -> str:
     return out
 
 
-
-
 def set_policy_disabled_yes(lines: List[str], policy_indices: List[int]) -> None:
 
     for idx in policy_indices:
@@ -145,8 +130,6 @@ def set_policy_disabled_yes(lines: List[str], policy_indices: List[int]) -> None
     newline = "" if prefix.endswith("\n") else "\n"
     lines.insert(first_idx + 1, prefix + " status disable" + newline)
     log(f"Policy status set to disable (inserted new status line) after idx={first_idx}")
-
-
 
 
 def main() -> None:

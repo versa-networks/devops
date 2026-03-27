@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""
-convert-service.py
-
-Final instruction (UPDATED):
-- Delete complete lines that CONTAIN either of these substrings:
-    /*begin main-section objects*/
-    /*end main-section objects*/
-
-Other behavior unchanged:
-- Step 0: dedupe ../final-data/final-service.txt by EXACT full line text only
-- Convert services into ../final-data/svt-temp.cfg
-- Step 33 cleanup for service/address delimiters
-- Collapse blank runs at end
-"""
 
 import os
 import re
@@ -107,9 +92,6 @@ def copy_file(src: str, dst: str, logger: logging.Logger) -> None:
     logger.info("Copied: %s -> %s", src, dst)
 
 def collapse_blank_runs(text: str, max_blank_lines: int = 1) -> str:
-    """
-    Collapse runs of blank lines. Default: 2+ blank lines -> 1 blank line.
-    """
     lines = text.splitlines(True)
     out: List[str] = []
     blank_run = 0
@@ -125,12 +107,6 @@ def collapse_blank_runs(text: str, max_blank_lines: int = 1) -> str:
     return "".join(out)
 
 def delete_lines_containing_main_section_delimiters(text: str, logger: logging.Logger) -> str:
-    """
-    Delete complete lines that CONTAIN either:
-      /*begin main-section objects*/
-      /*end main-section objects*/
-    anywhere on the line.
-    """
     lines = text.splitlines(True)
     out: List[str] = []
     removed = 0
@@ -149,11 +125,6 @@ def delete_lines_containing_main_section_delimiters(text: str, logger: logging.L
     return "".join(out)
 
 def dedupe_final_service_file_exact_lines(path: str, logger: logging.Logger) -> None:
-    """
-    Remove duplicated lines by EXACT full line text only.
-    - Comparison is exact after stripping only trailing newline chars.
-    - Keeps first occurrence, removes later duplicates.
-    """
     if not file_nonempty(path):
         logger.info("Step 0: %s missing or empty; nothing to dedupe.", path)
         return
@@ -322,16 +293,6 @@ def group_first_object(lines: List[str], logger: logging.Logger) -> Tuple[Option
     return first_name, group, remain
 
 def parse_group(group_lines: List[str], logger: logging.Logger) -> List[Dict[str, str]]:
-    """Return a list of parsed dicts — one per port entry.
-
-    Fortinet lines:
-      firewall service custom <name> tcp-portrange 80
-      firewall service custom <name> tcp-portrange 3389:1024-65535
-      firewall service custom <name> udp-portrange 33434-33534:32768-65535
-      firewall service custom <name> tcp-portrange 25 587        (multi-port)
-      firewall service custom <name> comment "description text"
-      firewall service custom <name> protocol TCP                (ignored; protocol derived from portrange keyword)
-    """
     base: Dict[str, str] = {}
 
     for ln in group_lines:
@@ -367,7 +328,6 @@ def parse_group(group_lines: List[str], logger: logging.Logger) -> List[Dict[str
         base["desc_value"] = rest
         break
 
-    # Fortinet portrange regex: protocol is embedded in the keyword (tcp-portrange / udp-portrange)
     portrange_re = re.compile(
         r'^\s*firewall\s+service\s+custom\s+("([^"]+)"|\S+)\s+(tcp|udp)-portrange\s+(.*)\s*$',
         re.IGNORECASE,
@@ -381,11 +341,9 @@ def parse_group(group_lines: List[str], logger: logging.Logger) -> List[Dict[str
         protocol = m.group(3).lower()
         port_spec = m.group(4).strip()
 
-        # port_spec may contain multiple space-separated port tokens (e.g. "25 587")
         for token in port_spec.split():
-            # Each token may be "dst" or "dst:src"; we only use the dst portion
             dst_part = token.split(":")[0]
-            entry = dict(base)  # copy shared fields (name, tag, desc)
+            entry = dict(base)
             entry["protocol"] = protocol
             entry["port_value"] = dst_part
             entry["kind"] = "range-port" if "-" in dst_part else "dest-port"
@@ -477,13 +435,6 @@ def cleanup_step_33_line_based(cfg_text: str, logger: logging.Logger) -> str:
 
 
 def capitalize_protocol_keywords_in_cfg(text: str, logger: logging.Logger) -> str:
-    """
-    Capitalize protocol keywords in lines like:
-      protocol         udp;  -> protocol         UDP;
-      protocol         tcp;  -> protocol         TCP;
-
-    Only touches standalone protocol statements ending with ';'.
-    """
     def _repl(m: re.Match) -> str:
         return f"{m.group(1)}{m.group(2).upper()}{m.group(3)}"
 

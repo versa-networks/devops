@@ -6,15 +6,20 @@ from datetime import datetime
 
 ALLOWED_CHARS_RE = re.compile(r"[^A-Za-z0-9_-]")
 
-PREFIX_URLF   = "webfilter profile"          # CHANGED: was "set shared profiles url-filtering"
-PREFIX_CUSTOM = "webfilter urlfilter"         # CHANGED: was "set shared profiles custom-url-category"
+PREFIX_URLF = "set shared profiles url-filtering"
+PREFIX_CUSTOM = "set shared profiles custom-url-category"
 
-FORTI_RULES_SRC_DEFAULT_REL = Path("step-5") / "step-5_cleaned-forti-rules.txt"  # CHANGED: was pan-rules
+PAN_RULES_SRC_DEFAULT_REL = Path("step-5") / "step-5_cleaned-pan-rules.txt"
 
-URLF_DROP_SUBSTRINGS = []   # CHANGED: was PAN-specific keywords; flattener controls Fortinet output
+URLF_DROP_SUBSTRINGS = [
+    "credential-enforcement mode",
+    "credential-enforcement log-severity",
+    "local-inline-cat",
+    "cloud-inline-cat",
+]
 
-ACTIONS = {"allow", "block", "alert", "reject"}   # kept (unused after urlf_line_references_name rewrite)
-PROFILE_SETTING_PHRASE = "webfilter-profile"       # CHANGED: was "profile-setting profiles url-filtering"
+ACTIONS = {"allow", "block", "alert", "reject"}
+PROFILE_SETTING_PHRASE = "profile-setting profiles url-filtering"
 
 
 class TeeStream:
@@ -74,11 +79,11 @@ def strip_non_visible_and_cr(s: str) -> str:
     return "".join(out)
 
 
-def sanitize_description_inner_quotes(line: str) -> tuple[str, bool]:
-    if 'comment "' not in line:          # CHANGED: was 'description "'
+def sanitize_description_inner_quotes(line: str) -> tuple:
+    if 'description "' not in line:
         return line, False
 
-    kw = "comment"                        # CHANGED: was "description"
+    kw = "description"
     kidx = line.find(kw)
     if kidx == -1:
         return line, False
@@ -254,18 +259,40 @@ def extract_first_token_after_phrase(line: str, phrase: str):
 
 
 def urlf_line_references_name(line: str, name: str) -> bool:
-    # CHANGED: Fortinet webfilter profiles reference urlfilter tables via
-    # "urlfilter-table <name>" instead of PAN's allow/block/alert/reject lists.
     norm = line.replace("[", " [ ").replace("]", " ] ")
     toks = norm.split()
     n = len(toks)
     for i in range(n):
-        if toks[i] == "urlfilter-table":
+        if toks[i] in ACTIONS:
             j = i + 1
-            if j < n:
-                tok = toks[j].strip('"')
-                if tok == name:
+            if j < n and toks[j] == "static":
+                j += 1
+            if j >= n:
+                continue
+            if toks[j] == "[":
+                j += 1
+                while j < n and toks[j] != "]":
+                    if toks[j] == name:
+                        return True
+                    j += 1
+            else:
+                if toks[j] == name:
                     return True
+    return False
+
+
+def rule_category_references_name(line: str, name: str) -> bool:
+    idx = line.find(" category ")
+    if idx == -1:
+        return False
+    rest = line[idx + len(" category "):].strip()
+    norm = rest.replace("[", " [ ").replace("]", " ] ")
+    toks = norm.split()
+    for tok in toks:
+        if tok in ("[", "]", "any"):
+            continue
+        if tok == name:
+            return True
     return False
 
 
@@ -298,265 +325,6 @@ def cut_object_blocks(clean_lines, prefix: str, unused_names_set):
     return kept, cut
 
 
-# ── NEW: Fortinet webfilter flattening functions ───────────────────────────────
-
-def find_forti_source_conf(main_dir: Path) -> Path:
-    """Locate source-forti-config.conf relative to main_dir."""
-    for candidate in [
-        main_dir / "source-forti-config.conf",
-        main_dir.parent / "source-forti-config.conf",
-    ]:
-        if candidate.exists():
-            return candidate
-    raise FileNotFoundError(
-        f"source-forti-config.conf not found near {main_dir}"
-    )
-
-
-def flatten_forti_webfilter_sections(source_path: Path, dst_rules: Path) -> int:
-    """
-    Read source-forti-config.conf and flatten two block types:
-      - config webfilter urlfilter  -->  webfilter urlfilter "Name" entry N url ... action ...
-      - config webfilter profile    -->  webfilter profile "Name" comment/urlfilter-table/ftgd-wf ...
-    Resolves numeric urlfilter-table IDs to names using the urlfilter section.
-    Appends all flattened lines to dst_rules.  Returns count of lines appended.
-    """
-    raw = read_text_lines(source_path)
-
-    # Join backslash line-continuations (Fortinet long-line convention)
-    joined: list[str] = []
-    buf = ""
-    for ln in raw:
-        s = ln.rstrip("\r\n")
-        if s.endswith("\\"):
-            buf += s[:-1] + " "
-        else:
-            buf += s
-            joined.append(buf)
-            buf = ""
-    if buf:
-        joined.append(buf)
-
-    # ── Pass 1: build urlfilter numeric-ID → name map ─────────────────────────
-    id_to_name: dict[int, str] = {}
-    in_urlf = in_table = False
-    cur_id: int | None = None
-    cur_name: str | None = None
-    depth = 0  # tracks nested "config" blocks inside a table entry
-
-    for line in joined:
-        s = line.strip()
-        if not in_urlf:
-            if s == "config webfilter urlfilter":
-                in_urlf = True
-            continue
-        if in_table:
-            if s.startswith("config "):
-                depth += 1
-            elif s == "end" and depth > 0:
-                depth -= 1
-            elif s == "end":
-                # end of config webfilter urlfilter
-                in_urlf = False
-            elif s == "next" and depth == 0:
-                if cur_id is not None and cur_name is not None:
-                    id_to_name[cur_id] = cur_name
-                cur_id = cur_name = None
-                in_table = False
-            elif s.startswith("set name ") and depth == 0:
-                cur_name = s[9:].strip().strip('"')
-            continue
-        # in_urlf, not in_table
-        if s.startswith("edit "):
-            tok = s.split(None, 1)
-            if len(tok) == 2:
-                try:
-                    cur_id = int(tok[1])
-                    in_table = True
-                    cur_name = None
-                    depth = 0
-                except ValueError:
-                    pass
-        elif s == "end":
-            in_urlf = False
-
-    # ── Pass 2: flatten config webfilter urlfilter ────────────────────────────
-    urlf_flat: list[str] = []
-    in_urlf = in_table = in_entries = in_entry = False
-    table_name: str | None = None
-    entry_id: int | None = None
-    entry_attrs: dict[str, str] = {}
-
-    for line in joined:
-        s = line.strip()
-        if not in_urlf:
-            if s == "config webfilter urlfilter":
-                in_urlf = True
-            continue
-
-        if in_entry:
-            if s == "next":
-                if table_name and entry_id is not None:
-                    parts = [f'webfilter urlfilter "{table_name}" entry {entry_id}']
-                    for k in ("url", "type", "action", "status"):
-                        if k in entry_attrs:
-                            parts.append(f"{k} {entry_attrs[k]}")
-                    urlf_flat.append(" ".join(parts))
-                in_entry = False
-                entry_id = None
-                entry_attrs = {}
-            elif s.startswith("set "):
-                tok = s.split(None, 2)
-                if len(tok) >= 3:
-                    entry_attrs[tok[1]] = tok[2].strip('"')
-                elif len(tok) == 2:
-                    entry_attrs[tok[1]] = ""
-            continue
-
-        if in_entries:
-            if s.startswith("edit "):
-                tok = s.split(None, 1)
-                if len(tok) == 2:
-                    try:
-                        entry_id = int(tok[1])
-                        in_entry = True
-                        entry_attrs = {}
-                    except ValueError:
-                        pass
-            elif s == "end":
-                in_entries = False
-            continue
-
-        if in_table:
-            if s.startswith("set name "):
-                table_name = s[9:].strip().strip('"')
-            elif s == "config entries":
-                in_entries = True
-            elif s == "next":
-                in_table = False
-                table_name = None
-            continue
-
-        # in_urlf, not in_table
-        if s.startswith("edit "):
-            tok = s.split(None, 1)
-            if len(tok) == 2:
-                try:
-                    int(tok[1])  # must be numeric
-                    in_table = True
-                    table_name = None
-                except ValueError:
-                    pass
-        elif s == "end":
-            in_urlf = False
-
-    # ── Pass 3: flatten config webfilter profile ──────────────────────────────
-    profile_flat: list[str] = []
-    ST_OUTSIDE   = 0
-    ST_IN_BLOCK  = 1   # inside config webfilter profile
-    ST_IN_PROF   = 2   # inside edit "name"
-    ST_IN_WEB    = 3   # inside config web
-    ST_IN_FTGD   = 4   # inside config ftgd-wf
-    ST_IN_FILTERS = 5  # inside config filters
-    ST_IN_FILTER  = 6  # inside edit N (filter entry)
-
-    state = ST_OUTSIDE
-    prof_name: str | None = None
-    filt_id: int | None = None
-    filt_attrs: dict[str, str] = {}
-
-    for line in joined:
-        s = line.strip()
-
-        if state == ST_OUTSIDE:
-            if s == "config webfilter profile":
-                state = ST_IN_BLOCK
-
-        elif state == ST_IN_BLOCK:
-            if s == "end":
-                state = ST_OUTSIDE
-            elif s.startswith("edit "):
-                rest = s[5:].strip()
-                prof_name = rest.strip('"')
-                state = ST_IN_PROF
-
-        elif state == ST_IN_PROF:
-            if s == "next":
-                prof_name = None
-                state = ST_IN_BLOCK
-            elif s == "config web":
-                state = ST_IN_WEB
-            elif s == "config ftgd-wf":
-                state = ST_IN_FTGD
-            elif s.startswith("set comment "):
-                val = s[12:].strip()
-                profile_flat.append(f'webfilter profile "{prof_name}" comment {val}')
-            elif s.startswith("set feature-set "):
-                val = s[16:].strip()
-                profile_flat.append(f'webfilter profile "{prof_name}" feature-set {val}')
-
-        elif state == ST_IN_WEB:
-            if s == "end":
-                state = ST_IN_PROF
-            elif s.startswith("set urlfilter-table "):
-                parts = s.split()
-                if len(parts) == 3:
-                    try:
-                        tid = int(parts[2])
-                        tname = id_to_name.get(tid, str(tid))
-                        profile_flat.append(
-                            f'webfilter profile "{prof_name}" urlfilter-table "{tname}"'
-                        )
-                    except ValueError:
-                        pass
-
-        elif state == ST_IN_FTGD:
-            if s == "end":
-                state = ST_IN_PROF
-            elif s == "config filters":
-                state = ST_IN_FILTERS
-
-        elif state == ST_IN_FILTERS:
-            if s == "end":
-                state = ST_IN_FTGD
-            elif s.startswith("edit "):
-                tok = s.split(None, 1)
-                if len(tok) == 2:
-                    try:
-                        filt_id = int(tok[1])
-                        filt_attrs = {}
-                        state = ST_IN_FILTER
-                    except ValueError:
-                        pass
-
-        elif state == ST_IN_FILTER:
-            if s == "next":
-                if filt_id is not None and "category" in filt_attrs and "action" in filt_attrs:
-                    profile_flat.append(
-                        f'webfilter profile "{prof_name}" ftgd-wf filter {filt_id}'
-                        f' category {filt_attrs["category"]} action {filt_attrs["action"]}'
-                    )
-                filt_id = None
-                filt_attrs = {}
-                state = ST_IN_FILTERS
-            elif s.startswith("set "):
-                tok = s.split(None, 2)
-                if len(tok) >= 3:
-                    filt_attrs[tok[1]] = tok[2].strip('"')
-                elif len(tok) == 2:
-                    filt_attrs[tok[1]] = ""
-
-    # Append all flattened lines to dst_rules
-    all_flat = urlf_flat + profile_flat
-    if all_flat:
-        with dst_rules.open("a", encoding="utf-8", errors="replace") as f:
-            for fl in all_flat:
-                f.write(fl + "\n")
-    return len(all_flat)
-
-# ── END NEW functions ──────────────────────────────────────────────────────────
-
-
 def main():
     script_dir = Path(__file__).resolve().parent
     main_dir = script_dir.parent
@@ -580,8 +348,8 @@ def main():
     ensure_dir(step6_dir)
     print(f"[{now_ts()}] Ensured/created directory: {step6_dir}")
 
-    src_default = main_dir / FORTI_RULES_SRC_DEFAULT_REL   # CHANGED: FORTI_RULES_SRC_DEFAULT_REL
-    dst_rules   = step6_dir / "step-6_cleaned-forti-rules.txt"  # CHANGED: forti-rules
+    src_default = main_dir / PAN_RULES_SRC_DEFAULT_REL
+    dst_rules = step6_dir / "step-6_cleaned-pan-rules.txt"
 
     if src_default.exists():
         shutil.copy2(src_default, dst_rules)
@@ -589,23 +357,13 @@ def main():
     else:
         print(f"[{now_ts()}] Default source not found: {src_default}")
         print(f"[{now_ts()}] Please provide the name/location of the source file to copy.")
-        user_src = prompt_for_existing_file(
-            "Enter full path (or relative path) to source Fortinet rules file: "  # CHANGED
-        )
+        user_src = prompt_for_existing_file("Enter full path (or relative path) to source PAN rules file: ")
         if not user_src.exists():
             alt = (main_dir / user_src).resolve()
             if alt.exists():
                 user_src = alt
         shutil.copy2(user_src, dst_rules)
         print(f"[{now_ts()}] Copied: {user_src} -> {dst_rules}")
-
-    # NEW: flatten webfilter urlfilter and webfilter profile blocks from source config
-    try:
-        source_conf = find_forti_source_conf(main_dir)
-        n_flat = flatten_forti_webfilter_sections(source_conf, dst_rules)
-        print(f"[{now_ts()}] Appended {n_flat} flattened webfilter lines from: {source_conf}")
-    except FileNotFoundError as exc:
-        print(f"[{now_ts()}] WARNING: {exc} - webfilter sections will not be processed")
 
     print()
     print(f"[{now_ts()}] ******* Allowed characters in object names: alphanumeric, '_' and '-' *******")
@@ -616,23 +374,23 @@ def main():
     rules_lines = read_text_lines(dst_rules)
 
     urlf_extracted = step6_dir / "step-6_extracted-urlf-profile.txt"
-    urlf_cleaned   = step6_dir / "step-6_cleaned-urlf-profile.txt"
+    urlf_cleaned = step6_dir / "step-6_cleaned-urlf-profile.txt"
     urlf_corrected = step6_dir / "step-6_corrected-urlf-profile-name.txt"
 
     rules_kept, urlf_cut_lines = cut_lines_by_prefix(rules_lines, PREFIX_URLF)
     write_text_lines(urlf_extracted, urlf_cut_lines)
     write_text_lines(dst_rules, rules_kept)
     print(f"[{now_ts()}] CUT {len(urlf_cut_lines)} URLF lines with prefix '{PREFIX_URLF}' -> {urlf_extracted}")
-    print(f"[{now_ts()}] forti-rules updated (URLF lines removed): {dst_rules} (kept {len(rules_kept)} lines)")  # CHANGED
+    print(f"[{now_ts()}] pan-rules updated (URLF lines removed): {dst_rules} (kept {len(rules_kept)} lines)")
 
     rules_lines = read_text_lines(dst_rules)
 
     shutil.copy2(urlf_extracted, urlf_cleaned)
     print(f"[{now_ts()}] Copied: {urlf_extracted} -> {urlf_cleaned}")
 
-    cleaned_in  = read_text_lines(urlf_cleaned)
+    cleaned_in = read_text_lines(urlf_cleaned)
     corrected_lines = []
-    sanitized_out   = []
+    sanitized_out = []
 
     for line in cleaned_in:
         line2 = strip_non_visible_and_cr(line)
@@ -650,7 +408,7 @@ def main():
         sanitized_out.append(line2)
 
     write_text_lines(urlf_corrected, corrected_lines)
-    write_text_lines(urlf_cleaned,   sanitized_out)
+    write_text_lines(urlf_cleaned, sanitized_out)
     print(f"[{now_ts()}] URLF sanitize complete -> {urlf_cleaned}")
     print(f"[{now_ts()}] Wrote {len(corrected_lines)} pre-modification lines to -> {urlf_corrected}")
 
@@ -688,32 +446,32 @@ def main():
                     changed += 1
                 new_rules.append(line2)
             write_text_lines(dst_rules, new_rules)
-            print(f"[{now_ts()}] Updated forti-rules references for URLF profile names: {len(mapping)} names, {changed} lines changed")  # CHANGED
+            print(f"[{now_ts()}] Updated pan-rules references for URLF profile names: {len(mapping)} names, {changed} lines changed")
         else:
             print(f"[{now_ts()}] URLF corrected file non-empty but no mappings parsed (unexpected).")
     else:
-        print(f"[{now_ts()}] URLF corrected file empty -> skip forti-rules URLF name correlation (step 11)")  # CHANGED
+        print(f"[{now_ts()}] URLF corrected file empty -> skip pan-rules URLF name correlation (step 11)")
 
     rules_lines = read_text_lines(dst_rules)
 
     custom_extracted = step6_dir / "step-6_extracted-custom-urlf-profile.txt"
-    custom_cleaned   = step6_dir / "step-6_cleaned-custom-urlf-profile.txt"
+    custom_cleaned = step6_dir / "step-6_cleaned-custom-urlf-profile.txt"
     custom_corrected = step6_dir / "step-6_corrected-custom-urlf-profile-name.txt"
 
     rules_kept, custom_cut_lines = cut_lines_by_prefix(rules_lines, PREFIX_CUSTOM)
     write_text_lines(custom_extracted, custom_cut_lines)
     write_text_lines(dst_rules, rules_kept)
     print(f"[{now_ts()}] CUT {len(custom_cut_lines)} CUSTOM lines with prefix '{PREFIX_CUSTOM}' -> {custom_extracted}")
-    print(f"[{now_ts()}] forti-rules updated (CUSTOM lines removed): {dst_rules} (kept {len(rules_kept)} lines)")  # CHANGED
+    print(f"[{now_ts()}] pan-rules updated (CUSTOM lines removed): {dst_rules} (kept {len(rules_kept)} lines)")
 
     rules_lines = read_text_lines(dst_rules)
 
     shutil.copy2(custom_extracted, custom_cleaned)
     print(f"[{now_ts()}] Copied: {custom_extracted} -> {custom_cleaned}")
 
-    cleaned_in  = read_text_lines(custom_cleaned)
+    cleaned_in = read_text_lines(custom_cleaned)
     corrected_lines = []
-    sanitized_out   = []
+    sanitized_out = []
 
     for line in cleaned_in:
         line2 = strip_non_visible_and_cr(line)
@@ -731,7 +489,7 @@ def main():
         sanitized_out.append(line2)
 
     write_text_lines(custom_corrected, corrected_lines)
-    write_text_lines(custom_cleaned,   sanitized_out)
+    write_text_lines(custom_cleaned, sanitized_out)
     print(f"[{now_ts()}] CUSTOM sanitize complete -> {custom_cleaned}")
     print(f"[{now_ts()}] Wrote {len(corrected_lines)} pre-modification lines to -> {custom_corrected}")
 
@@ -758,15 +516,15 @@ def main():
                     changed += 1
                 new_rules.append(line2)
             write_text_lines(dst_rules, new_rules)
-            print(f"[{now_ts()}] Updated forti-rules references for CUSTOM category names: {len(mapping)} names, {changed} lines changed")
+            print(f"[{now_ts()}] Updated pan-rules references for CUSTOM category names: {len(mapping)} names, {changed} lines changed")
         else:
             print(f"[{now_ts()}] CUSTOM corrected file non-empty but no mappings parsed (unexpected).")
     else:
-        print(f"[{now_ts()}] CUSTOM corrected file empty -> skip forti-rules CUSTOM name correlation (step 17)")  # CHANGED
+        print(f"[{now_ts()}] CUSTOM corrected file empty -> skip pan-rules CUSTOM name correlation (step 17)")
 
     rules_lines = read_text_lines(dst_rules)
 
-    custom_name_file  = step6_dir / "step-6_extracted-custom-urlf-profile-name.txt"
+    custom_name_file = step6_dir / "step-6_extracted-custom-urlf-profile-name.txt"
     custom_clean_lines = read_text_lines(custom_cleaned)
 
     custom_names = extract_object_names_from_file(custom_clean_lines, PREFIX_CUSTOM)
@@ -777,29 +535,20 @@ def main():
 
     used_custom = set()
     for name in custom_names:
-        in_pan = False
+        in_rules = False
         for line in rules_lines:
-            tok = extract_first_token_after_phrase(line, PROFILE_SETTING_PHRASE)
-            if tok is None:
-                continue
-            if len(tok) >= 2 and tok[0] == '"' and tok[-1] == '"':
-                tok_norm = tok[1:-1].replace(" ", "_")
-            else:
-                tok_norm = tok
-            if tok_norm == name:
-                in_pan = True
+            if rule_category_references_name(line, name):
+                in_rules = True
                 break
 
         in_urlf = False
-        if not in_pan:
+        if not in_rules:
             for line in urlf_clean_lines:
                 if urlf_line_references_name(line, name):
                     in_urlf = True
                     break
-        else:
-            in_urlf = True
 
-        if in_pan or in_urlf:
+        if in_rules or in_urlf:
             used_custom.add(name)
 
     unused_custom_names = [n for n in custom_names if n not in used_custom]
@@ -808,7 +557,7 @@ def main():
     unused_custom_file = step6_dir / "step-6_unused-custom-urlf-profile.txt"
     if unused_custom_names:
         keep, cut = cut_object_blocks(custom_clean_lines, PREFIX_CUSTOM, set(unused_custom_names))
-        write_text_lines(custom_cleaned,   keep)
+        write_text_lines(custom_cleaned, keep)
         write_text_lines(unused_custom_file, cut)
         print(f"[{now_ts()}] Moved UNUSED CUSTOM objects: {len(unused_custom_names)} names")
         print(f"[{now_ts()}]   kept lines={len(keep)} in {custom_cleaned}")
@@ -817,7 +566,7 @@ def main():
         write_text_lines(unused_custom_file, [])
         print(f"[{now_ts()}] No unused CUSTOM objects found. Wrote empty file -> {unused_custom_file}")
 
-    urlf_name_file   = step6_dir / "step-6_extracted-urlf-profile-name.txt"
+    urlf_name_file = step6_dir / "step-6_extracted-urlf-profile-name.txt"
     urlf_clean_lines = read_text_lines(urlf_cleaned)
 
     urlf_names = extract_object_names_from_file(urlf_clean_lines, PREFIX_URLF)
@@ -844,7 +593,7 @@ def main():
     unused_urlf_file = step6_dir / "step-6_unused-urlf-profile.txt"
     if unused_urlf_names:
         keep, cut = cut_object_blocks(urlf_clean_lines, PREFIX_URLF, set(unused_urlf_names))
-        write_text_lines(urlf_cleaned,   keep)
+        write_text_lines(urlf_cleaned, keep)
         write_text_lines(unused_urlf_file, cut)
         print(f"[{now_ts()}] Moved UNUSED URLF profiles: {len(unused_urlf_names)} names")
         print(f"[{now_ts()}]   kept lines={len(keep)} in {urlf_cleaned}")
@@ -857,10 +606,10 @@ def main():
     ensure_dir(final_dir)
 
     final_custom_dst = final_dir / "final-custom-urlf-profile.txt"
-    final_urlf_dst   = final_dir / "final-urlf-profile.txt"
+    final_urlf_dst = final_dir / "final-urlf-profile.txt"
 
     shutil.copy2(custom_cleaned, final_custom_dst)
-    shutil.copy2(urlf_cleaned,   final_urlf_dst)
+    shutil.copy2(urlf_cleaned, final_urlf_dst)
 
     print(f"[{now_ts()}] Final outputs written to ../final-data/:")
     print(f"[{now_ts()}]   {custom_cleaned} -> {final_custom_dst}")

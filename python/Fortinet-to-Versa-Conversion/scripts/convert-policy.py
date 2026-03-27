@@ -530,7 +530,6 @@ def dedupe_predefined_application_list_lines(cfg_text: str) -> str:
     return "".join(out)
 
 
-
 SVC_LIST_LINE_RE = re.compile(r'^(\s*(?:services-list|predefined-services-list)\s*\[)(.*?)(\]\s*;.*)$')
 
 def dedupe_service_list_lines(cfg_text: str) -> str:
@@ -630,7 +629,7 @@ def process_zone_match(
         pop_line(policy_lines, idx)
         return block, policy_lines
 
-    block = block.replace(marker, " ".join(out_zones))                   # FIXED: single replacement with all zones
+    block = block.replace(marker, " ".join(out_zones))
     block = delete_only_delim_lines(block, subsection_begin, subsection_end)
 
     pop_line(policy_lines, idx)
@@ -662,7 +661,7 @@ def process_address_split(
         pop_line(policy_lines, idx)
         return block, policy_lines
 
-    addr_vals = []                                                       # FIXED: collect all values first
+    addr_vals = []
     grp_vals = []
 
     for t in targets:
@@ -678,12 +677,12 @@ def process_address_split(
     block = delete_only_delim_lines(block, subsection_begin, subsection_end)
 
     if addr_vals:
-        block = block.replace(marker_addr, " ".join(addr_vals))          # FIXED: single replacement
+        block = block.replace(marker_addr, " ".join(addr_vals))
     else:
         block = delete_exact_line_containing(block, placeholder_addr_line)
 
     if grp_vals:
-        block = block.replace(marker_grp, " ".join(grp_vals))            # FIXED: single replacement
+        block = block.replace(marker_grp, " ".join(grp_vals))
     else:
         block = delete_exact_line_containing(block, placeholder_grp_line)
 
@@ -711,7 +710,6 @@ def quote_if_spaces(val: str) -> str:
 
 
 def find_dn_by_cn(short_name: str, dn_set: set) -> Optional[str]:
-    """Match a short name (e.g. 'esser.andreas') against DN set entries by CN= portion."""
     sn = strip_outer_quotes(short_name.strip())
     for dn in dn_set:
         dn_clean = strip_outer_quotes(dn.strip())
