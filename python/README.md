@@ -32,5 +32,3 @@ Script to identify CGNATs configured on VOS devices from Versa Director.
 Script to monitor Versa Analytics health using session and csrf-tokens.
 ## Fetch Interface Details 
 Script to fetch interfaces from VOS monitoring view and create csv inventory file
-## PAN-to-Versa-Conversion
-These script will fully convert PAN firewall rules to Versa Director service template
