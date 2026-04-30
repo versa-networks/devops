@@ -1,0 +1,61 @@
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" target negate no
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" to [ lan lan2 ]
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" from [ remote dmz ]
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" source vpn-client-net
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" destination [ ip-net1 group1 group-in-group1 ]
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" source-user [ "Karsten Kubeler@acme.com" "webvpn_external_amptown@acme.com" "CN=FIM-ORG-CMG Fleet Operations Center,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com" "acme\Oswald Martin" CN=testuser5,OU=research,DC=acme,DC=com ]
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" application [ bing-ai canva deepl quic ssl ]
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" service [ ssh ldap msrpc-base ] 
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" action allow
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" log-setting Panorama
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" description "This policy name is invalid"
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" tag "this is a bad tag"
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" profile-setting profiles url-filtering urlf-profile1
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" profile-setting profiles virus AV_drop_default
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" profile-setting profiles spyware AS_drop_default
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" profile-setting profiles vulnerability IPS_drop_default
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" profile-setting profiles file-blocking "Office 365 File Blocking"
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" disabled no
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" category [ adult my-url-category-2 ]
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" group-tag Internet
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" source-hip any
+set device-group Mobile_User_Device_Group pre-rulebase security rules "Policy 1 with space" destination-hip any
+
+
+set shared address vpn-client-net ip-netmask 172.16.1.0/24
+set shared address ip-fqdn fqdn versa-networks.com
+set shared address ip-net1 ip-netmask 1.1.1.1/24
+set shared address ip-net1 description "this has bad subnet mask"
+set shared address ip-net2 ip-netmask 2.2.2.0/24
+set shared address ip-net3 ip-netmask 3.3.3.3
+set shared address ip-net4 ip-netmask 3.3.3.4
+set shared address ip-range1 ip-range 3.3.3.100-3.3.3.254
+set shared address unused-address1 ip-netmask 3.3.3.3
+set shared address-group group1 static [ ip-net1 ip-net2 ]
+set shared address-group group2 static [ ip-net3 ip-net2 ]
+set shared address-group group3 static [ ip-net1 ip-net4 ]
+set shared address-group group-in-group1 static [ ip-net3 group2 group1 ]
+set shared address-group group-in-group2 static [ group-in-group1 group2 group3 ]
+set shared service TCP_8767 protocol tcp port 8765
+set shared service TCP_6417 protocol tcp port 6417
+set shared service TCP_6424 protocol tcp port 6424
+set shared service UDP_5555 protocol tcp port 5555
+set shared service UDP_5555 description UDP_5555
+set shared service unused-service protocol tcp port 5555
+set shared service-group serv-group1 members [ TCP_6424 TCP_8767 ]
+set shared service-group serv-group2 members [ UDP_5555 TCP_8767 ]
+
+set shared profiles custom-url-category my-url-category-1 list [ dummy.com whatsmyip.com/ *.versa-networks.com ]
+set shared profiles custom-url-category my-url-category-2 list [ cnn.com bbc.com ]
+set shared profiles custom-url-category unused-url-category-1 list [ cnn.com bbc.com ]
+
+
+
+set shared profiles url-filtering urlf-profile1 credential-enforcement block [ adult gambling ]
+set shared profiles url-filtering urlf-profile1 credential-enforcement justify [ abortion abused-drugs adult alcohol-and-tobacco command-and-control dating dynamic-dns extremism grayware hacking high-risk malware nudity phishing proxy-avoidance-and-anonymizers unknown weapons ]
+set shared profiles url-filtering urlf-profile1 allow [ news ]
+
+
+set shared profiles url-filtering urlf-profile2 credential-enforcement allow [ my-url-category-2 ]
+set shared profiles url-filtering urlf-profile2 credential-enforcement justify [ abortion abused-drugs adult alcohol-and-tobacco command-and-control dating dynamic-dns extremism gambling grayware hacking high-risk malware nudity phishing proxy-avoidance-and-anonymizers unknown weapons ]
+set shared profiles url-filtering urlf-profile2 allow [ news ]

@@ -1,0 +1,38 @@
+{
+    "entity":{
+        "attributes":{
+            "addressCollection":{
+                "value":[
+                    {
+                        "addressType":{
+                            "value":"@address-group-type"
+                        },
+                        "addressValue":[
+                            {
+                                "type":"@address-group-value-type",
+                                "value":"@address-group-value"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        "name":"@address-group-name",
+        "tags":["@address-group-tag"],
+        "uuid":"@address-group-uuid",
+        "type":"ELEMENTS",
+        "subtype":"ENDPOINT",
+        "category":"ADDRESS_GROUP"
+    },
+    "parentReference":{
+        "uuid":"@address-group-parent-reference-uuid",
+        "name":"Address Group",
+        "type":"FOLDER",
+        "subtype":null,
+        "category":null,
+        "version":"V1",
+        "originId":null,
+        "nodeLabel":"Address Group",
+        "federatedPath":"ConfigurationLifecycleGraph/PROFILE_ELEMENTS/Elements/Endpoint/Address Group//"
+    }
+}

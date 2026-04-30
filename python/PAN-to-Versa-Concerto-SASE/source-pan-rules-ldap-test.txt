@@ -1,0 +1,153 @@
+set device-group pre-rulebase security rules "Policy 1" with space" target negate no
+set device-group pre-rulebase security rules "Policy 1" with space" to [ lan lan2 ]
+set device-group pre-rulebase security rules "Policy 1" with space" from [ remote dmz ]
+set device-group pre-rulebase security rules "Policy 1" with space" source vpn-client-net
+set device-group pre-rulebase security rules "Policy 1" with space" destination [ ip-net1 group1 group-in-group1 ]
+set device-group pre-rulebase security rules "Policy 1" with space" source-user [ "Karsten Kubeler@acme.com" "webvpn_external_amptown@acme.com" "CN=FIM-ORG-CMG Fleet Operations Center,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com" "acme\Oswald Martin" CN=testuser5,OU=research,DC=acme,DC=com ]
+set device-group pre-rulebase security rules "Policy 1" with space" application [ bing-ai canva deepl quic ssl ]
+set device-group pre-rulebase security rules "Policy 1" with space" service [ ssh ldap msrpc-base ] 
+set device-group pre-rulebase security rules "Policy 1" with space" action allow
+set device-group pre-rulebase security rules "Policy 1" with space" log-setting Panorama
+set device-group pre-rulebase security rules "Policy 1" with space" description "This policy name is invalid"
+set device-group pre-rulebase security rules "Policy 1" with space" tag "this is a bad tag"
+set device-group pre-rulebase security rules "Policy 1" with space" profile-setting profiles url-filtering urlf-profile1
+set device-group pre-rulebase security rules "Policy 1" with space" profile-setting profiles virus AV_drop_default
+set device-group pre-rulebase security rules "Policy 1" with space" profile-setting profiles spyware AS_drop_default
+set device-group pre-rulebase security rules "Policy 1" with space" profile-setting profiles vulnerability IPS_drop_default
+set device-group pre-rulebase security rules "Policy 1" with space" profile-setting profiles file-blocking "Office 365 File Blocking"
+set device-group pre-rulebase security rules "Policy 1" with space" disabled no
+set device-group pre-rulebase security rules "Policy 1" with space" category [ adult my-url-category-2 ]
+set device-group pre-rulebase security rules "Policy 1" with space" group-tag Internet
+set device-group pre-rulebase security rules "Policy 1" with space" source-hip any
+set device-group pre-rulebase security rules "Policy 1" with space" destination-hip any
+
+
+set device-group pre-rulebase security rules "Unknown URLF" target negate no
+set device-group pre-rulebase security rules "Unknown URLF" to [ lan lan2 ]
+set device-group pre-rulebase security rules "Unknown URLF" from [ remote dmz ]
+set device-group pre-rulebase security rules "Unknown URLF" source vpn-client-net
+set device-group pre-rulebase security rules "Unknown URLF" destination [ ip-net1 group1 group-in-group1 ]
+set device-group pre-rulebase security rules "Unknown URLF" source-user [ "Karsten Kubeler@acme.com" "webvpn_external_amptown@acme.com" "CN=FIM-ORG-CMG Fleet Operations Center,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com" "acme\Oswald Martin" CN=testuser5,OU=research,DC=acme,DC=com ]
+set device-group pre-rulebase security rules "Unknown URLF" application [ bing-ai canva deepl quic ssl ]
+set device-group pre-rulebase security rules "Unknown URLF" service [ ssh ldap msrpc-base ] 
+set device-group pre-rulebase security rules "Unknown URLF" action allow
+set device-group pre-rulebase security rules "Unknown URLF" log-setting Panorama
+set device-group pre-rulebase security rules "Unknown URLF" description "This policy name is invalid"
+set device-group pre-rulebase security rules "Unknown URLF" tag "this is a bad tag"
+set device-group pre-rulebase security rules "Unknown URLF" profile-setting profiles url-filtering urlf-profile2
+set device-group pre-rulebase security rules "Unknown URLF" profile-setting profiles virus AV_drop_default
+set device-group pre-rulebase security rules "Unknown URLF" profile-setting profiles spyware AS_drop_default
+set device-group pre-rulebase security rules "Unknown URLF" profile-setting profiles vulnerability IPS_drop_default
+set device-group pre-rulebase security rules "Unknown URLF" profile-setting profiles file-blocking "Office 365 File Blocking"
+set device-group pre-rulebase security rules "Unknown URLF" disabled no
+set device-group pre-rulebase security rules "Unknown URLF" category [ adult my-url-category-2 unknown_url ]
+set device-group pre-rulebase security rules "Unknown URLF" group-tag Internet
+set device-group pre-rulebase security rules "Unknown URLF" source-hip any
+set device-group pre-rulebase security rules "Unknown URLF" destination-hip any
+
+set device-group pre-rulebase security rules "Unknown Addr Grp" target negate no
+set device-group pre-rulebase security rules "Unknown Addr Grp" to [ lan lan2 ]
+set device-group pre-rulebase security rules "Unknown Addr Grp" from [ remote dmz ]
+set device-group pre-rulebase security rules "Unknown Addr Grp" source [ vpn-client-net unknown_src_addr ]
+set device-group pre-rulebase security rules "Unknown Addr Grp" destination [ ip-net1 group1 group-in-group1 unknown_addr ]
+set device-group pre-rulebase security rules "Unknown Addr Grp" source-user [ "Karsten Kubeler@acme.com" "webvpn_external_amptown@acme.com" "CN=FIM-ORG-CMG Fleet Operations Center,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com" "acme\Oswald Martin" CN=testuser5,OU=research,DC=acme,DC=com ]
+set device-group pre-rulebase security rules "Unknown Addr Grp" application [ bing-ai canva deepl quic ssl ]
+set device-group pre-rulebase security rules "Unknown Addr Grp" service [ ssh ldap msrpc-base ] 
+set device-group pre-rulebase security rules "Unknown Addr Grp" action allow
+set device-group pre-rulebase security rules "Unknown Addr Grp" log-setting Panorama
+set device-group pre-rulebase security rules "Unknown Addr Grp" description "This policy name is invalid"
+set device-group pre-rulebase security rules "Unknown Addr Grp" tag "this is a bad tag"
+set device-group pre-rulebase security rules "Unknown Addr Grp" profile-setting profiles url-filtering urlf-profile1
+set device-group pre-rulebase security rules "Unknown Addr Grp" profile-setting profiles virus AV_drop_default
+set device-group pre-rulebase security rules "Unknown Addr Grp" profile-setting profiles spyware AS_drop_default
+set device-group pre-rulebase security rules "Unknown Addr Grp" profile-setting profiles vulnerability IPS_drop_default
+set device-group pre-rulebase security rules "Unknown Addr Grp" profile-setting profiles file-blocking "Office 365 File Blocking"
+set device-group pre-rulebase security rules "Unknown Addr Grp" disabled no
+set device-group pre-rulebase security rules "Unknown Addr Grp" category [ adult my-url-category-2 ]
+set device-group pre-rulebase security rules "Unknown Addr Grp" group-tag Internet
+set device-group pre-rulebase security rules "Unknown Addr Grp" source-hip any
+set device-group pre-rulebase security rules "Unknown Addr Grp" destination-hip any
+
+set device-group pre-rulebase security rules "Unknown User" target negate no
+set device-group pre-rulebase security rules "Unknown User" to [ lan lan2 ]
+set device-group pre-rulebase security rules "Unknown User" from [ remote dmz ]
+set device-group pre-rulebase security rules "Unknown User" source [ vpn-client-net ]
+set device-group pre-rulebase security rules "Unknown User" destination [ ip-net1 group1 group-in-group1 ]
+set device-group pre-rulebase security rules "Unknown User" source-user [ unknown_user@acme.com "Karsten Kubeler@acme.com" "webvpn_external_amptown@acme.com" "CN=FIM-ORG-CMG Fleet Operations Center,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com" "acme\Oswald Martin" CN=testuser5,OU=research,DC=acme,DC=com ]
+set device-group pre-rulebase security rules "Unknown User" application [ bing-ai canva deepl quic ssl ]
+set device-group pre-rulebase security rules "Unknown User" service [ ssh ldap msrpc-base ] 
+set device-group pre-rulebase security rules "Unknown User" action allow
+set device-group pre-rulebase security rules "Unknown User" log-setting Panorama
+set device-group pre-rulebase security rules "Unknown User" description "This policy name is invalid"
+set device-group pre-rulebase security rules "Unknown User" tag "this is a bad tag"
+set device-group pre-rulebase security rules "Unknown User" profile-setting profiles url-filtering urlf-profile1
+set device-group pre-rulebase security rules "Unknown User" profile-setting profiles virus AV_drop_default
+set device-group pre-rulebase security rules "Unknown User" profile-setting profiles spyware AS_drop_default
+set device-group pre-rulebase security rules "Unknown User" profile-setting profiles vulnerability IPS_drop_default
+set device-group pre-rulebase security rules "Unknown User" profile-setting profiles file-blocking "Office 365 File Blocking"
+set device-group pre-rulebase security rules "Unknown User" disabled no
+set device-group pre-rulebase security rules "Unknown User" category [ adult my-url-category-2 ]
+set device-group pre-rulebase security rules "Unknown User" group-tag Internet
+set device-group pre-rulebase security rules "Unknown User" source-hip any
+set device-group pre-rulebase security rules "Unknown User" destination-hip any
+
+set device-group pre-rulebase security rules "Unknown Group" target negate no
+set device-group pre-rulebase security rules "Unknown Group" to [ lan lan2 ]
+set device-group pre-rulebase security rules "Unknown Group" from [ remote dmz ]
+set device-group pre-rulebase security rules "Unknown Group" source [ vpn-client-net ]
+set device-group pre-rulebase security rules "Unknown Group" destination [ ip-net1 group1 group-in-group1 ]
+set device-group pre-rulebase security rules "Unknown Group" source-user [ unknown_group@acme.com "Karsten Kubeler@acme.com" "webvpn_external_amptown@acme.com" "CN=FIM-ORG-CMG Fleet Operations Center,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com" "acme\Oswald Martin" CN=testuser5,OU=research,DC=acme,DC=com ]
+set device-group pre-rulebase security rules "Unknown Group" application [ bing-ai canva deepl quic ssl ]
+set device-group pre-rulebase security rules "Unknown Group" service [ ssh ldap msrpc-base ] 
+set device-group pre-rulebase security rules "Unknown Group" action allow
+set device-group pre-rulebase security rules "Unknown Group" log-setting Panorama
+set device-group pre-rulebase security rules "Unknown Group" description "This policy name is invalid"
+set device-group pre-rulebase security rules "Unknown Group" tag "this is a bad tag"
+set device-group pre-rulebase security rules "Unknown Group" profile-setting profiles url-filtering urlf-profile1
+set device-group pre-rulebase security rules "Unknown Group" profile-setting profiles virus AV_drop_default
+set device-group pre-rulebase security rules "Unknown Group" profile-setting profiles spyware AS_drop_default
+set device-group pre-rulebase security rules "Unknown Group" profile-setting profiles vulnerability IPS_drop_default
+set device-group pre-rulebase security rules "Unknown Group" profile-setting profiles file-blocking "Office 365 File Blocking"
+set device-group pre-rulebase security rules "Unknown Group" disabled no
+set device-group pre-rulebase security rules "Unknown Group" category [ adult my-url-category-2 ]
+set device-group pre-rulebase security rules "Unknown Group" group-tag Internet
+set device-group pre-rulebase security rules "Unknown Group" source-hip any
+set device-group pre-rulebase security rules "Unknown Group" destination-hip any
+
+set shared address vpn-client-net ip-netmask 172.16.1.0/24
+set shared address ip-fqdn fqdn versa-networks.com
+set shared address ip-net1 ip-netmask 1.1.1.1/24
+set shared address ip-net1 description "this has bad subnet mask"
+set shared address ip-net2 ip-netmask 2.2.2.0/24
+set shared address ip-net3 ip-netmask 3.3.3.3
+set shared address ip-net4 ip-netmask 3.3.3.4
+set shared address ip-range1 ip-range 3.3.3.100-3.3.3.254
+set shared address unused-address1 ip-netmask 3.3.3.3
+set shared address-group group1 static [ ip-net1 ip-net2 ]
+set shared address-group group2 static [ ip-net3 ip-net2 ]
+set shared address-group group3 static [ ip-net1 ip-net4 ]
+set shared address-group group-in-group1 static [ ip-net3 group2 group1 ]
+set shared address-group group-in-group2 static [ group-in-group1 group2 group3 ]
+set shared service TCP_8767 protocol tcp port 8765
+set shared service TCP_6417 protocol tcp port 6417
+set shared service TCP_6424 protocol tcp port 6424
+set shared service UDP_5555 protocol tcp port 5555
+set shared service UDP_5555 description UDP_5555
+set shared service unused-service protocol tcp port 5555
+set shared service-group serv-group1 members [ TCP_6424 TCP_8767 ]
+set shared service-group serv-group2 members [ UDP_5555 TCP_8767 ]
+
+set shared profiles custom-url-category my-url-category-1 list [ dummy.com whatsmyip.com/ *.versa-networks.com ]
+set shared profiles custom-url-category my-url-category-2 list [ cnn.com bbc.com ]
+set shared profiles custom-url-category unused-url-category-1 list [ cnn.com bbc.com ]
+
+
+
+set shared profiles url-filtering urlf-profile1 credential-enforcement block [ adult gambling ]
+set shared profiles url-filtering urlf-profile1 credential-enforcement justify [ abortion abused-drugs adult alcohol-and-tobacco command-and-control dating dynamic-dns extremism grayware hacking high-risk malware nudity phishing proxy-avoidance-and-anonymizers unknown weapons ]
+set shared profiles url-filtering urlf-profile1 allow [ news ]
+
+
+set shared profiles url-filtering urlf-profile2 credential-enforcement allow [ my-url-category-2 ]
+set shared profiles url-filtering urlf-profile2 credential-enforcement justify [ abortion abused-drugs adult alcohol-and-tobacco command-and-control dating dynamic-dns extremism gambling grayware hacking high-risk malware nudity phishing proxy-avoidance-and-anonymizers unknown weapons ]
+set shared profiles url-filtering urlf-profile2 allow [ news ]
