@@ -1,0 +1,458 @@
+----BEGIN USERS----
+[
+    {
+        "name": "Administrator CN=Administrator,CN=Users,DC=acme,DC=com",
+        "object": "CN=Administrator,CN=Users,DC=acme,DC=com"
+    },
+    {
+        "name": "Guest CN=Guest,CN=Users,DC=acme,DC=com",
+        "object": "CN=Guest,CN=Users,DC=acme,DC=com"
+    },
+    {
+        "name": "Karsten Kubeler CN=Karsten Kubeler,OU=TEST_HQ,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=Karsten Kubeler,OU=TEST_HQ,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "Oswald Martin CN=Oswald Martin,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=Oswald Martin,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "WIN-QACNT3QD5QI CN=WIN-QACNT3QD5QI,OU=Domain Controllers,DC=acme,DC=com",
+        "object": "CN=WIN-QACNT3QD5QI,OU=Domain Controllers,DC=acme,DC=com"
+    },
+    {
+        "name": "binduser CN=binduser,OU=research,DC=acme,DC=com",
+        "object": "CN=binduser,OU=research,DC=acme,DC=com"
+    },
+    {
+        "name": "dobbermann_martin CN=dobbermann_martin,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=dobbermann_martin,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "esser.andreas CN=esser.andreas,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=esser.andreas,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "hallidri.refat CN=hallidri.refat,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=hallidri.refat,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "krbtgt CN=krbtgt,CN=Users,DC=acme,DC=com",
+        "object": "CN=krbtgt,CN=Users,DC=acme,DC=com"
+    },
+    {
+        "name": "perkins.derek CN=perkins.derek,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=perkins.derek,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "rossbach.maximilian CN=rossbach.maximilian,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=rossbach.maximilian,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "schroeder.michael CN=schroeder.michael,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=schroeder.michael,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "seifert.ole CN=seifert.ole,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=seifert.ole,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "testuser1 CN=testuser1,OU=research,DC=acme,DC=com",
+        "object": "CN=testuser1,OU=research,DC=acme,DC=com"
+    },
+    {
+        "name": "testuser2 CN=testuser2,OU=research,DC=acme,DC=com",
+        "object": "CN=testuser2,OU=research,DC=acme,DC=com"
+    },
+    {
+        "name": "testuser3 space CN=testuser3 space,OU=research,DC=acme,DC=com",
+        "object": "CN=testuser3 space,OU=research,DC=acme,DC=com"
+    },
+    {
+        "name": "testuser4 CN=testuser4,OU=research,DC=acme,DC=com",
+        "object": "CN=testuser4,OU=research,DC=acme,DC=com"
+    },
+    {
+        "name": "testuser5 CN=testuser5,OU=research,DC=acme,DC=com",
+        "object": "CN=testuser5,OU=research,DC=acme,DC=com"
+    },
+    {
+        "name": "valley.ryan CN=valley.ryan,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=valley.ryan,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "wolfram.kristian CN=wolfram.kristian,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=wolfram.kristian,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    },
+    {
+        "name": "zenglein.georg CN=zenglein.georg,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com",
+        "object": "CN=zenglein.georg,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com"
+    }
+]
+----END USERS----
+
+----BEGIN GROUPS----
+
+[
+    {
+        "name": "Access Control Assistance Operators",
+        "object": "CN=Access Control Assistance Operators,CN=Builtin,DC=acme,DC=com|S-1-5-32-579"
+    },
+    {
+        "name": "Account Operators",
+        "object": "CN=Account Operators,CN=Builtin,DC=acme,DC=com|S-1-5-32-548"
+    },
+    {
+        "name": "Acountancy_Finance",
+        "object": "CN=Acountancy_Finance,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1134"
+    },
+    {
+        "name": "Administrators",
+        "object": "CN=Administrators,CN=Builtin,DC=acme,DC=com|S-1-5-32-544"
+    },
+    {
+        "name": "Allowed RODC Password Replication Group",
+        "object": "CN=Allowed RODC Password Replication Group,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-571"
+    },
+    {
+        "name": "Backup Operators",
+        "object": "CN=Backup Operators,CN=Builtin,DC=acme,DC=com|S-1-5-32-551"
+    },
+    {
+        "name": "CMG - DISTLIST RAAS",
+        "object": "CN=CMG - DISTLIST RAAS,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1137"
+    },
+    {
+        "name": "Cert Publishers",
+        "object": "CN=Cert Publishers,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-517"
+    },
+    {
+        "name": "Certificate Service DCOM Access",
+        "object": "CN=Certificate Service DCOM Access,CN=Builtin,DC=acme,DC=com|S-1-5-32-574"
+    },
+    {
+        "name": "Cloneable Domain Controllers",
+        "object": "CN=Cloneable Domain Controllers,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-522"
+    },
+    {
+        "name": "Cryptographic Operators",
+        "object": "CN=Cryptographic Operators,CN=Builtin,DC=acme,DC=com|S-1-5-32-569"
+    },
+    {
+        "name": "Denied RODC Password Replication Group",
+        "object": "CN=Denied RODC Password Replication Group,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-572"
+    },
+    {
+        "name": "Distributed COM Users",
+        "object": "CN=Distributed COM Users,CN=Builtin,DC=acme,DC=com|S-1-5-32-562"
+    },
+    {
+        "name": "DnsAdmins",
+        "object": "CN=DnsAdmins,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1101"
+    },
+    {
+        "name": "DnsUpdateProxy",
+        "object": "CN=DnsUpdateProxy,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1102"
+    },
+    {
+        "name": "Domain Admins",
+        "object": "CN=Domain Admins,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-512"
+    },
+    {
+        "name": "Domain Computers",
+        "object": "CN=Domain Computers,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-515"
+    },
+    {
+        "name": "Domain Controllers",
+        "object": "CN=Domain Controllers,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-516"
+    },
+    {
+        "name": "Domain Guests",
+        "object": "CN=Domain Guests,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-514"
+    },
+    {
+        "name": "Domain Users",
+        "object": "CN=Domain Users,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-513"
+    },
+    {
+        "name": "Enterprise Admins",
+        "object": "CN=Enterprise Admins,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-519"
+    },
+    {
+        "name": "Enterprise Key Admins",
+        "object": "CN=Enterprise Key Admins,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-527"
+    },
+    {
+        "name": "Enterprise Read-only Domain Controllers",
+        "object": "CN=Enterprise Read-only Domain Controllers,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-498"
+    },
+    {
+        "name": "Event Log Readers",
+        "object": "CN=Event Log Readers,CN=Builtin,DC=acme,DC=com|S-1-5-32-573"
+    },
+    {
+        "name": "FIM-ORG-CMG Fleet Operations Center",
+        "object": "CN=FIM-ORG-CMG Fleet Operations Center,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1144"
+    },
+    {
+        "name": "FIM-ORG-Finance",
+        "object": "CN=FIM-ORG-Finance,OU=TEST_Groups,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1117"
+    },
+    {
+        "name": "FIM-ORG-IT Business",
+        "object": "CN=FIM-ORG-IT Business,OU=TEST_Groups,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1146"
+    },
+    {
+        "name": "FIM-ORG-Yield Management",
+        "object": "CN=FIM-ORG-Yield Management,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1138"
+    },
+    {
+        "name": "FIM-TECH-Cruises-Division",
+        "object": "CN=FIM-TECH-Cruises-Division,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1135"
+    },
+    {
+        "name": "FIM-TECH-CustomerCenter",
+        "object": "CN=FIM-TECH-CustomerCenter,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1136"
+    },
+    {
+        "name": "FIM-TECH-Entertainment-Group",
+        "object": "CN=FIM-TECH-Entertainment-Group,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1141"
+    },
+    {
+        "name": "FIM-TECH-Maritime-Division",
+        "object": "CN=FIM-TECH-Maritime-Division,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1140"
+    },
+    {
+        "name": "FW_BackupAdmins",
+        "object": "CN=FW_BackupAdmins,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1114"
+    },
+    {
+        "name": "FW_DB_Admins",
+        "object": "CN=FW_DB_Admins,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1109"
+    },
+    {
+        "name": "FW_Finance_External",
+        "object": "CN=FW_Finance_External,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1112"
+    },
+    {
+        "name": "FW_IT_SysAdmin",
+        "object": "CN=FW_IT_SysAdmin,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1115"
+    },
+    {
+        "name": "FW_NetworkAdmins",
+        "object": "CN=FW_NetworkAdmins,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1110"
+    },
+    {
+        "name": "FW_RemoteVendors_All",
+        "object": "CN=FW_RemoteVendors_All,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1111"
+    },
+    {
+        "name": "FW_Siemens_External",
+        "object": "CN=FW_Siemens_External,OU=TEST_Siemens,OU=TEST_Fremdfirmen,OU=TEST_Rostock,OU=TEST_Corp,OU=TEST_allgemein,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1108"
+    },
+    {
+        "name": "Finance_Users",
+        "object": "CN=Finance_Users,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1113"
+    },
+    {
+        "name": "Group Policy Creator Owners",
+        "object": "CN=Group Policy Creator Owners,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-520"
+    },
+    {
+        "name": "Guests",
+        "object": "CN=Guests,CN=Builtin,DC=acme,DC=com|S-1-5-32-546"
+    },
+    {
+        "name": "Hyper-V Administrators",
+        "object": "CN=Hyper-V Administrators,CN=Builtin,DC=acme,DC=com|S-1-5-32-578"
+    },
+    {
+        "name": "IIS_IUSRS",
+        "object": "CN=IIS_IUSRS,CN=Builtin,DC=acme,DC=com|S-1-5-32-568"
+    },
+    {
+        "name": "IT Enterprise Applications",
+        "object": "CN=IT Enterprise Applications,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1143"
+    },
+    {
+        "name": "IT_Security",
+        "object": "CN=IT_Security,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1129"
+    },
+    {
+        "name": "Incoming Forest Trust Builders",
+        "object": "CN=Incoming Forest Trust Builders,CN=Builtin,DC=acme,DC=com|S-1-5-32-557"
+    },
+    {
+        "name": "Key Admins",
+        "object": "CN=Key Admins,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-526"
+    },
+    {
+        "name": "Network Configuration Operators",
+        "object": "CN=Network Configuration Operators,CN=Builtin,DC=acme,DC=com|S-1-5-32-556"
+    },
+    {
+        "name": "NetworkAdmin",
+        "object": "CN=NetworkAdmin,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1128"
+    },
+    {
+        "name": "Performance Log Users",
+        "object": "CN=Performance Log Users,CN=Builtin,DC=acme,DC=com|S-1-5-32-559"
+    },
+    {
+        "name": "Performance Monitor Users",
+        "object": "CN=Performance Monitor Users,CN=Builtin,DC=acme,DC=com|S-1-5-32-558"
+    },
+    {
+        "name": "Pre-Windows 2000 Compatible Access",
+        "object": "CN=Pre-Windows 2000 Compatible Access,CN=Builtin,DC=acme,DC=com|S-1-5-32-554"
+    },
+    {
+        "name": "Print Operators",
+        "object": "CN=Print Operators,CN=Builtin,DC=acme,DC=com|S-1-5-32-550"
+    },
+    {
+        "name": "Protected Users",
+        "object": "CN=Protected Users,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-525"
+    },
+    {
+        "name": "RAS and IAS Servers",
+        "object": "CN=RAS and IAS Servers,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-553"
+    },
+    {
+        "name": "RAVPN_intern",
+        "object": "CN=RAVPN_intern,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1116"
+    },
+    {
+        "name": "RDS Endpoint Servers",
+        "object": "CN=RDS Endpoint Servers,CN=Builtin,DC=acme,DC=com|S-1-5-32-576"
+    },
+    {
+        "name": "RDS Management Servers",
+        "object": "CN=RDS Management Servers,CN=Builtin,DC=acme,DC=com|S-1-5-32-577"
+    },
+    {
+        "name": "RDS Remote Access Servers",
+        "object": "CN=RDS Remote Access Servers,CN=Builtin,DC=acme,DC=com|S-1-5-32-575"
+    },
+    {
+        "name": "Read-only Domain Controllers",
+        "object": "CN=Read-only Domain Controllers,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-521"
+    },
+    {
+        "name": "Remote Desktop Users",
+        "object": "CN=Remote Desktop Users,CN=Builtin,DC=acme,DC=com|S-1-5-32-555"
+    },
+    {
+        "name": "Remote Management Users",
+        "object": "CN=Remote Management Users,CN=Builtin,DC=acme,DC=com|S-1-5-32-580"
+    },
+    {
+        "name": "Replicator",
+        "object": "CN=Replicator,CN=Builtin,DC=acme,DC=com|S-1-5-32-552"
+    },
+    {
+        "name": "Schema Admins",
+        "object": "CN=Schema Admins,CN=Users,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-518"
+    },
+    {
+        "name": "Server Operators",
+        "object": "CN=Server Operators,CN=Builtin,DC=acme,DC=com|S-1-5-32-549"
+    },
+    {
+        "name": "Storage Replica Administrators",
+        "object": "CN=Storage Replica Administrators,CN=Builtin,DC=acme,DC=com|S-1-5-32-582"
+    },
+    {
+        "name": "Terminal Server License Servers",
+        "object": "CN=Terminal Server License Servers,CN=Builtin,DC=acme,DC=com|S-1-5-32-561"
+    },
+    {
+        "name": "Users",
+        "object": "CN=Users,CN=Builtin,DC=acme,DC=com|S-1-5-32-545"
+    },
+    {
+        "name": "Windows Authorization Access Group",
+        "object": "CN=Windows Authorization Access Group,CN=Builtin,DC=acme,DC=com|S-1-5-32-560"
+    },
+    {
+        "name": "backupadmins",
+        "object": "CN=backupadmins,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1123"
+    },
+    {
+        "name": "firewall_external_IT_Fleet_Ops",
+        "object": "CN=firewall_external_IT_Fleet_Ops,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1145"
+    },
+    {
+        "name": "firewall_external_fidelio-UAT",
+        "object": "CN=firewall_external_fidelio-UAT,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1126"
+    },
+    {
+        "name": "firewall_internal_IT_System_Administration",
+        "object": "CN=firewall_internal_IT_System_Administration,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1118"
+    },
+    {
+        "name": "firewall_internal_it_database_administration",
+        "object": "CN=firewall_internal_it_database_administration,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1122"
+    },
+    {
+        "name": "firewall_internal_xmedia-admin",
+        "object": "CN=firewall_internal_xmedia-admin,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1119"
+    },
+    {
+        "name": "firewall_internal_xmedia-user",
+        "object": "CN=firewall_internal_xmedia-user,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1120"
+    },
+    {
+        "name": "gitlab",
+        "object": "CN=gitlab,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1121"
+    },
+    {
+        "name": "group1",
+        "object": "CN=group1,OU=research,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1105"
+    },
+    {
+        "name": "it security",
+        "object": "CN=it security,OU=TEST_ServiceNow,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1142"
+    },
+    {
+        "name": "ravpn_external_danelec",
+        "object": "CN=ravpn_external_danelec,OU=TEST_RAVPN,OU=TEST_Groups,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1130"
+    },
+    {
+        "name": "ravpn_external_gmis",
+        "object": "CN=ravpn_external_gmis,OU=TEST_Groups,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1131"
+    },
+    {
+        "name": "ravpn_external_jbt",
+        "object": "CN=ravpn_external_jbt,OU=TEST_Groups,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1132"
+    },
+    {
+        "name": "ravpn_external_kpmg",
+        "object": "CN=ravpn_external_kpmg,OU=TEST_Groups,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1124"
+    },
+    {
+        "name": "ravpn_external_kyndryl",
+        "object": "CN=ravpn_external_kyndryl,OU=TEST_Kyndryl,OU=TEST_Vendors,OU=TEST_Office,OU=TEST_Corp,OU=TEST_allgemein,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1133"
+    },
+    {
+        "name": "ravpn_external_orcaai",
+        "object": "CN=ravpn_external_orcaai,OU=TEST_orcaai,OU=TEST_Fremdfirmen,OU=TEST_Rostock,OU=TEST_Corp,OU=TEST_allgemein,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1127"
+    },
+    {
+        "name": "v.IT-System Admins",
+        "object": "CN=v.IT-System Admins,OU=TEST_Groups,OU=TEST_O365,OU=TEST_HQ,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1139"
+    },
+    {
+        "name": "webvpn_external_amptown",
+        "object": "CN=webvpn_external_amptown,OU=TEST_Amptown System Company GmbH,OU=TEST_Fremdfirmen,OU=TEST_Rostock,OU=TEST_Corp,OU=TEST_allgemein,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1147"
+    },
+    {
+        "name": "webvpn_external_itron",
+        "object": "CN=webvpn_external_itron,OU=TEST_itron - Industrie-Elektronik Martin Willers e.K,OU=TEST_Fremdfirmen,OU=TEST_Rostock,OU=TEST_Corp,OU=TEST_allgemein,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1148"
+    },
+    {
+        "name": "webvpn_external_siemens",
+        "object": "CN=webvpn_external_siemens,OU=TEST_Siemens,OU=TEST_Fremdfirmen,OU=TEST_Rostock,OU=TEST_Corp,OU=TEST_allgemein,OU=TEST_users,OU=TEST_corp,DC=acme,DC=com|S-1-5-21-4196225532-4002339472-3162245871-1125"
+    }
+]
+----END GROUPS----

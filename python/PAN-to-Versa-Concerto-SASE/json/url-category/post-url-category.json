@@ -1,0 +1,23 @@
+{
+    "attributes":{
+        "criteria":{
+            "value":{
+                "pattern":[
+                    "@place-each-new-pattern-here"
+                ],
+                "string":[
+                    {
+                        "string":null,
+                        "reputation":null
+                    }
+                ],
+            }
+        }
+    },
+    "type":"GLOBAL_SETTINGS",
+    "subtype":"USER_DEFINED_OBJECTS",
+    "category":"URL_CATEGORY",
+    "name":"@url-category-name",
+    "description":"@url-category-descriptiom",
+    "tags":[ "@url-category-tag" ]
+}
