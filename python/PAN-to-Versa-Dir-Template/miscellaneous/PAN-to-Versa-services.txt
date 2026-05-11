@@ -1,0 +1,113 @@
+ssl >> https
+ms-rdp >>
+ssh >> ssh
+ms-ds-smb-base >> microsoft-ds
+ms-ds-smbv3 >> microsoft-ds
+vnc >>
+msrpc-base >> epmap
+ldap >> ldap
+icmp >>
+ping >> echo
+traceroute >>
+oracle >> sql*net
+soap >> http
+web-browsing >> www
+mssql-db-base >> sqlserv
+dns >> domain
+ms-ds-smb >> microsoft-ds
+active-directory-base >> ldap
+kerberos >> kerberos
+ms-local-security-management >> epmap
+ms-netlogon >> microsoft-ds
+ntp >> ntp
+ms-update >> https
+soti-mobicontrol >>
+rtp >>
+stun >>
+ms-ds-smbv2 >> microsoft-ds
+bing-ai >> https
+canva >> https
+deepl >> https
+High_Bandwidth_App_Groups >>
+quic >>
+http-audio >> http
+http-video >> http
+ms-office365 >> https
+ocsp >> http
+websocket >> https
+windows-azure-base >> https
+windows-push-notifications >> https
+ms-product-activation >> https
+office365-consumer-access >> https
+office365-enterprise-access >> https
+activesync >> https
+mapi-over-http >> https
+ms-exchange >> msexch-routing
+rpc-over-http >> https
+rtcp >>
+facebook >> https
+instagram >> https
+pinterest >> https
+tiktok >> https
+twitter >> https
+youtube >> https
+amazon-aws-console >> https
+bluejeans >> https
+docusign >> https
+new-relic >> https
+lotus-notes-base >>
+smtp-base >> smtp
+tftp >> tftp
+jabber >>
+bfcp >>
+sip >> sip
+tlsp >>
+sip-application >> sip
+adobe-cq >> https
+radius >>
+redis >>
+mysql >> mysql
+kvm-ssh-console >> ssh
+vnc-base >>
+ftp >> ftp
+mssql-db >> sqlserv
+msrpc >> epmap
+pcoip >>
+vmware-blast-extreme >>
+vmware-view >>
+apache-jserv >>
+swiftmq >>
+service-now >> https
+oracle-forms >>
+citrix >>
+active-directory >> ldap
+radmin >>
+postgres >>
+lotus-sametime >>
+qlikview >>
+jenkins >>
+siemens-s7 >> iso-tsap
+vnc-filetransfer >>
+telnet >> telnet
+shore-standard-internet-apps >>
+snmp >> snmp
+snmp-trap >> snmptrap
+vmware >>
+hp-ilo >> https
+vertica >>
+ms-sms >>
+webdav >> http
+windows-remote-management >> https
+veeam >>
+afp >> afpovertcp
+server >>
+netbios-ns >> netbios-ns
+cotp >> iso-tsap
+apple-remote-desktop >>
+vnc-encrypted >>
+http-proxy >> http
+rsync >> rsync
+mongodb >>
+cisco-rtmt >>
+milestone-xprotect >>
+splunk >>
