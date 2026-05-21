@@ -85,7 +85,14 @@ box_print() {
 
 run_py() {
     local name="$1"
-    local full_path="$PY_DIR/$name"
+    local xml_arg="${2:-}"
+    local full_path
+    if [[ "$name" == /* ]]; then
+        full_path="$name"
+        name="$(basename "$name")"
+    else
+        full_path="$PY_DIR/$name"
+    fi
     STEP=$((STEP + 1))
 
     echo -e "${BOLD}[${STEP}/${TOTAL}]${NC} Running ${YELLOW}${name}${NC} ..."
@@ -97,7 +104,11 @@ run_py() {
         return 1
     fi
 
-    python3 "$full_path"
+    if [[ -n "$xml_arg" ]]; then
+        python3 "$full_path" "$xml_arg"
+    else
+        python3 "$full_path"
+    fi
     local exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
@@ -116,7 +127,14 @@ run_py() {
 
 print_banner
 
+MAIN_DIR="$SCRIPT_DIR"
+
 run_py "get-token.py"
+
+if [[ -f "${MAIN_DIR}/sp-config.xml" ]]; then
+    echo -e "${BOLD}sp-config.xml found — running pan-xml-to-flat.py${NC}"
+    run_py "${MAIN_DIR}/scripts/pan-xml-to-flat.py" "../sp-config.xml"
+fi
 
 SCIM_SCRIPT="$PY_DIR/get-concerto-scim.py"
 GENERAL_FILE="$TEMP_DIR/general.txt"
