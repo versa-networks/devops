@@ -1,0 +1,60 @@
+---
+# vars/templates/SPOKE-AMER-REGION-1.yml
+# -----------------------------------------------------------------------
+# Maps Director template variable names to Ansible variable names.
+# Loaded by provision_cpe.yml (STEP 5) when template_name = "SPOKE-AMER-REGION-1".
+#
+# director_var : the {$v_...} key Director expects in the POST/PUT body
+# ansible_var  : the Ansible variable that holds the value (from site file,
+#                region defaults, or -e on the command line)
+#
+# To disable a mapping, remove or comment out its entry.
+# If ansible_var is not defined at runtime the entry is skipped silently.
+# -----------------------------------------------------------------------
+
+template_var_map:
+
+  # ── WAN – MPLS primary ────────────────────────────────────────────────
+  - director_var: "{$v_MPLS_IPv4__staticaddress}"
+    ansible_var:  "inet1_static_address"
+    type:         "ipv4_mask"
+
+  - director_var: "{$v_MPLS-Transport-VR_IPv4__vrHopAddress}"
+    ansible_var:  "inet1_transport_vr_hop"
+    type:         "ipv4"
+
+  # ── WAN – MPLS secondary ──────────────────────────────────────────────
+  - director_var: "{$v_MPLS_M_IPv4__staticaddress}"
+    ansible_var:  "inet2_static_address"
+    type:         "ipv4_mask"
+
+  - director_var: "{$v_MPLS_M-Transport-VR_IPv4__vrHopAddress}"
+    ansible_var:  "inet2_transport_vr_hop"
+    type:         "ipv4"
+
+  # ── LAN ───────────────────────────────────────────────────────────────
+  - director_var: "{$v_LAN1_IPv4__staticaddress}"
+    ansible_var:  "lan_corp_ipv4_address"
+    type:         "ipv4_mask"
+
+  # ── Network services ──────────────────────────────────────────────────
+  - director_var: "{$v_LAN-CORP_NTP_Server-0__server}"
+    ansible_var:  "lan_corp_ntp_server"
+    type:         "ipv4_or_fqdn"
+
+  # ── Optional — uncomment to enable ───────────────────────────────────
+  # - director_var: "{$v_LAN-CORP_Syslog_Server-0__server}"
+  #   ansible_var:  "lan_corp_syslog_server"
+  #   type:         "ipv4_or_fqdn"
+
+  # - director_var: "{$v_LAN-CORP_BGP_LocalAS__bgpLocalAS}"
+  #   ansible_var:  "lan_corp_bgp_local_as"
+  #   type:         "integer"
+
+  # - director_var: "{$v_LAN-CORP_BGP_NeighborIP-0__bgpNeighborIP}"
+  #   ansible_var:  "lan_corp_bgp_neighbor_ip"
+  #   type:         "ipv4"
+
+  # - director_var: "{$v_LAN-CORP_BGP_PeerAS-0__bgpPeerAS}"
+  #   ansible_var:  "lan_corp_bgp_peer_as"
+  #   type:         "integer"

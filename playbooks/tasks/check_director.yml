@@ -1,0 +1,81 @@
+---
+###############################################################################
+# tasks/check_director.yml
+# -----------------------------------------------------------------------
+# Discovers which Director in the HA pair is active, then sets
+# director_host and director_base_url as host facts for use by all
+# subsequent tasks in the play.
+#
+# Discovery endpoint: GET /vnms/system/isActive
+#   2XX  → this Director is active
+#   4XX / 5XX / connection error → not active or unreachable
+#
+# director_host_1 is tried first. director_host_2 is the fallback.
+# If director_host_2 is "" (empty), it is skipped entirely and
+# director_host_1 is used as the sole candidate.
+# The play is aborted if no Director responds as active.
+###############################################################################
+
+# ── Probe Director 1 ──────────────────────────────────────────────────────────
+- name: "DIRECTOR HA | Probe {{ director_host_1 }}:{{ director_port }} — is it active?"
+  ansible.builtin.uri:
+    url: "https://{{ director_host_1 }}:{{ director_port }}/vnms/system/isActive"
+    method: GET
+    url_username: "{{ director_user }}"
+    url_password: "{{ director_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200, 201, 202]
+    timeout: 10
+  register: check_host_1
+  ignore_errors: yes
+
+# ── Probe Director 2 (skipped if director_host_2 is empty) ───────────────────
+- name: "DIRECTOR HA | Probe {{ director_host_2 }}:{{ director_port }} — is it active?"
+  ansible.builtin.uri:
+    url: "https://{{ director_host_2 }}:{{ director_port }}/vnms/system/isActive"
+    method: GET
+    url_username: "{{ director_user }}"
+    url_password: "{{ director_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200, 201, 202]
+    timeout: 10
+  register: check_host_2
+  ignore_errors: yes
+  when: director_host_2 | default('') != ''
+
+# ── Abort if no active Director found ────────────────────────────────────────
+- name: "DIRECTOR HA | Abort – no active Director found"
+  ansible.builtin.fail:
+    msg: >-
+      {%- if director_host_2 | default('') == '' -%}
+      {{ director_host_1 }} did not respond as active on /vnms/system/isActive.
+      director_host_2 is not configured. Check Director health before retrying.
+      {%- else -%}
+      Neither {{ director_host_1 }} nor {{ director_host_2 }} responded with 2XX
+      on /vnms/system/isActive. Check Director health before retrying.
+      {%- endif -%}
+  when:
+    - check_host_1 is failed
+    - director_host_2 | default('') == '' or check_host_2 is failed
+
+# ── Set director_host and director_base_url facts ────────────────────────────
+- name: "DIRECTOR HA | Set active Director facts"
+  ansible.builtin.set_fact:
+    director_host: >-
+      {{ director_host_1 if check_host_1 is not failed else director_host_2 }}
+    director_base_url: >-
+      https://{{ director_host_1 if check_host_1 is not failed else director_host_2 }}:{{ director_port }}/vnms
+
+- name: "DIRECTOR HA | Active Director selected ✓"
+  ansible.builtin.debug:
+    msg: >-
+      Active Director: {{ director_host }}:{{ director_port }}
+      ({{ director_host_1 }} – {{ 'ACTIVE' if check_host_1 is not failed else 'standby/unreachable' }}
+      {%- if director_host_2 | default('') != '' -%}
+      , {{ director_host_2 }} – {{ 'ACTIVE' if check_host_2 is not failed else 'standby/unreachable' }}
+      {%- else -%}
+      , director_host_2 not configured
+      {%- endif -%}
+      )

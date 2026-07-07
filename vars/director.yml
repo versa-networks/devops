@@ -1,0 +1,22 @@
+---
+# vars/director.yml
+# -----------------------------------------------------------------------
+# Org-wide Director connection settings and global defaults.
+# Loaded explicitly by each playbook via vars_files.
+# Credentials (director_password) are in vault/director_credentials.yml.
+#
+# director_host and director_base_url are NOT defined here — they are
+# resolved at runtime by check_director.yml, which probes both IPs and
+# sets facts for whichever Director responds as active.
+# -----------------------------------------------------------------------
+
+# ── Director HA pair ──────────────────────────────────────────────────
+director_host_1: "10.78.22.21"
+director_host_2: "10.70.44.1"
+director_port: "9182"
+director_user: "Administrator"
+validate_certs: false
+
+# ── Task polling ──────────────────────────────────────────────────────
+task_poll_interval: 10
+task_poll_retries: 60

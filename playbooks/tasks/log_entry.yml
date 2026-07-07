@@ -1,0 +1,22 @@
+---
+###############################################################################
+# tasks/log_entry.yml
+# -----------------------------------------------------------------------
+# Reusable single-line log writer.
+#
+# Caller must pass:
+#   log_entry  — the message string to record
+#
+# device_name must already be set as a fact (done by "Flatten vars" at the
+# top of both provision_cpe.yml and redeploy_cpe.yml).
+#
+# Log file: logs/<device_name>.log (relative to sdwan-automate/ root).
+# Lines are timestamped in UTC and appended on every call.
+###############################################################################
+
+- name: "LOG | [{{ device_name }}] {{ log_entry }}"
+  ansible.builtin.lineinfile:
+    path: "{{ playbook_dir }}/../logs/{{ device_name }}.log"
+    line: "{{ now(utc=True, fmt='%Y-%m-%d %H:%M:%S UTC') }} | {{ log_entry }}"
+    create: yes
+    mode: '0644'

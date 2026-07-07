@@ -1,0 +1,594 @@
+---
+###############################################################################
+# tasks/provision_cpe.yml
+# -----------------------------------------------------------------------
+# Called once per CPE by provision_device.yml.
+# Receives loop var `cpe` (one entry from devices[]).
+# Flattens nested site/CPE vars into the flat names Steps 2-9 expect,
+# then runs the full provisioning flow for that CPE.
+#
+# Var precedence (highest wins):
+#   region defaults → site level → CPE level
+###############################################################################
+
+# ── Flatten site + CPE vars into provisioning-ready facts ────────────────────
+- name: "CPE {{ cpe.device_name }} | Flatten vars"
+  ansible.builtin.set_fact:
+    # ── Mandatory identity fields (playbook will fail here if absent) ─────────
+    device_name:              "{{ cpe.device_name }}"
+    serial_number:            "{{ cpe.serial_number }}"
+    deployment_type:          "{{ cpe.deployment_type }}"
+    model_number:             "{{ cpe.model_number }}"
+    license_period:           "{{ cpe.license_period }}"
+    location_country:         "{{ location.address.country }}"
+    device_group:             "{{ cpe.device_group | default(device_group) }}"
+    template_name:            "{{ cpe.template_name | default(template_name) }}"
+    # Template-specific vars (inet1_static_address, lan_corp_ipv4_address, etc.)
+    # are NOT flattened here. Define them as flat keys directly in the site or
+    # CPE vars file. STEP 5 validates that every non-autogeneratable template
+    # variable has a value and aborts with a clear message if one is missing.
+
+# =========================================================================
+# EARLY VALIDATION – type-check vars before any API calls
+# Runs for every code path (new device, existing, or redeploy).
+# =========================================================================
+- name: "VALIDATE | [{{ device_name }}] Load template variable mapping for '{{ template_name }}'"
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/../vars/templates/{{ template_name }}.yml"
+
+- name: "VALIDATE | [{{ device_name }}] Type-check supplied variable values"
+  ansible.builtin.set_fact:
+    type_errors: >-
+      {%- set errors = [] -%}
+      {%- for mapping in template_var_map -%}
+        {%- if mapping.type is defined -%}
+          {%- set val = cpe[mapping.ansible_var] if mapping.ansible_var in cpe
+                        else (vars[mapping.ansible_var] if mapping.ansible_var in vars else '') -%}
+          {%- if val != '' -%}
+            {%- if mapping.type == 'ipv4_mask' and '/' not in val -%}
+              {%- set _ = errors.append(mapping.ansible_var ~ ' = "' ~ val ~ '" — type ipv4_mask requires CIDR notation, e.g. 1.1.1.1/24 (director_var=' ~ mapping.director_var ~ ')') -%}
+            {%- elif mapping.type == 'ipv4' and '/' in val -%}
+              {%- set _ = errors.append(mapping.ansible_var ~ ' = "' ~ val ~ '" — type ipv4 must be a plain IP address with no mask, e.g. 1.1.1.1 (director_var=' ~ mapping.director_var ~ ')') -%}
+            {%- endif -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ errors }}
+
+- name: "VALIDATE | [{{ device_name }}] Abort – type validation failed"
+  ansible.builtin.fail:
+    msg: >-
+      {{ type_errors | length }} template variable(s) failed type validation
+      for device '{{ device_name }}' / template '{{ template_name }}':
+      {{ type_errors | join('; ') }}
+  when: type_errors | length > 0
+
+- name: "CPE {{ cpe.device_name }} | ── Begin provisioning ──────────────────"
+  ansible.builtin.debug:
+    msg: >-
+      Provisioning CPE '{{ device_name }}' at site '{{ site_name }}'
+      [serial: {{ serial_number }}, model: {{ model_number }}, region: {{ region | default('none') }}]
+
+- name: "LOG | [{{ device_name }}] Start"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      START | site={{ site_name }}, region={{ region | default('none') }},
+      serial={{ serial_number }}, model={{ model_number }}, template={{ template_name | default('(tbd)') }}
+
+# =========================================================================
+# STEP 2 – Get next available Site ID from Director
+# =========================================================================
+- name: "STEP 2 | [{{ device_name }}] Get next available Site ID"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/global/Branch/availableId"
+    method: GET
+    status_code: [200, 202]
+    timeout: 30
+  register: available_id_result
+
+- name: "STEP 2 | [{{ device_name }}] Set site_id from Director response"
+  ansible.builtin.set_fact:
+    site_id: "{{ available_id_result.json | int }}"
+
+- name: "STEP 2 | [{{ device_name }}] Show assigned Site ID"
+  ansible.builtin.debug:
+    msg: "Director assigned Site ID {{ site_id }} to CPE '{{ device_name }}'"
+
+- name: "LOG | [{{ device_name }}] STEP 2"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP2 | available site_id={{ site_id }}"
+
+# =========================================================================
+# STEP 3 – Idempotency / branch check  (runs BEFORE template allocation)
+# =========================================================================
+- name: "STEP 3 | [{{ device_name }}] Query Director for existing device"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices/device/{{ device_name }}"
+    method: GET
+    status_code: [200, 404]
+    timeout: 30
+  register: device_check_result
+
+- name: "STEP 3 | [{{ device_name }}] Parse workflowStatus, applianceExists, and siteId"
+  ansible.builtin.set_fact:
+    device_exists: "{{ device_check_result.status == 200 }}"
+    workflow_status: >-
+      {{ device_check_result.json['versanms.sdwan-device-workflow']['workflowStatus']
+         | default('UNKNOWN')
+         if device_check_result.status == 200
+         else 'NOT_FOUND' }}
+    appliance_exists: >-
+      {{ device_check_result.json['versanms.sdwan-device-workflow']['applianceExists']
+         | default(false)
+         if device_check_result.status == 200
+         else false }}
+    existing_site_id: >-
+      {{ device_check_result.json['versanms.sdwan-device-workflow']['siteId']
+         | default(omit)
+         if device_check_result.status == 200
+         else omit }}
+
+- name: "STEP 3 | [{{ device_name }}] Show pre-check result"
+  ansible.builtin.debug:
+    msg: >-
+      CPE '{{ device_name }}':
+        HTTP status      : {{ device_check_result.status }}
+        Exists in VNMS   : {{ device_exists }}
+        Workflow status  : {{ workflow_status }}
+        Appliance exists : {{ appliance_exists }}
+
+- name: "LOG | [{{ device_name }}] STEP 3 result"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP3 | http={{ device_check_result.status }},
+      device_exists={{ device_exists }},
+      workflow_status={{ workflow_status }},
+      appliance_exists={{ appliance_exists }}
+
+- name: "LOG | [{{ device_name }}] STEP 3 ABORT – Failed state"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP3 | ABORT – workflowStatus=Failed, investigate in Director"
+  when:
+    - device_exists | bool
+    - workflow_status == 'Failed'
+
+- name: "STEP 3 | [{{ device_name }}] Abort – workflowStatus is 'Failed'"
+  ansible.builtin.fail:
+    msg: >-
+      CPE '{{ device_name }}' is in a FAILED state (workflowStatus='Failed').
+      Investigate and resolve the failure in Director before retrying.
+  when:
+    - device_exists | bool
+    - workflow_status == 'Failed'
+
+- name: "LOG | [{{ device_name }}] STEP 3 ABORT – unexpected state"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP3 | ABORT – unexpected workflowStatus={{ workflow_status }}, expected Deployed"
+  when:
+    - device_exists | bool
+    - workflow_status not in ['Deployed', 'Failed']
+    - workflow_status != 'NOT_FOUND'
+
+- name: "STEP 3 | [{{ device_name }}] Abort – workflowStatus is not 'Deployed'"
+  ansible.builtin.fail:
+    msg: >-
+      CPE '{{ device_name }}' exists but workflowStatus='{{ workflow_status }}'.
+      Expected 'Deployed'. Investigate in Director before retrying.
+  when:
+    - device_exists | bool
+    - workflow_status not in ['Deployed', 'Failed']
+    - workflow_status != 'NOT_FOUND'
+
+
+# =========================================================================
+# STEP 4 – Obtain template variable bindings
+# =========================================================================
+- name: "STEP 4 | [{{ device_name }}] Fetch auto-generated template values (new device)"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices/device/template/data/{{ device_name }}"
+    method: POST
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      "versanms.sdwan-device-workflow":
+        deviceName: "{{ device_name }}"
+        siteId: "{{ site_id | int }}"
+        orgName: "{{ org_name }}"
+        serialNumber: "{{ serial_number }}"
+        deviceGroup: "{{ device_group }}"
+        licensePeriod: "{{ license_period | int }}"
+        deploymentType: "{{ deployment_type }}"
+        modelNumber: "{{ model_number }}"
+        locationInfo:
+          country: "{{ location_country }}"
+        postStagingTemplateInfo:
+          templateName: "{{ template_name }}"
+    status_code: [200, 201]
+    timeout: 60
+  register: validate_result
+  when: not (device_exists | bool)
+
+- name: "STEP 4 | [{{ device_name }}] Extract autogen_attrs from template endpoint (new device)"
+  ansible.builtin.set_fact:
+    autogen_attrs: >-
+      {{ validate_result.json['versanms.sdwan-device-workflow']
+         ['postStagingTemplateInfo']['templateData']
+         ['device-template-variable']['variable-binding']['attrs'] }}
+  when: not (device_exists | bool)
+
+- name: "STEP 4 | [{{ device_name }}] Reuse existing autogen_attrs from Director GET (existing device)"
+  ansible.builtin.set_fact:
+    autogen_attrs: >-
+      {{ device_check_result.json['versanms.sdwan-device-workflow']
+         ['postStagingTemplateInfo']['templateData']
+         ['device-template-variable']['variable-binding']['attrs'] }}
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+
+- name: "STEP 4 | [{{ device_name }}] Show template variable count"
+  ansible.builtin.debug:
+    msg: >-
+      {{ autogen_attrs | length }} template variables loaded —
+      {{ autogen_attrs | selectattr('isAutogeneratable', 'equalto', true) | list | length }} auto-generated,
+      {{ autogen_attrs | selectattr('isAutogeneratable', 'equalto', false) | list | length }} require user input
+      (source: {{ 'Director GET (existing)' if device_exists | bool else 'template endpoint (new)' }})
+
+# - name: "STEP 4 | [{{ device_name }}] Show all autogen_attrs"
+#   ansible.builtin.debug:
+#     msg: "{{ autogen_attrs }}"
+
+# =========================================================================
+# STEP 5 – Merge user-supplied values into auto-generated set
+# =========================================================================
+- name: "STEP 5 | [{{ device_name }}] Build user-supplied variable overrides"
+  ansible.builtin.set_fact:
+    user_supplied_vars: >-
+      {%- set result = {} -%}
+      {%- for mapping in template_var_map -%}
+      {%- set val = cpe[mapping.ansible_var] if mapping.ansible_var in cpe
+                    else (vars[mapping.ansible_var] if mapping.ansible_var in vars else '') -%}
+      {%- if val != '' -%}
+      {%- set _ = result.update({mapping.director_var: val}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ result }}
+
+- name: "STEP 5 | [{{ device_name }}] Identify required vars not covered by template map or missing a value"
+  ansible.builtin.set_fact:
+    missing_required_vars: >-
+      {%- set missing = [] -%}
+      {%- for attr in autogen_attrs -%}
+        {%- if not attr.isAutogeneratable -%}
+          {%- if attr.name not in user_supplied_vars -%}
+            {%- set mapping = template_var_map | selectattr('director_var', 'equalto', attr.name) | list -%}
+            {%- if mapping | length == 0 -%}
+              {%- set _ = missing.append(attr.name ~ ' (not mapped in vars/templates/' ~ template_name ~ '.yml)') -%}
+            {%- else -%}
+              {%- set ansible_var = mapping[0].ansible_var -%}
+              {%- set val = cpe[ansible_var] if ansible_var in cpe
+                            else (vars[ansible_var] if ansible_var in vars else '') -%}
+              {%- if val == '' -%}
+                {%- set _ = missing.append(attr.name ~ ' → ansible_var=' ~ ansible_var ~ ' (variable is unset or empty)') -%}
+              {%- endif -%}
+            {%- endif -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ missing }}
+
+- name: "STEP 5 | [{{ device_name }}] Abort – required template variables are missing"
+  ansible.builtin.fail:
+    msg: >-
+      {{ missing_required_vars | length }} required (non-autogeneratable) template variable(s)
+      have no value for device '{{ device_name }}' / template '{{ template_name }}':
+      {{ missing_required_vars | join('; ') }}
+      Fix: add missing entries to vars/templates/{{ template_name }}.yml and ensure
+      the corresponding Ansible variable is set in the site, region, or CPE vars.
+  when: missing_required_vars | length > 0
+
+- name: "STEP 5 | [{{ device_name }}] Build final variable bindings"
+  ansible.builtin.set_fact:
+    final_attrs: >-
+      {%- set result = [] -%}
+      {%- for attr in autogen_attrs -%}
+      {%- if attr.name in user_supplied_vars -%}
+      {%- set _ = result.append(attr | combine({'value': user_supplied_vars[attr.name]})) -%}
+      {%- else -%}
+      {%- set _ = result.append(attr) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ result }}
+
+- name: "STEP 5 | [{{ device_name }}] Show merged variable count"
+  ansible.builtin.debug:
+    msg: >-
+      {{ final_attrs | length }} variables ready for device creation —
+      {{ autogen_attrs | selectattr('isAutogeneratable', 'equalto', true) | list | length }} auto-generated,
+      {{ autogen_attrs | selectattr('isAutogeneratable', 'equalto', false) | list | length }} user-supplied
+
+# =========================================================================
+# STEP 6 – Create / update the device record in Director
+# =========================================================================
+- name: "STEP 6 | [{{ device_name }}] Create device in VNMS (POST – new device)"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices/device"
+    method: POST
+    headers:
+      Accept: "application/json, text/plain, */*"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      "versanms.sdwan-device-workflow":
+        deviceName: "{{ device_name }}"
+        siteId: "{{ site_id | int }}"
+        orgName: "{{ org_name }}"
+        serialNumber: "{{ serial_number }}"
+        deviceGroup: "{{ device_group }}"
+        licensePeriod: "{{ license_period | int }}"
+        deploymentType: "{{ deployment_type }}"
+        modelNumber: "{{ model_number }}"
+        locationInfo:
+          country: "{{ location_country }}"
+        postStagingTemplateInfo:
+          templateName: "{{ template_name }}"
+          templateData:
+            device-template-variable:
+              template: "{{ template_name }}"
+              variable-binding:
+                attrs: "{{ final_attrs }}"
+        serviceTemplateInfo:
+          templateData:
+            device-template-variable:
+              - template: "{{ org_name }}-DataStore"
+                organization: "{{ org_name }}"
+                device: "{{ device_name }}"
+                variable-binding:
+                  attrs: []
+                variableMetadata: []
+    status_code: [200, 201]
+    timeout: 120
+  register: create_result
+  when: not (device_exists | bool)
+
+- name: "STEP 6 | [{{ device_name }}] Update device in VNMS (PUT – device exists)"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices/device/{{ device_name }}"
+    method: PUT
+    headers:
+      Accept: "application/json, text/plain, */*"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      "versanms.sdwan-device-workflow":
+        deviceName: "{{ device_name }}"
+        siteId: "{{ existing_site_id | int }}"
+        orgName: "{{ org_name }}"
+        serialNumber: "{{ serial_number }}"
+        deviceGroup: "{{ device_group }}"
+        licensePeriod: "{{ license_period | int }}"
+        deploymentType: "{{ deployment_type }}"
+        modelNumber: "{{ model_number }}"
+        locationInfo:
+          country: "{{ location_country }}"
+        postStagingTemplateInfo:
+          templateName: "{{ template_name }}"
+          templateData:
+            device-template-variable:
+              template: "{{ template_name }}"
+              variable-binding:
+                attrs: "{{ final_attrs }}"
+        serviceTemplateInfo:
+          templateData:
+            device-template-variable:
+              - template: "{{ org_name }}-DataStore"
+                organization: "{{ org_name }}"
+                device: "{{ device_name }}"
+                variable-binding:
+                  attrs: []
+                variableMetadata: []
+    status_code: [200, 201]
+    timeout: 120
+  register: create_result
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+
+- name: "STEP 6 | [{{ device_name }}] Device {{ 'updated (PUT)' if device_exists | bool else 'created (POST)' }} ✓"
+  ansible.builtin.debug:
+    msg: "Device record saved successfully"
+
+- name: "LOG | [{{ device_name }}] STEP 6 success"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP6 | device {{ 'updated (PUT)' if device_exists | bool else 'created (POST)' }} OK"
+
+# ── Branch: device is live → vars updated above, now redeploy ────────────────
+- name: "STEP 6 | [{{ device_name }}] Branch – vars updated, triggering redeploy"
+  ansible.builtin.debug:
+    msg: >-
+      CPE '{{ device_name }}' is live (applianceExists=true). Variable bindings updated (PUT).
+      Branching to redeploy_cpe.yml — skipping Steps 7-8.
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+    - appliance_exists | bool
+
+- name: "LOG | [{{ device_name }}] STEP 6 BRANCH to redeploy"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP6 | BRANCH – applianceExists=true, vars updated (PUT), handing off to redeploy_cpe.yml"
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+    - appliance_exists | bool
+
+- name: "STEP 6 | [{{ device_name }}] Execute re-deploy tasks"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/redeploy_cpe.yml"
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+    - appliance_exists | bool
+
+# =========================================================================
+# STEP 7 – Deploy device configuration
+# =========================================================================
+- name: "STEP 7 | [{{ device_name }}] Trigger deploy"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices/device/deploy/{{ device_name }}"
+    method: POST
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body: {}
+    status_code: [200, 201, 202]
+    timeout: 60
+  register: deploy_result
+  when: not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+
+- name: "STEP 7 | [{{ device_name }}] Extract deploy task ID"
+  ansible.builtin.set_fact:
+    deploy_task_id: "{{ deploy_result.json | json_query('*.taskId | [0]') | default('') }}"
+  when:
+    - not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+    - deploy_result.json is defined
+
+- name: "STEP 7 | [{{ device_name }}] Deploy triggered – task ID: {{ deploy_task_id | default('unknown') }}"
+  ansible.builtin.debug:
+    msg: "Deploy task started"
+  when: not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+
+- name: "LOG | [{{ device_name }}] STEP 7 deploy triggered"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP7 | deploy triggered, task_id={{ deploy_task_id | default('unknown') }}"
+  when:
+    - not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+    - deploy_result.json is defined
+
+# =========================================================================
+# STEP 8 – Poll task to completion
+# =========================================================================
+- name: "STEP 8 | [{{ device_name }}] Poll deploy task until complete"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/tasks/task/{{ deploy_task_id }}?deep=true"
+    method: GET
+    status_code: 200
+    timeout: 30
+  register: task_status
+  until: >-
+    task_status.json['versa-tasks.task']['versa-tasks.task-status'] in
+    ['SUCCESS', 'COMPLETED', 'FAILED', 'ERROR']
+  retries: "{{ task_poll_retries }}"
+  delay: "{{ task_poll_interval }}"
+  when:
+    - not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+    - deploy_task_id is defined
+    - deploy_task_id != ''
+
+- name: "STEP 8 | [{{ device_name }}] Final task status"
+  ansible.builtin.debug:
+    msg: >-
+      Task {{ deploy_task_id }} –
+      Status  : {{ task_status.json['versa-tasks.task']['versa-tasks.task-status'] }}
+      Progress: {{ task_status.json['versa-tasks.task']['versa-tasks.percentage-completion'] }}%
+  when:
+    - not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+    - task_status is defined
+    - task_status.json is defined
+
+- name: "LOG | [{{ device_name }}] STEP 8 task complete"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP8 | task={{ deploy_task_id | default('unknown') }},
+      status={{ task_status.json['versa-tasks.task']['versa-tasks.task-status'] }},
+      progress={{ task_status.json['versa-tasks.task']['versa-tasks.percentage-completion'] }}%
+  when:
+    - not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+    - task_status is defined
+    - task_status.json is defined
+
+- name: "LOG | [{{ device_name }}] STEP 8 FAILED"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP8 | FAILED – status={{ task_status.json['versa-tasks.task']['versa-tasks.task-status'] }},
+      errors={{ task_status.json['versa-tasks.task']['versa-tasks.errormessages'] }}
+  when:
+    - not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+    - deploy_task_id is defined
+    - deploy_task_id != ''
+    - task_status is defined
+    - task_status.json is defined
+    - task_status.json['versa-tasks.task']['versa-tasks.task-status'] in ['FAILED', 'ERROR']
+
+- name: "STEP 8 | [{{ device_name }}] Fail if deploy reported an error"
+  ansible.builtin.fail:
+    msg: >-
+      Provisioning FAILED for '{{ device_name }}'.
+      Status : {{ task_status.json['versa-tasks.task']['versa-tasks.task-status'] }}
+      Errors : {{ task_status.json['versa-tasks.task']['versa-tasks.errormessages'] }}
+  when:
+    - not (device_exists | bool and workflow_status == 'Deployed' and appliance_exists | bool)
+    - deploy_task_id is defined
+    - deploy_task_id != ''
+    - task_status is defined
+    - task_status.json is defined
+    - task_status.json['versa-tasks.task']['versa-tasks.task-status'] in ['FAILED', 'ERROR']
+
+# =========================================================================
+# STEP 9 – Verify device appears in org
+# =========================================================================
+- name: "STEP 9 | [{{ device_name }}] Verify device appears in org '{{ org_name }}'"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices?deep=true&orgname={{ org_name }}&offset=0&limit=25"
+    method: GET
+    status_code: 200
+    timeout: 30
+  register: device_list
+
+- name: "STEP 9 | [{{ device_name }}] Assert device is present"
+  ansible.builtin.assert:
+    that:
+      - device_list.json is defined
+      - device_name in (device_list.json | to_json)
+    fail_msg: "CPE '{{ device_name }}' NOT found in org '{{ org_name }}' after provisioning."
+    success_msg: "CPE '{{ device_name }}' confirmed present in org '{{ org_name }}'."
+
+- name: "LOG | [{{ device_name }}] STEP 9 verified"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP9 | device confirmed present in org={{ org_name }}"
+
+- name: "✅ [{{ device_name }}] Provisioning complete"
+  ansible.builtin.debug:
+    msg: >-
+      CPE '{{ device_name }}' (Site ID: {{ site_id }}) successfully provisioned
+      in org '{{ org_name }}' using template '{{ template_name }}'.
+
+- name: "LOG | [{{ device_name }}] DONE"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "DONE  | provisioning complete, org={{ org_name }}, template={{ template_name }}"

@@ -1,0 +1,15 @@
+---
+# vars/regions/AMER.yml
+# -----------------------------------------------------------------------
+# Regional defaults for AMER sites.
+# Override any value at the site level in vars/sites/<site>.yml.
+# -----------------------------------------------------------------------
+
+region: "AMER"
+
+# ── Director assignment defaults ──────────────────────────────────────
+device_group: "AMER-HUB-GROUP"
+template_name: "AMER-HUB-1"
+
+# ── Network services ──────────────────────────────────────────────────
+lan_corp_ntp_server: "4.2.2.2"

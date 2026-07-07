@@ -1,0 +1,3 @@
+logs/
+vault/director_credentials.yml
+*.retry

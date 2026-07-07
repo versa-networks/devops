@@ -1,0 +1,129 @@
+---
+###############################################################################
+# tasks/commit_and_verify_cpe.yml
+# -----------------------------------------------------------------------
+# Called by redeploy_cpe.yml ONLY when applianceExists=true.
+# Commits the template to the live device, polls the task, then verifies
+# the device is still present in the org.
+#
+# STEP C  — POST  /vnms/template/applyTemplate/devices  (commit template)
+# STEP D  — GET   /tasks/task/{id}                       (poll until done)
+# STEP E  — GET   /sdwan/workflow/devices                (verify presence)
+###############################################################################
+
+# ── STEP C: Commit template ───────────────────────────────────────────────────
+- name: "REDEPLOY | [{{ device_name }}] Commit template (apply to device)"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/template/applyTemplate/devices"
+    method: POST
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      "versanms.templateRequest":
+        device-list:
+          - "{{ device_name }}"
+        mode: "overwrite"
+    status_code: [200, 201, 202]
+    timeout: 60
+  register: commit_result
+
+- name: "REDEPLOY | [{{ device_name }}] Extract commit task ID"
+  ansible.builtin.set_fact:
+    commit_task_id: "{{ commit_result.json | json_query('*.taskId | [0]') | default('') }}"
+  when: commit_result.json is defined
+
+- name: "REDEPLOY | [{{ device_name }}] Commit template triggered – task ID: {{ commit_task_id | default('unknown') }}"
+  ansible.builtin.debug:
+    msg: "Commit template task started for '{{ device_name }}'"
+
+- name: "LOG | [{{ device_name }}] STEP C commit template triggered"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP-C | commit template triggered, task_id={{ commit_task_id | default('unknown') }}"
+  when: commit_result.json is defined
+
+# ── STEP D: Poll commit template task ─────────────────────────────────────────
+- name: "REDEPLOY | [{{ device_name }}] Poll commit template task until complete"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/tasks/task/{{ commit_task_id }}?deep=true"
+    method: GET
+    status_code: 200
+    timeout: 30
+  register: commit_task_status
+  until: >-
+    commit_task_status.json['versa-tasks.task']['versa-tasks.task-status'] in
+    ['SUCCESS', 'COMPLETED', 'FAILED', 'ERROR']
+  retries: "{{ task_poll_retries }}"
+  delay: "{{ task_poll_interval }}"
+  when: commit_task_id is defined and commit_task_id != ''
+
+- name: "REDEPLOY | [{{ device_name }}] Final commit task status"
+  ansible.builtin.debug:
+    msg: >-
+      Commit task {{ commit_task_id }} –
+      Status  : {{ commit_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }}
+      Progress: {{ commit_task_status.json['versa-tasks.task']['versa-tasks.percentage-completion'] }}%
+  when: commit_task_status is defined and commit_task_status.json is defined
+
+- name: "LOG | [{{ device_name }}] STEP D commit task complete"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP-D | task={{ commit_task_id | default('unknown') }},
+      status={{ commit_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }},
+      progress={{ commit_task_status.json['versa-tasks.task']['versa-tasks.percentage-completion'] }}%
+  when: commit_task_status is defined and commit_task_status.json is defined
+
+- name: "LOG | [{{ device_name }}] STEP D FAILED"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP-D | FAILED – status={{ commit_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }},
+      errors={{ commit_task_status.json['versa-tasks.task']['versa-tasks.errormessages'] }}
+  when:
+    - commit_task_id is defined
+    - commit_task_id != ''
+    - commit_task_status is defined
+    - commit_task_status.json is defined
+    - commit_task_status.json['versa-tasks.task']['versa-tasks.task-status'] in ['FAILED', 'ERROR']
+
+- name: "REDEPLOY | [{{ device_name }}] Fail if commit template reported an error"
+  ansible.builtin.fail:
+    msg: >-
+      Commit template FAILED for '{{ device_name }}'.
+      Status : {{ commit_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }}
+      Errors : {{ commit_task_status.json['versa-tasks.task']['versa-tasks.errormessages'] }}
+  when:
+    - commit_task_id is defined
+    - commit_task_id != ''
+    - commit_task_status is defined
+    - commit_task_status.json is defined
+    - commit_task_status.json['versa-tasks.task']['versa-tasks.task-status'] in ['FAILED', 'ERROR']
+
+# ── STEP E: Verify ────────────────────────────────────────────────────────────
+- name: "REDEPLOY | [{{ device_name }}] Verify device appears in org '{{ org_name }}'"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices?deep=true&orgname={{ org_name }}&offset=0&limit=25"
+    method: GET
+    status_code: 200
+    timeout: 30
+  register: redeploy_device_list
+
+- name: "REDEPLOY | [{{ device_name }}] Assert device is present"
+  ansible.builtin.assert:
+    that:
+      - redeploy_device_list.json is defined
+      - device_name in (redeploy_device_list.json | to_json)
+    fail_msg: "CPE '{{ device_name }}' NOT found in org '{{ org_name }}' after commit."
+    success_msg: "CPE '{{ device_name }}' confirmed present in org '{{ org_name }}'."
+
+- name: "LOG | [{{ device_name }}] STEP E verified"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP-E | device confirmed present in org={{ org_name }}"
