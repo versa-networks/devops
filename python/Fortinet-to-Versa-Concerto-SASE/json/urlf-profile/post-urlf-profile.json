@@ -1,0 +1,28 @@
+{
+    "name":"@urlf-profiles-name",
+    "version":"1",
+    "attributes":{
+        "criteria":{
+            "value":{
+                "categoryList":[
+                ],
+                "action":{
+                    "actionCombo":{
+                        "predefined":"allow"
+                    },
+                    "cloudLookupState":true,
+                    "enableLogging":false
+                }
+            },
+            "uuid":"@predefined-urlf-category-random-uuid"
+        }
+    },
+    "initialFormMode":"CREATE",
+    "description":"@urlf-profiles-description",
+    "tags":["@urlf-profiles-tag-name"],
+    "category":"URL_FILTERING",
+    "subtype":"PROFILE",
+    "type":"REAL_TIME_PROTECTION",
+    "formMode":"CREATE",
+    "deploy":false
+}

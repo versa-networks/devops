@@ -1,0 +1,30 @@
+{
+    "entity":{
+        "attributes":{
+            "protocol":{
+                "value":"@service-protocol-value"
+            },
+            "@service-port-type":{
+                "value":"@service-port-value"
+            }
+        },
+        "name":"@service-object-name",
+        "description":"@service-description",
+        "tags":["@service-tag"],
+        "uuid":"@service-object-uuid",
+        "type":"ELEMENTS",
+        "subtype":"Services",
+        "category":null
+    },
+    "parentReference":{
+        "uuid":"@service-parent-ref-uuid",
+        "name":"Services",
+        "type":"FOLDER",
+        "subtype":null,
+        "category":null,
+        "version":"V1",
+        "originId":null,
+        "nodeLabel":"Services",
+        "federatedPath":"ConfigurationLifecycleGraph/PROFILE_ELEMENTS/Elements/Endpoint/Services//"
+    }
+}

@@ -1,0 +1,39 @@
+
+
+
+POST https://{concerto-fqdn}/portalapi/v1/tenants/{tenant-uuid}/sase/real-time/internet-protection
+
+{
+    "lastModifiedUser":"@username",
+    "description":"@description",
+    "attributes":{
+        "match":{
+            "value":{
+            }
+        },
+        "set":{
+            "value":{
+                "action":"@Allow-Deny",
+                "tcpSessionKeepAlive":false
+            }
+        }
+    },
+    "enabled":true,
+    "uncloneable":false,
+    "name":"@policy-name",
+    "version":null,
+    "originId":null,
+    "type":"REAL_TIME_PROTECTION",
+    "subtype":"INTERNET_PROTECTION",
+    "category":null,
+    "federatedPath":null,
+    "isDefault":null,
+    "isReusable":null,
+    "tags":[ "@tag-name"],
+    "order":{
+        "bottom":true
+    },
+    "formMode":"CREATE",
+    "deploy":false,
+    "versionControl": @version-number
+}

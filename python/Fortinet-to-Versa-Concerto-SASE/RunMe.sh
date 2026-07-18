@@ -85,14 +85,7 @@ box_print() {
 
 run_py() {
     local name="$1"
-    local xml_arg="${2:-}"
-    local full_path
-    if [[ "$name" == /* ]]; then
-        full_path="$name"
-        name="$(basename "$name")"
-    else
-        full_path="$PY_DIR/$name"
-    fi
+    local full_path="$PY_DIR/$name"
     STEP=$((STEP + 1))
 
     echo -e "${BOLD}[${STEP}/${TOTAL}]${NC} Running ${YELLOW}${name}${NC} ..."
@@ -104,11 +97,7 @@ run_py() {
         return 1
     fi
 
-    if [[ -n "$xml_arg" ]]; then
-        python3 "$full_path" "$xml_arg"
-    else
-        python3 "$full_path"
-    fi
+    python3 "$full_path"
     local exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
@@ -127,14 +116,7 @@ run_py() {
 
 print_banner
 
-MAIN_DIR="$SCRIPT_DIR"
-
 run_py "get-token.py"
-
-if [[ -f "${MAIN_DIR}/sp-config.xml" ]]; then
-    echo -e "${BOLD}sp-config.xml found — running pan-xml-to-flat.py${NC}"
-    run_py "${MAIN_DIR}/scripts/pan-xml-to-flat.py" "../sp-config.xml"
-fi
 
 SCIM_SCRIPT="$PY_DIR/get-concerto-scim.py"
 GENERAL_FILE="$TEMP_DIR/general.txt"
@@ -166,10 +148,7 @@ LDAP_USERS_FILE="$TEMP_DIR/concerto-ldap-users.txt"
 LDAP_GROUPS_FILE="$TEMP_DIR/ldap-groups-uuid.txt"
 LDAP_MERGED_FILE="$SCRIPT_DIR/ldap-source-input.txt"
 
-if [[ -f "$LDAP_MERGED_FILE" ]]; then
-    echo -e "        ${GREEN}LDAP merge:${NC} ldap-source-input.txt already exists, skipping merge"
-    echo ""
-elif [[ -f "$LDAP_USERS_FILE" && -f "$LDAP_GROUPS_FILE" ]]; then
+if [[ -f "$LDAP_USERS_FILE" && -f "$LDAP_GROUPS_FILE" ]]; then
     {
         echo "----BEGIN USERS----"
         cat "$LDAP_USERS_FILE"
@@ -191,27 +170,6 @@ fi
 
 for name in "${PRE_SCRIPTS[@]}"; do
     [[ "$name" == "get-token.py" ]] && continue
-
-    if [[ "$name" == "step-7.py" || "$name" == "step-8.py" ]]; then
-        if ! grep -q "^ldap-profile >>" "$GENERAL_FILE" 2>/dev/null; then
-            STEP=$((STEP + 1))
-            echo -e "${BOLD}[${STEP}/${TOTAL}]${NC} Skipping ${YELLOW}${name}${NC} - no ldap-profile in general.txt"
-            if [[ "$name" == "step-7.py" ]]; then
-                SRC_RULES="$SCRIPT_DIR/step-6/step-6_cleaned-pan-rules.txt"
-                DST_RULES="$SCRIPT_DIR/final-data/cleaned-pan-rules.txt"
-                if [[ -f "$SRC_RULES" ]]; then
-                    mkdir -p "$SCRIPT_DIR/final-data"
-                    cp "$SRC_RULES" "$DST_RULES"
-                    echo -e "        ${GREEN}Copied:${NC} step-6/step-6_cleaned-pan-rules.txt -> final-data/cleaned-pan-rules.txt"
-                else
-                    echo -e "        ${RED}Missing:${NC} step-6/step-6_cleaned-pan-rules.txt not found, skipping copy"
-                fi
-            fi
-            echo ""
-            continue
-        fi
-    fi
-
     run_py "$name"
 done
 
@@ -286,7 +244,7 @@ for name in "${POST_SCRIPTS[@]}"; do
 done
 
 GENERAL="$SCRIPT_DIR/temp/general.txt"
-FINAL_RULES="$SCRIPT_DIR/final-data/cleaned-pan-rules.txt"
+FINAL_RULES="$SCRIPT_DIR/final-data/cleaned-forti-rules.txt"
 NEED_COPY=false
 
 if [[ -f "$GENERAL" ]]; then
