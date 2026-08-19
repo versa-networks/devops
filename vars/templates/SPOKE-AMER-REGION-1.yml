@@ -41,6 +41,23 @@ template_var_map:
   - director_var: "{$v_LAN-CORP_NTP_Server-0__server}"
     ansible_var:  "lan_corp_ntp_server"
     type:         "ipv4_or_fqdn"
+  
+  # ── VLAN details ──────────────────────────────────────────────────
+  - director_var: "{$v_vni-0-1_MPLS_M__unit}"
+    ansible_var:  "vni_0-1_unit"
+    type:         "integer"
+  # ── VLAN details ──────────────────────────────────────────────────
+  - director_var: "{$v_vni-0-1_MPLS_M__vlanId}"
+    ansible_var:  "vni_0-1_vlan"
+    type:         "integer"
+  # ── VLAN details ──────────────────────────────────────────────────
+  - director_var: "{$v_vni-0-2_MPLS__unit}"
+    ansible_var:  "vni_0-2_unit"
+    type:         "integer"
+  # ── VLAN details ──────────────────────────────────────────────────
+  - director_var: "{$v_vni-0-2_MPLS__vlanId}"
+    ansible_var:  "vni_0-2_vlan"
+    type:         "integer"
 
   # ── Optional — uncomment to enable ───────────────────────────────────
   # - director_var: "{$v_LAN-CORP_Syslog_Server-0__server}"

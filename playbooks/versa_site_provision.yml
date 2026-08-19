@@ -3,7 +3,7 @@
 # playbooks/versa_site_provision.yml
 # -----------------------------------------------------------------------
 # Provisions all Versa SD-WAN sites defined in vars/sites/.
-# Loops over each site file and runs provision_device.yml per site.
+# Loops over each site file and runs provision_site.yml per site.
 #
 # Usage:
 #   ansible-playbook playbooks/versa_site_provision.yml --ask-vault-pass
@@ -64,7 +64,7 @@
 
     - name: "PROVISION | Run provisioning steps for each site"
       ansible.builtin.include_tasks:
-        file: tasks/provision_device.yml
+        file: tasks/provision_site.yml
       vars:
         device_vars_file: "{{ item.path }}"
       loop: >-

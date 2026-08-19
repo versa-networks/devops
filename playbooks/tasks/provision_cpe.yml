@@ -246,9 +246,202 @@
       {{ autogen_attrs | selectattr('isAutogeneratable', 'equalto', false) | list | length }} require user input
       (source: {{ 'Director GET (existing)' if device_exists | bool else 'template endpoint (new)' }})
 
-# - name: "STEP 4 | [{{ device_name }}] Show all autogen_attrs"
-#   ansible.builtin.debug:
-#     msg: "{{ autogen_attrs }}"
+- name: "DEBUG | [{{ device_name }}] STEP 4 – Show all autogen_attrs"
+  ansible.builtin.debug:
+    var: autogen_attrs
+  when: MYDEBUG | default(false) | bool
+
+# =========================================================================
+# STEP 4 – Service template variable handling
+# For EXISTING devices  : extract serviceTemplateInfo entries from the STEP 3
+#                         GET response (they carry current Director values).
+# For NEW devices       : build entries from the `service_templates:` list
+#                         defined in the site/region/CPE vars (empty attrs
+#                         are sent; Director fills autogeneratable values).
+# Per-template user overrides are applied in STEP 5 after this block.
+# =========================================================================
+- name: "STEP 4 | [{{ device_name }}] Initialize service template tracking vars"
+  ansible.builtin.set_fact:
+    svc_template_entries: []
+    final_svc_template_entries: []
+    original_svc_info: {}              # full serviceTemplateInfo block from GET
+    device_specific_svc_templates: []  # deviceSpecificServiceTemplates for POST/PUT
+
+# Store the ENTIRE serviceTemplateInfo block from the GET response so that the
+# PUT body can be built as: original + overrides.  This prevents wiping service
+# template data when device-template-variable is absent or extraction fails.
+- name: "STEP 4 | [{{ device_name }}] Store full serviceTemplateInfo block (existing device)"
+  ansible.builtin.set_fact:
+    original_svc_info: "{{ device_check_result.json['versanms.sdwan-device-workflow']['serviceTemplateInfo'] | default({}, true) }}"
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+
+# DEBUG 1 – raw serviceTemplateInfo block as returned by Director GET
+- name: "DEBUG | [{{ device_name }}] STEP 4 – raw original_svc_info from GET"
+  ansible.builtin.debug:
+    var: original_svc_info
+  when:
+    - MYDEBUG | default(false) | bool
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+
+# Director returns device-template-variable as a single dict when there is only
+# one service template, and as a list when there are multiple.  Normalise to a
+# list in both cases so the rest of the playbook can always iterate safely.
+- name: "STEP 4 | [{{ device_name }}] Extract and normalise device-template-variable (existing device)"
+  ansible.builtin.set_fact:
+    svc_template_entries: "{{ [_raw] if _raw is mapping else _raw }}"
+  vars:
+    _raw: "{{ original_svc_info.templateData['device-template-variable'] | default([], true) }}"
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+
+# DEBUG 2 – svc_template_entries after extraction + normalisation (existing device)
+# Shows whether Director returned a dict (single template) or list (multiple).
+- name: "DEBUG | [{{ device_name }}] STEP 4 – svc_template_entries after normalise (existing)"
+  ansible.builtin.debug:
+    var: svc_template_entries
+  when:
+    - MYDEBUG | default(false) | bool
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+
+# Fetch variable list for any service template in the site vars that is NOT
+# already present in svc_template_entries (extracted from the GET above).
+# This covers two cases:
+#   • New device       — svc_template_entries is always [] → fetch all templates
+#   • Existing device  — device had no service template (or a new one is being
+#                        added) → fetch only the ones missing from the GET data
+# Templates already in svc_template_entries (existing device, already assigned)
+# are skipped — their current Director values are used as the base instead.
+# ignore_errors=true so one bad template does not abort all CPEs.
+# Compute which service templates from the site vars are NOT already present
+# in svc_template_entries (extracted from GET above).
+# Uses to_json/from_json because rejectattr does not support 'in' as a test name.
+- name: "STEP 4 | [{{ device_name }}] Compute missing service templates (need fetch) – build JSON"
+  ansible.builtin.set_fact:
+    _missing_templates_json: >-
+      {%- set existing = svc_template_entries | map(attribute='template') | list -%}
+      {%- set missing = [] -%}
+      {%- for t in service_templates | default([]) -%}
+        {%- if t.name not in existing -%}
+          {%- set _ = missing.append(t) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ missing | to_json }}
+
+- name: "STEP 4 | [{{ device_name }}] Parse missing service templates list"
+  ansible.builtin.set_fact:
+    _missing_templates: "{{ _missing_templates_json | from_json }}"
+
+- name: "DEBUG | [{{ device_name }}] STEP 4 – service_templates var and _missing_templates"
+  ansible.builtin.debug:
+    msg:
+      service_templates:       "{{ service_templates | default('UNDEFINED') }}"
+      _missing_templates_json: "{{ _missing_templates_json }}"
+      _missing_templates:      "{{ _missing_templates }}"
+  when: MYDEBUG | default(false) | bool
+
+- name: "STEP 4 | [{{ device_name }}] Fetch variable list for missing service templates"
+  ansible.builtin.uri:
+    url: "{{ director_root_url }}/nextgen/binddata/template/{{ _missing_tmpl.name }}"
+    method: GET
+    status_code: [200]
+    timeout: 30
+  register: _svc_fetch
+  loop: "{{ _missing_templates }}"
+  loop_control:
+    loop_var: _missing_tmpl
+    label: "{{ _missing_tmpl.name }}"
+  ignore_errors: true
+  when: _missing_templates | length > 0
+
+# DEBUG 3a – raw fetch response for missing templates.
+# Check this first when parsing fails — it shows the exact response structure.
+- name: "DEBUG | [{{ device_name }}] STEP 4 – raw service template fetch results"
+  ansible.builtin.debug:
+    var: _svc_fetch
+  when:
+    - MYDEBUG | default(false) | bool
+    - _missing_templates | length > 0
+
+# Build svc_template_entries for each successfully fetched template.
+# vars: are evaluated in sequence so each can reference the previous one.
+# All values use single "{{ }}" expressions to preserve native types.
+#
+# attrs is split by editable flag:
+#   editable=true  → isAutogeneratable=false (user must supply value via STEP 5)
+#   editable=false → isAutogeneratable=true  (Director fills on POST/PUT)
+- name: "STEP 4 | [{{ device_name }}] Build service template entries from fetch"
+  ansible.builtin.set_fact:
+    svc_template_entries: "{{ svc_template_entries + [_entry] }}"
+  vars:
+    _meta:     "{{ _fetch_result.json.variableMetadata | default([]) }}"
+    _editable: "{{ _meta | selectattr('editable') | list | json_query('[].{name: variable}') | map('combine', {'value': '', 'isAutogeneratable': false, 'isOverwritten': false}) | list }}"
+    _autogen:  "{{ _meta | rejectattr('editable') | list | json_query('[].{name: variable}') | map('combine', {'value': '', 'isAutogeneratable': true, 'isOverwritten': false}) | list }}"
+    _attrs:    "{{ _editable + _autogen }}"
+    _entry:
+      template:          "{{ _fetch_result._missing_tmpl.name }}"
+      organization:      "{{ _fetch_result._missing_tmpl.org | default(org_name) }}"
+      device:            "{{ device_name }}"
+      variable-binding:
+        attrs:           "{{ _attrs }}"
+      variableMetadata:  "{{ _meta }}"
+  loop: "{{ _svc_fetch.results | default([]) }}"
+  loop_control:
+    loop_var: _fetch_result
+    label: "{{ _fetch_result._missing_tmpl.name }}"
+  when:
+    - _missing_templates | length > 0
+    - _svc_fetch is defined
+    - not (_fetch_result.failed | default(false) | bool)
+
+# DEBUG 3b – svc_template_entries after fetch build (new device or newly assigned template)
+- name: "DEBUG | [{{ device_name }}] STEP 4 – svc_template_entries after fetch build"
+  ansible.builtin.debug:
+    var: svc_template_entries
+  when:
+    - MYDEBUG | default(false) | bool
+    - _missing_templates | length > 0
+
+- name: "STEP 4 | [{{ device_name }}] Service template summary"
+  ansible.builtin.debug:
+    msg: >-
+      {{ svc_template_entries | length }} service template(s) for '{{ device_name }}':
+      {{ svc_template_entries | map(attribute='template') | list | join(', ')
+         if svc_template_entries | length > 0 else 'none configured' }}
+
+- name: "STEP 4 | [{{ device_name }}] Load service template variable maps"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/load_svc_template_vars.yml"
+  loop: "{{ svc_template_entries }}"
+  loop_control:
+    loop_var: _svc_tmpl
+    label: "{{ _svc_tmpl.template }}"
+  when: svc_template_entries | length > 0
+
+# Build deviceSpecificServiceTemplates from svc_template_entries.
+# category comes from vars/service_templates/<name>.yml (loaded above as svc_map_<safe>).
+# Defaults to 'general' if the var map file is missing or has no category key.
+- name: "STEP 4 | [{{ device_name }}] Build deviceSpecificServiceTemplates – JSON"
+  ansible.builtin.set_fact:
+    _device_specific_svc_json: >-
+      {%- set result = [] -%}
+      {%- for entry in svc_template_entries -%}
+        {%- set tmpl_safe = entry.template | replace('-', '_') | replace('.', '_') | replace(' ', '_') -%}
+        {%- set map_key = 'svc_map_' ~ tmpl_safe -%}
+        {%- set cat = vars[map_key].category | default('general') if map_key in vars else 'general' -%}
+        {%- set _ = result.append({'name': entry.template, 'organization': entry.organization, 'category': cat}) -%}
+      {%- endfor -%}
+      {{ result | to_json }}
+  when: svc_template_entries | length > 0
+
+- name: "STEP 4 | [{{ device_name }}] Parse deviceSpecificServiceTemplates"
+  ansible.builtin.set_fact:
+    device_specific_svc_templates: "{{ _device_specific_svc_json | from_json }}"
+  when: svc_template_entries | length > 0
 
 # =========================================================================
 # STEP 5 – Merge user-supplied values into auto-generated set
@@ -319,27 +512,206 @@
       {{ autogen_attrs | selectattr('isAutogeneratable', 'equalto', true) | list | length }} auto-generated,
       {{ autogen_attrs | selectattr('isAutogeneratable', 'equalto', false) | list | length }} user-supplied
 
+# ── Service template variable merge ──────────────────────────────────────────
+# For each service template entry: look up the per-template var map that was
+# loaded in STEP 4 (stored as svc_map_<safe_name>), apply any user-supplied
+# Ansible var overrides to the matching attrs, and pass all other attrs through
+# unchanged.  Templates without a var-map file are passed through as-is.
+# Two-step approach: render to JSON string first, then parse back to a native
+# list.  The >- + {% %} pattern cannot return a native list directly.
+- name: "STEP 5 | [{{ device_name }}] Merge user-supplied values into service template entries (build JSON)"
+  ansible.builtin.set_fact:
+    _final_svc_json: >-
+      {%- set final_entries = [] -%}
+      {%- for entry in svc_template_entries -%}
+        {%- set tmpl_safe = entry.template | replace('-', '_') | replace('.', '_') | replace(' ', '_') -%}
+        {%- set map_key = 'svc_map_' ~ tmpl_safe -%}
+        {%- set var_map = vars[map_key].service_template_var_map | default([]) if map_key in vars else [] -%}
+        {%- set updated_attrs = [] -%}
+        {%- for attr in entry['variable-binding']['attrs'] -%}
+          {%- set overrides = var_map | selectattr('director_var', 'equalto', attr.name) | list -%}
+          {%- if overrides | length > 0 -%}
+            {%- set ansible_var = overrides[0].ansible_var -%}
+            {%- set val = cpe[ansible_var] if ansible_var in cpe else (vars[ansible_var] if ansible_var in vars else '') -%}
+            {%- if val != '' -%}
+              {%- set _ = updated_attrs.append(attr | combine({'value': val | string, 'isOverwritten': true})) -%}
+            {%- else -%}
+              {%- set _ = updated_attrs.append(attr) -%}
+            {%- endif -%}
+          {%- else -%}
+            {%- set _ = updated_attrs.append(attr) -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- set _ = final_entries.append({
+          'template':          entry.template,
+          'organization':      entry.organization,
+          'device':            entry.device,
+          'variable-binding':  {'attrs': updated_attrs},
+          'variableMetadata':  entry.variableMetadata | default([])
+        }) -%}
+      {%- endfor -%}
+      {{ final_entries | to_json }}
+  when: svc_template_entries | length > 0
+
+- name: "STEP 5 | [{{ device_name }}] Parse final service template entries (native list)"
+  ansible.builtin.set_fact:
+    final_svc_template_entries: "{{ _final_svc_json | from_json }}"
+  when: svc_template_entries | length > 0
+
+- name: "STEP 5 | [{{ device_name }}] Service template variable summary"
+  ansible.builtin.debug:
+    msg: >-
+      {{ final_svc_template_entries | length }} service template(s) ready —
+      {{ final_svc_template_entries | map(attribute='template') | list | join(', ') }}
+  when: final_svc_template_entries | length > 0
+
+# DEBUG 4 – full merged attrs for every service template entry
+# Shows each attr name/value/isOverwritten so you can verify overrides applied.
+- name: "DEBUG | [{{ device_name }}] STEP 5 – final_svc_template_entries (full attr detail)"
+  ansible.builtin.debug:
+    var: final_svc_template_entries
+  when:
+    - MYDEBUG | default(false) | bool
+    - final_svc_template_entries | length > 0
+
+# DEBUG 5 – preview the exact serviceTemplateInfo value that will be sent in PUT.
+# Uses set_fact first because var: does not accept Jinja2 expressions.
+- name: "DEBUG | [{{ device_name }}] STEP 5 – Compute PUT serviceTemplateInfo for preview"
+  ansible.builtin.set_fact:
+    _debug_put_svc_info: "{{ original_svc_info | combine({'templateData': {'device-template-variable': final_svc_template_entries}}, recursive=True) if final_svc_template_entries | length > 0 else original_svc_info }}"
+  when:
+    - MYDEBUG | default(false) | bool
+    - device_exists | bool
+
+- name: "DEBUG | [{{ device_name }}] STEP 5 – serviceTemplateInfo that will be sent in PUT"
+  ansible.builtin.debug:
+    var: _debug_put_svc_info
+  when:
+    - MYDEBUG | default(false) | bool
+    - device_exists | bool
+
+# =========================================================================
+# STEP 5 (diff + confirm) – Show what will change and ask for approval
+# Runs only when the device already exists in Director (PUT path).
+# Bypass with:  -e "assume_yes=true"
+# =========================================================================
+- name: "STEP 5 | [{{ device_name }}] Compute variable diff (current Director vs new values)"
+  ansible.builtin.set_fact:
+    var_diff: >-
+      {%- set changes = [] -%}
+      {%- for new_attr in final_attrs -%}
+        {%- set old_list = autogen_attrs | selectattr('name', 'equalto', new_attr.name) | list -%}
+        {%- if old_list | length > 0 -%}
+          {%- set old_val = old_list[0].value | default('') | string -%}
+          {%- set new_val = new_attr.value | default('') | string -%}
+          {%- if old_val != new_val -%}
+            {%- set _ = changes.append({'name': new_attr.name, 'old': old_val, 'new': new_val}) -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ changes }}
+  when: device_exists | bool
+
+# Compare service template attrs: svc_template_entries (from GET) vs
+# final_svc_template_entries (after user overrides).  Matched by template name
+# then by attr name.  Only attrs present in both are diffed — new attrs (not in
+# the GET response) are treated as additions and also included.
+- name: "STEP 5 | [{{ device_name }}] Compute service template variable diff"
+  ansible.builtin.set_fact:
+    svc_var_diff: >-
+      {%- set changes = [] -%}
+      {%- for new_entry in final_svc_template_entries -%}
+        {%- set old_entries = svc_template_entries | selectattr('template', 'equalto', new_entry.template) | list -%}
+        {%- set old_attrs = old_entries[0]['variable-binding']['attrs'] if old_entries | length > 0 else [] -%}
+        {%- for new_attr in new_entry['variable-binding']['attrs'] -%}
+          {%- set old_list = old_attrs | selectattr('name', 'equalto', new_attr.name) | list -%}
+          {%- set old_val = old_list[0].value | default('') | string if old_list | length > 0 else '' -%}
+          {%- set new_val = new_attr.value | default('') | string -%}
+          {%- if old_val != new_val -%}
+            {%- set _ = changes.append({'template': new_entry.template, 'name': new_attr.name, 'old': old_val, 'new': new_val}) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ changes }}
+  when: device_exists | bool
+
+# Build a structured diff dict so var: renders it as clean JSON.
+# Keys use 'before'/'after' to follow standard diff conventions.
+- name: "STEP 5 | [{{ device_name }}] Build diff summary (JSON format)"
+  ansible.builtin.set_fact:
+    _diff_summary_json: >-
+      {%- set tmpl = [] -%}
+      {%- for d in var_diff -%}
+        {%- set _ = tmpl.append({'variable': d.name, 'before': d.old if d.old != '' else '(empty)', 'after': d.new if d.new != '' else '(empty)'}) -%}
+      {%- endfor -%}
+      {%- set svc = [] -%}
+      {%- for d in svc_var_diff | default([]) -%}
+        {%- set _ = svc.append({'template': d.template, 'variable': d.name, 'before': d.old if d.old != '' else '(empty)', 'after': d.new if d.new != '' else '(empty)'}) -%}
+      {%- endfor -%}
+      {{ {'total_changes': (var_diff | length) + (svc_var_diff | default([]) | length),
+          'device_template': template_name,
+          'device_template_changes': tmpl,
+          'service_template_changes': svc} | to_json }}
+  when: device_exists | bool
+
+- name: "STEP 5 | [{{ device_name }}] Parse diff summary"
+  ansible.builtin.set_fact:
+    _diff_summary: "{{ _diff_summary_json | from_json }}"
+  when: device_exists | bool
+
+- name: "STEP 5 | [{{ device_name }}] Show variable diff ({{ _diff_summary.total_changes }} change(s))"
+  ansible.builtin.debug:
+    var: _diff_summary
+  when: device_exists | bool
+
+- name: "STEP 5 | [{{ device_name }}] Confirm update (type 'yes' to proceed)"
+  ansible.builtin.pause:
+    prompt: >-
+      Device '{{ device_name }}' exists in Director
+      (workflowStatus={{ workflow_status }}, applianceExists={{ appliance_exists }}).
+      {{ _diff_summary.total_changes }} variable(s) will change (see diff above).
+      Proceed with update? [yes/no]
+  register: confirm_update
+  when:
+    - device_exists | bool
+    - not (assume_yes | default(false) | bool)
+
+- name: "STEP 5 | [{{ device_name }}] Abort – update declined by user"
+  ansible.builtin.fail:
+    msg: >-
+      Update cancelled by user for device '{{ device_name }}'.
+      Re-run with -e "assume_yes=true" to skip this prompt.
+  when:
+    - device_exists | bool
+    - not (assume_yes | default(false) | bool)
+    - confirm_update.user_input | default('no') | lower not in ['yes', 'y']
+
+- name: "LOG | [{{ device_name }}] STEP 5 confirmed (assume_yes={{ assume_yes | default(false) }})"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP5 | {{ _diff_summary.total_changes }} var(s) changed
+      ({{ _diff_summary.device_template_changes | length }} template, {{ _diff_summary.service_template_changes | length }} svc-template),
+      {{ 'auto-approved (assume_yes=true)' if assume_yes | default(false) | bool
+         else 'confirmed by user' }}
+  when: device_exists | bool
+
 # =========================================================================
 # STEP 6 – Create / update the device record in Director
 # =========================================================================
-- name: "STEP 6 | [{{ device_name }}] Create device in VNMS (POST – new device)"
-  ansible.builtin.uri:
-    url: "{{ director_base_url }}/sdwan/workflow/devices/device"
-    method: POST
-    headers:
-      Accept: "application/json, text/plain, */*"
-      Content-Type: "application/json"
-    body_format: json
-    body:
+- name: "STEP 6 | [{{ device_name }}] Build POST body (new device)"
+  ansible.builtin.set_fact:
+    _post_body:
       "versanms.sdwan-device-workflow":
-        deviceName: "{{ device_name }}"
-        siteId: "{{ site_id | int }}"
-        orgName: "{{ org_name }}"
-        serialNumber: "{{ serial_number }}"
-        deviceGroup: "{{ device_group }}"
+        deviceName:    "{{ device_name }}"
+        siteId:        "{{ site_id | int }}"
+        orgName:       "{{ org_name }}"
+        serialNumber:  "{{ serial_number }}"
+        deviceGroup:   "{{ device_group }}"
         licensePeriod: "{{ license_period | int }}"
         deploymentType: "{{ deployment_type }}"
-        modelNumber: "{{ model_number }}"
+        modelNumber:   "{{ model_number }}"
         locationInfo:
           country: "{{ location_country }}"
         postStagingTemplateInfo:
@@ -351,17 +723,69 @@
                 attrs: "{{ final_attrs }}"
         serviceTemplateInfo:
           templateData:
-            device-template-variable:
-              - template: "{{ org_name }}-DataStore"
-                organization: "{{ org_name }}"
-                device: "{{ device_name }}"
-                variable-binding:
-                  attrs: []
-                variableMetadata: []
+            device-template-variable: "{{ final_svc_template_entries }}"
+        deviceSpecificServiceTemplates: "{{ device_specific_svc_templates }}"
+  when: not (device_exists | bool)
+
+- name: "DEBUG | [{{ device_name }}] STEP 6 – full POST body"
+  ansible.builtin.debug:
+    var: _post_body
+  when:
+    - MYDEBUG | default(false) | bool
+    - not (device_exists | bool)
+
+- name: "STEP 6 | [{{ device_name }}] Create device in VNMS (POST – new device)"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices/device"
+    method: POST
+    headers:
+      Accept: "application/json, text/plain, */*"
+      Content-Type: "application/json"
+    body_format: json
+    body: "{{ _post_body }}"
     status_code: [200, 201]
     timeout: 120
   register: create_result
   when: not (device_exists | bool)
+
+- name: "STEP 6 | [{{ device_name }}] Build PUT body (existing device)"
+  ansible.builtin.set_fact:
+    _put_body:
+      "versanms.sdwan-device-workflow":
+        deviceName:        "{{ device_name }}"
+        siteId:            "{{ existing_site_id | int }}"
+        orgName:           "{{ org_name }}"
+        serialNumber:      "{{ serial_number }}"
+        deviceGroup:       "{{ device_group }}"
+        licensePeriod:     "{{ license_period | int }}"
+        deploymentType:    "{{ deployment_type }}"
+        modelNumber:       "{{ model_number }}"
+        locationInfo:
+          country: "{{ location_country }}"
+        postStagingTemplateInfo:
+          templateName: "{{ template_name }}"
+          templateData:
+            device-template-variable:
+              template: "{{ template_name }}"
+              variable-binding:
+                attrs: "{{ final_attrs }}"
+        serviceTemplateInfo: >-
+          {{ original_svc_info
+             | combine({'templateData': {'device-template-variable': final_svc_template_entries}}, recursive=True)
+             if final_svc_template_entries | length > 0
+             else original_svc_info }}
+        deviceSpecificServiceTemplates: "{{ device_specific_svc_templates }}"
+  when:
+    - device_exists | bool
+    - workflow_status == 'Deployed'
+
+- name: "DEBUG | [{{ device_name }}] STEP 6 – full PUT body"
+  ansible.builtin.debug:
+    var: _put_body
+  when:
+    - MYDEBUG | default(false) | bool
+    - device_exists | bool
+    - workflow_status == 'Deployed'
 
 - name: "STEP 6 | [{{ device_name }}] Update device in VNMS (PUT – device exists)"
   ansible.builtin.uri:
@@ -371,34 +795,7 @@
       Accept: "application/json, text/plain, */*"
       Content-Type: "application/json"
     body_format: json
-    body:
-      "versanms.sdwan-device-workflow":
-        deviceName: "{{ device_name }}"
-        siteId: "{{ existing_site_id | int }}"
-        orgName: "{{ org_name }}"
-        serialNumber: "{{ serial_number }}"
-        deviceGroup: "{{ device_group }}"
-        licensePeriod: "{{ license_period | int }}"
-        deploymentType: "{{ deployment_type }}"
-        modelNumber: "{{ model_number }}"
-        locationInfo:
-          country: "{{ location_country }}"
-        postStagingTemplateInfo:
-          templateName: "{{ template_name }}"
-          templateData:
-            device-template-variable:
-              template: "{{ template_name }}"
-              variable-binding:
-                attrs: "{{ final_attrs }}"
-        serviceTemplateInfo:
-          templateData:
-            device-template-variable:
-              - template: "{{ org_name }}-DataStore"
-                organization: "{{ org_name }}"
-                device: "{{ device_name }}"
-                variable-binding:
-                  attrs: []
-                variableMetadata: []
+    body: "{{ _put_body }}"
     status_code: [200, 201]
     timeout: 120
   register: create_result

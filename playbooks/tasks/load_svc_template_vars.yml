@@ -1,0 +1,24 @@
+---
+###############################################################################
+# tasks/load_svc_template_vars.yml
+# -----------------------------------------------------------------------
+# Called once per service template entry (via include_tasks loop in
+# provision_cpe.yml STEP 4).  Loads the matching var-map file from
+# vars/service_templates/<template_name>.yml and stores it under a unique
+# fact name so multiple templates do not overwrite each other.
+#
+# Loop variable: _svc_tmpl  (one entry from svc_template_entries list)
+#   Required keys: template, organization, device
+#
+# Stored fact name pattern:
+#   svc_map_<template_name_with_special_chars_replaced_by_underscores>
+#
+# If no var-map file exists for a template the task is silently skipped
+# and that template's attrs are passed through to Director unchanged.
+###############################################################################
+
+- name: "SVC TMPL | [{{ _svc_tmpl.template }}] Load var map (vars/service_templates/{{ _svc_tmpl.template }}.yml)"
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/../vars/service_templates/{{ _svc_tmpl.template }}.yml"
+    name: "svc_map_{{ _svc_tmpl.template | replace('-', '_') | replace('.', '_') | replace(' ', '_') }}"
+  ignore_errors: true   # no file → no overrides; attrs pass through unchanged

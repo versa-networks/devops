@@ -5,7 +5,7 @@
 # Standalone re-deploy playbook for sites that already exist in Director
 # with workflowStatus="Deployed" and applianceExists=true.
 #
-# Also triggered automatically mid-run by provision_device.yml when that
+# Also triggered automatically mid-run by provision_site.yml when that
 # condition is detected.
 #
 # Usage:
@@ -59,7 +59,7 @@
 
     - name: "REDEPLOY | Run re-deploy steps for each site"
       ansible.builtin.include_tasks:
-        file: tasks/redeploy_device.yml
+        file: tasks/redeploy_site.yml
       vars:
         device_vars_file: "{{ item.path }}"
       loop: >-

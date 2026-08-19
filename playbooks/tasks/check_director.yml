@@ -67,6 +67,8 @@
       {{ director_host_1 if check_host_1 is not failed else director_host_2 }}
     director_base_url: >-
       https://{{ director_host_1 if check_host_1 is not failed else director_host_2 }}:{{ director_port }}/vnms
+    director_root_url: >-
+      https://{{ director_host_1 if check_host_1 is not failed else director_host_2 }}:{{ director_port }}
 
 - name: "DIRECTOR HA | Active Director selected ✓"
   ansible.builtin.debug:

@@ -31,6 +31,15 @@ bgp:
 device_group: "SPOKE-AMER-REGION-1-DG"
 template_name: "SPOKE-AMER-REGION-1"
 
+# ── Service templates ─────────────────────────────────────────────────
+# Lists the service templates associated with CPEs at this site.
+# Each entry must have a `name` matching a Director service template and
+# an optional `org` (defaults to org_name).
+# Create vars/service_templates/<name>.yml to map $v_ vars to Ansible vars.
+service_templates:
+  - name: "NV_MGMT"
+    org: "NVIDIA-IT"
+
 # ── Devices ───────────────────────────────────────────────────────────
 devices:
   - device_name: "BRANCH-003-PRIMARY"
@@ -47,3 +56,14 @@ devices:
     lan_corp_ipv4_address: "192.168.18.1/24"
     lan_corp_bgp_neighbor_ip: "192.168.10.100"
     lan_corp_bgp_peer_as:     "103"
+    vni_0-1_unit: "30"
+    vni_0-1_vlan: "30"
+    vni_0-2_unit: "20"
+    vni_0-2_vlan: "20"
+    # ── Service template vars (NV_MGMT) ────────────────────────────
+    svc_vz_mgmt_director_addr_1: "10.78.22.21/32"
+    svc_vz_mgmt_director_addr_2: "10.78.22.22/32"
+    svc_vz_mgmt_director_addr_3: "10.78.22.23/32"
+    svc_vz_mgmt_director_addr_4: "10.78.22.24/32"
+    system_user_password: "Versa@1234"
+    mgmt_lo_addr: "100.1.2.15/32"

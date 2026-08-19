@@ -1,4 +1,4 @@
-# sdwan-automate
+# deploy-automate
 
 Ansible automation for provisioning and re-deploying Versa SD-WAN sites via the Director REST API.
 
@@ -7,7 +7,7 @@ Ansible automation for provisioning and re-deploying Versa SD-WAN sites via the 
 ## Directory Structure
 
 ```
-sdwan-automate/
+deploy-automate/
 ├── ansible.cfg                       # Global Ansible config (log_path, host_key_checking)
 ├── playbooks/
 │   ├── versa_site_provision.yml      # Main provisioning playbook
@@ -15,9 +15,9 @@ sdwan-automate/
 │   └── tasks/
 │       ├── check_director.yml        # Director connectivity check (runs once)
 │       ├── log_entry.yml             # Reusable per-device log writer
-│       ├── provision_device.yml      # Loads site vars, loops over CPEs
+│       ├── provision_site.yml      # Loads site vars, loops over CPEs
 │       ├── provision_cpe.yml         # Steps 2–9 for a single CPE
-│       ├── redeploy_device.yml       # Loads site vars, loops over CPEs (re-deploy)
+│       ├── redeploy_site.yml       # Loads site vars, loops over CPEs (re-deploy)
 │       ├── redeploy_cpe.yml          # Re-deploy steps A+B for a single CPE
 │       └── commit_and_verify_cpe.yml # Steps C–E: commit template + verify (applianceExists=true only)
 ├── vars/
@@ -30,10 +30,13 @@ sdwan-automate/
 │   │   ├── BRANCH-001.yml            # Site definition with devices[] list
 │   │   ├── BRANCH-002.yml
 │   │   └── BRANCH-003.yml
-│   └── templates/
-│       └── AMER-HUB-1.yml            # Maps Director var names → Ansible var names
+│   ├── templates/
+│   │   └── AMER-HUB-1.yml            # Maps Director var names → Ansible var names
+│   └── service_templates/
+│       └── NV_MGMT.yml               # Maps service template $v_ vars → Ansible var names
 ├── vault/
 │   └── director_credentials.yml      # Ansible Vault — Director password
+├── versa_ansible_automation.pdf      # Versa SD-WAN provisioning reference documentation
 └── logs/
     ├── ansible.log                   # Full Ansible run log (all tasks, all devices)
     ├── BRANCH-002-PRIMARY.log        # Per-device milestone log
@@ -46,12 +49,12 @@ sdwan-automate/
 
 ```
 versa_site_provision.yml          loops over vars/sites/*.yml
-  └── provision_device.yml        loads site + region vars, loops over devices[]
+  └── provision_site.yml        loads site + region vars, loops over devices[]
         └── provision_cpe.yml     flattens vars, runs Steps 2–9 per CPE
               └── redeploy_cpe.yml  (branched to when applianceExists=true)
 
 versa_site_redeploy.yml           loops over vars/sites/*.yml
-  └── redeploy_device.yml         loads site + region vars, loops over devices[]
+  └── redeploy_site.yml         loads site + region vars, loops over devices[]
         └── redeploy_cpe.yml      flattens vars, triggers re-deploy per CPE (STEP A+B)
               └── commit_and_verify_cpe.yml  (branched to when applianceExists=true)
 ```
@@ -141,7 +144,7 @@ tail -f logs/BRANCH-002-PRIMARY.log
 **First-run setup:** `ansible.cfg` sets `log_path = logs/ansible.log`, but Ansible requires the directory to exist before it starts. The playbooks create `logs/` automatically via `pre_tasks`, but this happens after Ansible has already tried to open the log file. Run this once on a new host to get `ansible.log` from the very first execution:
 
 ```bash
-mkdir -p ~/sdwan-automate/logs
+mkdir -p ~/deploy-automate/logs
 ```
 
 ---
@@ -171,7 +174,7 @@ ansible-vault edit vault/director_credentials.yml
 
 ---
 
-## Running from the `sdwan-automate/` directory
+## Running from the `deploy-automate/` directory
 
 ### Provisioning
 
@@ -266,6 +269,45 @@ ansible-playbook playbooks/versa_site_provision.yml --ask-vault-pass -vvv
 | `director_port`      | Both         | Override Director port.                                                   | `-e "director_port=9182"`            |
 | `task_poll_retries`  | Both         | Override number of task poll retries (default: 60).                       | `-e "task_poll_retries=120"`         |
 | `task_poll_interval` | Both         | Override seconds between poll attempts (default: 10).                     | `-e "task_poll_interval=5"`          |
+| `assume_yes`         | Provision    | Skip the diff + confirm prompt for existing devices (default: false).     | `-e "assume_yes=true"`               |
+| `MYDEBUG`            | Both         | Enable verbose debug tasks (PUT/POST body, raw API responses, attr detail). | `-e "MYDEBUG=true"`                |
+
+---
+
+## Diff and Confirm on Re-run
+
+When `versa_site_provision.yml` encounters a CPE that already exists in Director (HTTP 200 from STEP 3), it computes a diff of the current variable bindings in Director against the new values from the site/CPE vars file before making any changes.
+
+The diff is displayed as structured JSON:
+
+```json
+{
+  "total_changes": 3,
+  "device_template": "SPOKE-AMER-REGION-1",
+  "device_template_changes": [
+    {"variable": "{$v_MPLS_IPv4__staticaddress}", "before": "192.168.20.1/24", "after": "192.168.20.23/24"}
+  ],
+  "service_template_changes": [
+    {"template": "NV_MGMT", "variable": "{$v_Director_Address-Prefix-1__vnfIpaddress}", "before": "(empty)", "after": "10.78.22.21/32"}
+  ]
+}
+```
+
+The playbook then pauses and requires explicit confirmation:
+
+```
+Proceed with update? [yes/no]:
+```
+
+Type `yes` or `y` to continue. Anything else aborts the run with no changes sent to Director.
+
+**To skip the prompt** (for pipelines or unattended runs):
+
+```bash
+ansible-playbook playbooks/versa_site_provision.yml --ask-vault-pass -e "assume_yes=true"
+```
+
+`assume_yes` can also be set permanently in `vars/director.yml`.
 
 ---
 
@@ -276,8 +318,8 @@ The provisioning playbook is safe to re-run. For each CPE, STEP 3 queries Direct
 | Director response                          | Action taken                              |
 |--------------------------------------------|-------------------------------------------|
 | 404 — device not found                     | Full provisioning (POST + deploy)         |
-| 200, `workflowStatus=Deployed`, `applianceExists=false` | Update device record (PUT + deploy) |
-| 200, `workflowStatus=Deployed`, `applianceExists=true`  | Branch to re-deploy only          |
+| 200, `workflowStatus=Deployed`, `applianceExists=false` | Diff shown → confirm → PUT + deploy |
+| 200, `workflowStatus=Deployed`, `applianceExists=true`  | Diff shown → confirm → PUT → re-deploy |
 | 200, `workflowStatus=Failed`               | Abort — investigate in Director           |
 | 200, any other `workflowStatus`            | Abort — investigate in Director           |
 | 5XX                                        | Abort — Director error                    |
@@ -301,3 +343,62 @@ The provisioning playbook is safe to re-run. For each CPE, STEP 3 queries Direct
 1. Create `vars/templates/<template_name>.yml` with the `template_var_map` list.
 2. Set `template_name` in the region file or site file.
 3. No changes to playbook or task files needed.
+
+---
+
+## Service Templates
+
+A Versa service template (`serviceTemplateInfo`) is a named template that can be shared across multiple devices and orgs. Each device may be associated with one or more service templates, each carrying their own set of `$v_` variables.
+
+### How it works
+
+**Existing devices** — STEP 4 reads the current `serviceTemplateInfo` block from the Director GET response. Those variable bindings (including current Director values) are used as the base. Any Ansible var overrides defined in the site/CPE vars are applied on top before the PUT is sent.
+
+**New devices** — STEP 4 builds the service template entries from the `service_templates:` list in the site or region vars file. Attrs start empty; Director fills autogeneratable values on POST.
+
+### Associating service templates with a site
+
+Add a `service_templates:` list to the site (or region) vars file:
+
+```yaml
+service_templates:
+  - name: "NV_MGMT"
+    org: "NVIDIA-IT"
+  - name: "QoS_Srv_Tmplt_Springer_G1"
+    org: "NVIDIA-IT"
+```
+
+`org` defaults to `org_name` if omitted.
+
+### Mapping service template variables
+
+Create `vars/service_templates/<template_name>.yml` with a `service_template_var_map` list and a `category` field. The `category` is sent to Director in the `deviceSpecificServiceTemplates` field of the POST/PUT body (common values: `general`, `class-of-service`):
+
+```yaml
+category: "general"
+
+service_template_var_map:
+  - director_var: "{$v_Director_Address-Prefix-1__vnfIpaddress}"
+    ansible_var:  "svc_vz_mgmt_director_addr_1"
+    type:         "ipv4_mask"
+```
+
+Variable metadata (which vars are user-supplied vs autogenerated by Director) is fetched from the Director API at `GET /nextgen/binddata/template/<name>`. Variables with `editable=true` in the response must be provided by the user; `editable=false` variables are filled by Director automatically on POST/PUT.
+
+Then set the Ansible variable in the site or CPE vars file:
+
+```yaml
+devices:
+  - device_name: "BRANCH-003-PRIMARY"
+    ...
+    svc_vz_mgmt_director_addr_1: "10.73.16.2/32"
+```
+
+If no var-map file exists for a template, all its attrs are passed through to Director unchanged (the service template is still included in the POST/PUT body). If a mapped Ansible variable is unset or empty, that attr is also passed through unchanged.
+
+### Adding a New Service Template Mapping
+
+1. Create `vars/service_templates/<template_name>.yml` with the `service_template_var_map` list.
+2. Add the template to `service_templates:` in the relevant site/region vars file.
+3. Set the Ansible variables in the site or CPE vars file.
+4. No changes to playbook or task files needed.

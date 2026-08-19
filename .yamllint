@@ -1,0 +1,25 @@
+---
+extends: default
+
+rules:
+  # Ansible playbooks routinely exceed 80 chars due to Jinja2 expressions,
+  # long module names, and URI bodies.  200 is a practical limit that still
+  # catches genuinely runaway lines.
+  line-length:
+    max: 200
+    level: warning
+
+  # Allow alignment spacing in set_fact / vars blocks, e.g.:
+  #   device_name:    "{{ cpe.device_name }}"
+  #   serial_number:  "{{ cpe.serial_number }}"
+  colons:
+    max-spaces-before: 0
+    max-spaces-after: -1   # -1 = no upper limit (any number of spaces allowed)
+
+  # Section-header and inline comments in Ansible tasks are often indented
+  # deliberately; disable the strict indentation check.
+  comments-indentation: disable
+
+  # Ansible task files are included fragments — they do not always start with
+  # a bare --- document-start marker.
+  document-start: disable
