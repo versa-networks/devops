@@ -1,3 +1,4 @@
 logs/
 vault/director_credentials.yml
 *.retry
+versa_ansible_automation.pdf
