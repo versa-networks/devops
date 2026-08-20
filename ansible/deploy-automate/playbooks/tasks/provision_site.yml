@@ -1,0 +1,73 @@
+---
+###############################################################################
+# tasks/provision_site.yml
+# -----------------------------------------------------------------------
+# Called once per site file by versa_site_provision.yml.
+# Loads site vars and regional defaults, then loops over the devices[]
+# list and calls provision_cpe.yml for each CPE.
+#
+# Variable isolation:
+#   Both the site file and the region file are loaded into named dicts
+#   (_site, _region) so that a single set_fact can apply site > region
+#   precedence cleanly.  This prevents host-fact carryover between sites
+#   when multiple site files are processed in the same play.
+###############################################################################
+
+# ── Load site + region variables into isolated dicts ─────────────────────────
+- name: "SITE {{ device_vars_file | basename }} | Load site variables"
+  ansible.builtin.include_vars:
+    file: "{{ device_vars_file }}"
+    name: _site
+
+- name: "SITE {{ _site.site_name }} | Load regional defaults"
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/../vars/regions/{{ _site.region }}.yml"
+    name: _region
+  when: "'region' in _site"
+
+# ── Resolve all facts with explicit site → region precedence ─────────────────
+# set_fact always overwrites previous host-fact values, so there is no
+# carryover from a preceding site file processed in the same play run.
+- name: "SITE {{ _site.site_name }} | Resolve vars (site overrides region)"
+  ansible.builtin.set_fact:
+    site_name:           "{{ _site.site_name }}"
+    region:              "{{ _site.region           | default('') }}"
+    org_name:            "{{ _site.org_name }}"
+    location:            "{{ _site.location }}"
+    bgp:                 "{{ _site.bgp              | default({}) }}"
+    devices:             "{{ _site.devices }}"
+    device_group:        "{{ _site.device_group        | default(_region.device_group        | default('')) }}"
+    template_name:       "{{ _site.template_name       | default(_region.template_name       | default('')) }}"
+    lan_corp_ntp_server: "{{ _site.lan_corp_ntp_server | default(_region.lan_corp_ntp_server | default('')) }}"
+    service_templates:   "{{ _site.service_templates   | default(_region.service_templates   | default([])) }}"
+
+- name: "SITE {{ site_name }} | Skip – '{{ target_device }}' not found in this site"
+  ansible.builtin.debug:
+    msg: >-
+      Skipping site '{{ site_name }}' — no device named '{{ target_device }}' here.
+      Devices in this site: {{ devices | map(attribute='device_name') | list | join(', ') }}
+  when:
+    - target_device is defined
+    - devices | selectattr('device_name', 'equalto', target_device) | list | length == 0
+
+- name: "SITE {{ site_name }} | ── Begin provisioning ({{ devices | length }} CPE(s)) ──"
+  ansible.builtin.debug:
+    msg: >-
+      Site '{{ site_name }}' [region: {{ region | default('none') }}, template: {{ template_name }}]
+      — provisioning {{ devices | length }} CPE(s):
+      {{ devices | map(attribute='device_name') | list | join(', ') }}
+  when: >-
+    target_device is not defined or
+    devices | selectattr('device_name', 'equalto', target_device) | list | length > 0
+
+# ── Loop over CPEs ────────────────────────────────────────────────────────────
+- name: "SITE {{ site_name }} | Provision each CPE"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/provision_cpe.yml"
+  loop: >-
+    {{ devices | selectattr('device_name', 'equalto', target_device) | list
+       if target_device is defined
+       else devices }}
+  loop_control:
+    loop_var: cpe
+    label: "{{ cpe.device_name }}"

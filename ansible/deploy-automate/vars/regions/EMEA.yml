@@ -1,0 +1,15 @@
+---
+# vars/regions/EMEA.yml
+# -----------------------------------------------------------------------
+# Regional defaults for EMEA sites.
+# Override any value at the site level in vars/sites/<site>.yml.
+# -----------------------------------------------------------------------
+
+region: "EMEA"
+
+# ── Director assignment defaults ──────────────────────────────────────
+device_group: "EMEA-HUB-GROUP"
+template_name: "EMEA-HUB-1"
+
+# ── Network services ──────────────────────────────────────────────────
+lan_corp_ntp_server: "4.2.2.2"

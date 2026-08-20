@@ -1,0 +1,51 @@
+---
+# vars/service_templates/NV_MGMT.yml
+# -----------------------------------------------------------------------
+# Maps Director service template variable names ($v_...) to Ansible vars.
+# Loaded by provision_cpe.yml (STEP 4) when the device's serviceTemplateInfo
+# includes a template named "NV_MGMT".
+#
+# director_var : the {$v_...} key as returned in variable-binding.attrs[].name
+# ansible_var  : flat variable name set in the site/region/CPE vars file
+# type         : optional — enables format validation (ipv4_mask, ipv4, string)
+#
+# For existing devices:  current Director values are read from the STEP 3 GET
+#   response; only attrs listed here (with a non-empty ansible_var) are updated.
+# For new devices:       attrs start empty; STEP 5 fills in user-supplied values.
+#
+# To disable a mapping, comment out or remove its entry.
+# Missing ansible_var → silently skipped (Director retains its current value).
+# -----------------------------------------------------------------------
+
+# Used to populate deviceSpecificServiceTemplates in POST/PUT.
+# Common values: "general", "class-of-service"
+category: "general"
+
+service_template_var_map:
+
+  # ── VNF / Director management addresses ──────────────────────────────
+  - director_var: "{$v_Director_Address-Prefix-1__vnfIpaddress}"
+    ansible_var:  "svc_vz_mgmt_director_addr_1"
+    type:         "ipv4_mask"
+
+  - director_var: "{$v_Director_Address-Prefix-2__vnfIpaddress}"
+    ansible_var:  "svc_vz_mgmt_director_addr_2"
+    type:         "ipv4_mask"
+
+  - director_var: "{$v_VNF_IP_Address-Prefix-3__vnfIpaddress}"
+    ansible_var:  "svc_vz_mgmt_director_addr_3"
+    type:         "ipv4_mask"
+
+  - director_var: "{$v_VNF_IP_Address-Prefix-4__vnfIpaddress}"
+    ansible_var:  "svc_vz_mgmt_director_addr_4"
+    type:         "ipv4_mask"
+
+  # ── System credentials ────────────────────────────────────────────────
+  - director_var: "{$v_Device_System_User_NVuser__systemUserPassword}"
+    ansible_var:  "system_user_password"
+    type:         "string"
+
+  # ── Loopback address ──────────────────────────────────────────────────
+  - director_var: "{$v_NV-MGMT_Loopback_Address-Prefix__vrAddress}"
+    ansible_var:  "mgmt_lo_addr"
+    type:         "ipv4_mask"

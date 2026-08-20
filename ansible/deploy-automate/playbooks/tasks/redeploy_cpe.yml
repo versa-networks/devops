@@ -1,0 +1,142 @@
+---
+###############################################################################
+# tasks/redeploy_cpe.yml
+# -----------------------------------------------------------------------
+# Called once per CPE by:
+#   - redeploy_device.yml  (standalone re-deploy playbook)
+#   - provision_cpe.yml    (when applianceExists=true mid-provision)
+#
+# Receives loop var `cpe` (one entry from devices[]).
+# Flattens nested vars, then triggers re-deploy for that CPE.
+###############################################################################
+
+# ── Flatten site + CPE vars ───────────────────────────────────────────────────
+- name: "CPE {{ cpe.device_name }} | Flatten vars"
+  ansible.builtin.set_fact:
+    # ── Mandatory identity fields (playbook will fail here if absent) ─────────
+    device_name:              "{{ cpe.device_name }}"
+    serial_number:            "{{ cpe.serial_number }}"
+    deployment_type:          "{{ cpe.deployment_type }}"
+    model_number:             "{{ cpe.model_number }}"
+    license_period:           "{{ cpe.license_period }}"
+    location_country:         "{{ location.address.country }}"
+    device_group:             "{{ cpe.device_group | default(device_group) }}"
+    template_name:            "{{ cpe.template_name | default(template_name) }}"
+    # Template-specific vars are NOT flattened here — define them as flat keys
+    # directly in the site or CPE vars file.
+
+- name: "CPE {{ cpe.device_name }} | ── Begin re-deploy ────────────────────"
+  ansible.builtin.debug:
+    msg: "Re-deploying CPE '{{ device_name }}' at site '{{ site_name }}'"
+
+- name: "LOG | [{{ device_name }}] Start"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "REDEPLOY START | site={{ site_name }}, region={{ region | default('none') }}, serial={{ serial_number }}"
+
+# ── STEP A: Trigger re-deploy ──────────────────────────────────────────────────
+- name: "REDEPLOY | [{{ device_name }}] Trigger re-deploy"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/sdwan/workflow/devices/device/deploy/{{ device_name }}"
+    method: POST
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body: {}
+    status_code: [200, 201, 202]
+    timeout: 60
+  register: redeploy_result
+
+- name: "REDEPLOY | [{{ device_name }}] Extract re-deploy task ID"
+  ansible.builtin.set_fact:
+    redeploy_task_id: "{{ redeploy_result.json | json_query('*.taskId | [0]') | default('') }}"
+  when: redeploy_result.json is defined
+
+- name: "REDEPLOY | [{{ device_name }}] Re-deploy triggered – task ID: {{ redeploy_task_id | default('unknown') }}"
+  ansible.builtin.debug:
+    msg: "Re-deploy task started for '{{ device_name }}'"
+
+- name: "LOG | [{{ device_name }}] STEP A deploy triggered"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "STEP-A | redeploy triggered, task_id={{ redeploy_task_id | default('unknown') }}"
+  when: redeploy_result.json is defined
+
+# ── STEP B: Poll task ──────────────────────────────────────────────────────────
+- name: "REDEPLOY | [{{ device_name }}] Poll re-deploy task until complete"
+  ansible.builtin.uri:
+    url: "{{ director_base_url }}/tasks/task/{{ redeploy_task_id }}?deep=true"
+    method: GET
+    status_code: 200
+    timeout: 30
+  register: redeploy_task_status
+  until: >-
+    redeploy_task_status.json['versa-tasks.task']['versa-tasks.task-status'] in
+    ['SUCCESS', 'COMPLETED', 'FAILED', 'ERROR']
+  retries: "{{ task_poll_retries }}"
+  delay: "{{ task_poll_interval }}"
+  when: redeploy_task_id is defined and redeploy_task_id != ''
+
+- name: "REDEPLOY | [{{ device_name }}] Final task status"
+  ansible.builtin.debug:
+    msg: >-
+      Task {{ redeploy_task_id }} –
+      Status  : {{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }}
+      Progress: {{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.percentage-completion'] }}%
+  when: redeploy_task_status is defined and redeploy_task_status.json is defined
+
+- name: "LOG | [{{ device_name }}] STEP B task complete"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP-B | task={{ redeploy_task_id | default('unknown') }},
+      status={{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }},
+      progress={{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.percentage-completion'] }}%
+  when: redeploy_task_status is defined and redeploy_task_status.json is defined
+
+- name: "LOG | [{{ device_name }}] STEP B FAILED"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: >-
+      STEP-B | FAILED – status={{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }},
+      errors={{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.errormessages'] }}
+  when:
+    - redeploy_task_id is defined
+    - redeploy_task_id != ''
+    - redeploy_task_status is defined
+    - redeploy_task_status.json is defined
+    - redeploy_task_status.json['versa-tasks.task']['versa-tasks.task-status'] in ['FAILED', 'ERROR']
+
+- name: "REDEPLOY | [{{ device_name }}] Fail if re-deploy reported an error"
+  ansible.builtin.fail:
+    msg: >-
+      Re-deploy FAILED for '{{ device_name }}'.
+      Status : {{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.task-status'] }}
+      Errors : {{ redeploy_task_status.json['versa-tasks.task']['versa-tasks.errormessages'] }}
+  when:
+    - redeploy_task_id is defined
+    - redeploy_task_id != ''
+    - redeploy_task_status is defined
+    - redeploy_task_status.json is defined
+    - redeploy_task_status.json['versa-tasks.task']['versa-tasks.task-status'] in ['FAILED', 'ERROR']
+
+# ── STEPS C / D / E: only when applianceExists=true (device is live) ─────────
+- name: "REDEPLOY | [{{ device_name }}] Branch – commit template + verify (appliance_exists=true)"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/commit_and_verify_cpe.yml"
+  when: appliance_exists | default(false) | bool
+
+- name: "✅ [{{ device_name }}] Re-deploy complete"
+  ansible.builtin.debug:
+    msg: "CPE '{{ device_name }}' successfully re-deployed in org '{{ org_name }}'."
+
+- name: "LOG | [{{ device_name }}] DONE"
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/tasks/log_entry.yml"
+  vars:
+    log_entry: "DONE  | redeploy+commit complete, org={{ org_name }}, template={{ template_name }}"

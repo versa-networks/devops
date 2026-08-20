@@ -1,0 +1,15 @@
+---
+# vars/regions/APAC.yml
+# -----------------------------------------------------------------------
+# Regional defaults for APAC sites.
+# Override any value at the site level in vars/sites/<site>.yml.
+# -----------------------------------------------------------------------
+
+region: "APAC"
+
+# ── Director assignment defaults ──────────────────────────────────────
+device_group: "APAC-HUB-GROUP"
+template_name: "APAC-HUB-1"
+
+# ── Network services ──────────────────────────────────────────────────
+lan_corp_ntp_server: "4.4.4.4"

@@ -1,0 +1,71 @@
+---
+###############################################################################
+# playbooks/versa_site_redeploy.yml
+# -----------------------------------------------------------------------
+# Standalone re-deploy playbook for sites that already exist in Director
+# with workflowStatus="Deployed" and applianceExists=true.
+#
+# Also triggered automatically mid-run by provision_site.yml when that
+# condition is detected.
+#
+# Usage:
+#   ansible-playbook playbooks/versa_site_redeploy.yml --ask-vault-pass
+###############################################################################
+
+- name: Re-Deploy existing Versa SD-WAN Sites
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - "../vars/director.yml"
+    - "../vault/director_credentials.yml"
+
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: "{{ director_user }}"
+      url_password: "{{ director_password }}"
+      force_basic_auth: true
+      validate_certs: "{{ validate_certs }}"
+      headers:
+        Accept: "application/json"
+
+  pre_tasks:
+
+    - name: "INIT | Ensure logs directory exists"
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/../logs"
+        state: directory
+        mode: '0755'
+
+  tasks:
+
+    - name: "INIT | Verify Director is reachable"
+      ansible.builtin.include_tasks:
+        file: tasks/check_director.yml
+
+    - name: "INIT | Discover site files in vars/sites/"
+      ansible.builtin.find:
+        paths: "{{ playbook_dir }}/../vars/sites"
+        patterns: "*.yml"
+        file_type: file
+      register: discovered_sites
+
+    - name: "INIT | Show sites to be re-deployed"
+      ansible.builtin.debug:
+        msg: >-
+          Found {{ discovered_sites.files | length }} site file(s):
+          {{ discovered_sites.files | map(attribute='path') | map('basename') | list | join(', ') }}
+
+    - name: "REDEPLOY | Run re-deploy steps for each site"
+      ansible.builtin.include_tasks:
+        file: tasks/redeploy_site.yml
+      vars:
+        device_vars_file: "{{ item.path }}"
+      loop: >-
+        {{ discovered_sites.files | sort(attribute='path')
+           | selectattr('path', 'search', site_filter) | list
+           if site_filter is defined
+           else discovered_sites.files | sort(attribute='path') }}
+      loop_control:
+        label: "{{ item.path | basename }}"

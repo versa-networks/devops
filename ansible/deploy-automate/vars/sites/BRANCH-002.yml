@@ -1,0 +1,70 @@
+---
+# vars/sites/BRANCH-002.yml
+# -----------------------------------------------------------------------
+# Site-level vars. Regional defaults are inherited from vars/regions/AMER.yml.
+# Any key defined here overrides the regional default.
+#
+# Template-specific vars (inet1_static_address, lan_corp_ipv4_address, etc.)
+# are defined as flat keys directly on each CPE entry.  Only declare the vars
+# your template actually needs — STEP 5 validates that every non-autogeneratable
+# Director template variable has a corresponding value.
+# -----------------------------------------------------------------------
+
+# ── Branch identity ───────────────────────────────────────────────────
+site_name: "BRANCH-002"
+region: "AMER"            # links to vars/regions/AMER.yml
+org_name: "NVIDIA-IT"
+
+# ── Physical location ─────────────────────────────────────────────────
+location:
+  address:
+    street: "7900 Aqua Vista Dr"
+    city: "Plano"
+    state: "TX"
+    postal_code: "75025"
+    country: "USA"
+  coordinates:
+    latitude: 18.5204
+    longitude: 73.8567
+
+# ── Site-level shared vars ────────────────────────────────────────────
+# Shared by all CPEs at this site; override per-CPE if needed.
+lan_corp_bgp_local_as: "100"
+
+# ── Regional overrides (optional) ────────────────────────────────────
+# Uncomment to override defaults from vars/regions/AMER.yml
+# device_group: "AMER-BRANCH-GROUP"
+# template_name: "AMER-BRANCH-1"
+# lan_corp_ntp_server: "ntp.local.plano.nvidia.com"
+
+# ── Devices ───────────────────────────────────────────────────────────
+devices:
+
+  - device_name: "BRANCH-002-PRIMARY"
+    serial_number: "102-1"
+    deployment_type: "physical"
+    model_number: "Versa CSG1500"
+    license_period: 1
+    # device_group / template_name: omit to inherit from region
+    # ── Template-specific vars ──────────────────────────────────────
+    inet1_static_address:     "1.1.1.1/24"
+    inet1_transport_vr_hop:   "1.1.1.100"
+    inet2_static_address:     "2.2.2.2/24"
+    inet2_transport_vr_hop:   "2.2.2.100"
+    lan_corp_ipv4_address:    "192.168.10.1/24"
+    lan_corp_bgp_neighbor_ip: "192.168.10.100"
+    lan_corp_bgp_peer_as:     "103"
+
+  - device_name: "BRANCH-002-SECONDARY"
+    serial_number: "102-2"
+    deployment_type: "physical"
+    model_number: "Versa CSG150"
+    license_period: 1
+    # ── Template-specific vars ──────────────────────────────────────
+    inet1_static_address:     "1.1.2.1/24"
+    inet1_transport_vr_hop:   "1.1.2.100"
+    inet2_static_address:     "2.2.3.1/24"
+    inet2_transport_vr_hop:   "2.2.3.100"
+    lan_corp_ipv4_address:    "192.168.10.2/24"
+    lan_corp_bgp_neighbor_ip: "192.168.10.101"
+    lan_corp_bgp_peer_as:     "103"
