@@ -1,10 +1,24 @@
 import os
+import re
 import sys
 import shutil
 import time
 import shlex
 import select
 from typing import Dict, List, Tuple
+
+CUSTOM_APP_DEF_RE = re.compile(r'^\s*set\s+shared\s+application\s+(?:"([^"]+)"|(\S+))\s')
+
+def collect_custom_app_names(path: str) -> set:
+    names = set()
+    if not os.path.isfile(path):
+        return names
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        for raw in f:
+            m = CUSTOM_APP_DEF_RE.match(raw)
+            if m:
+                names.add(m.group(1) if m.group(1) is not None else m.group(2))
+    return names
 
 class Tee:
     def __init__(self, *streams):
@@ -441,6 +455,17 @@ def main() -> int:
     missing_apps_added = 0
     total_app_refs = 0
 
+    custom_apps = collect_custom_app_names(rules_dst)
+    print(f"INFO: custom applications defined in source configuration: {len(custom_apps)}")
+
+    removed_custom = 0
+    for v in list(order_app):
+        if v in custom_apps:
+            order_app.remove(v)
+            cur_app.pop(v, None)
+            removed_custom += 1
+            print(f"OK: removed custom application from predef-application-conversion.txt: {v}")
+
     with open(rules_dst, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
             line = raw.strip()
@@ -459,14 +484,17 @@ def main() -> int:
                 if not v:
                     continue
                 total_app_refs += 1
+                if v in custom_apps:
+                    continue
                 if v not in cur_app:
                     cur_app[v] = ""
                     order_app.append(v)
                     missing_apps_added += 1
 
-    if missing_apps_added > 0:
+    if missing_apps_added > 0 or removed_custom > 0:
         write_conversion_file(predef_app_conv, order_app, cur_app)
-        print(f"OK: added {missing_apps_added} application name(s) to: {predef_app_conv}")
+        print(f"OK: added {missing_apps_added} application name(s), removed {removed_custom} "
+              f"custom application name(s) in: {predef_app_conv}")
     else:
         if os.path.isfile(predef_app_conv):
             print(f"OK: no new applications found (application refs scanned: {total_app_refs}).")

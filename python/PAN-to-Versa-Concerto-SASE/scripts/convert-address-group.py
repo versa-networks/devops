@@ -229,7 +229,7 @@ def replace_address_markers(obj, addr: dict):
             val = obj[key]
             if isinstance(val, str):
                 val = val.replace("@address-group-value-type",  addr["value_type"])
-                val = val.replace("@address-group-valuetype",   addr["value_type"])   # alt spelling
+                val = val.replace("@address-group-valuetype",   addr["value_type"])
                 val = val.replace("@address-group-value",       addr["value"])
                 val = val.replace("@address-group-type",        addr["display_type"])
                 obj[key] = val

@@ -87,9 +87,9 @@ def parse_address_objects(filepath: str) -> Tuple[Dict, List]:
     obj_order: list = []
     PATTERN = re.compile(
         r'^set\s+shared\s+address\s+'
-        r'(?:"([^"]+)"|(\S+))'           # group 1=quoted name, group 2=plain name
-        r'\s+(\S+)'                       # group 3=keyword
-        r'(?:\s+(.+))?$',                 # group 4=value (optional)
+        r'(?:"([^"]+)"|(\S+))'
+        r'\s+(\S+)'
+        r'(?:\s+(.+))?$',
         re.IGNORECASE,
     )
 

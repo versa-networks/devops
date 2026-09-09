@@ -16,11 +16,8 @@ PYTHONWARNINGS = "ignore:InsecureRequestWarning"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GENERAL_FILE = os.path.join(SCRIPT_DIR, "../temp/general.txt")
 
-# ---------------------------------------------------------------------------
-# CLI flags — parsed once at startup, used throughout
-# ---------------------------------------------------------------------------
-QUICK_MODE  = "--quick"  in sys.argv   # fire DEL without waiting for server response
-BOTTOM_MODE = "--bottom" in sys.argv   # process temp-file objects bottom-to-top
+QUICK_MODE  = "--quick"  in sys.argv
+BOTTOM_MODE = "--bottom" in sys.argv
 
 
 def read_general_file():
@@ -278,11 +275,6 @@ def save_objects_to_file(objects, filepath):
 
 
 def read_objects_from_file(filepath):
-    """Parse a name >> uuid temp file into an ordered dict.
-
-    When the global BOTTOM_MODE flag is set, the file lines are reversed so
-    the last entry in the file is processed first.
-    """
     with open(filepath, "r", encoding="utf-8", errors="replace") as f:
         raw_lines = f.readlines()
     if BOTTOM_MODE:
@@ -305,26 +297,15 @@ def got_401():
     print("  Your token has expired. Select option R from the menu to refresh it.\n")
 
 
-# ---------------------------------------------------------------------------
-# DELETE helpers
-# ---------------------------------------------------------------------------
 
 def _fire_delete(url, headers, cookies, name):
-    """Background worker for --quick mode — response is intentionally discarded."""
     try:
         requests.delete(url, headers=headers, cookies=cookies, verify=False, timeout=30)
     except Exception:
-        pass  # fire-and-forget: errors are silently dropped
+        pass
 
 
 def safe_delete(url, headers, cookies, name, delay=0.500, retries=2):
-    """Issue a DELETE request with throttle delay and retry on connection errors.
-
-    Behaviour is controlled by the global QUICK_MODE flag set via --quick:
-      QUICK_MODE=False  blocks until the server responds and prints the status.
-      QUICK_MODE=True   spawns a daemon thread and returns immediately without
-                        waiting for the server reply (fire-and-forget).
-    """
     time.sleep(delay)
     if QUICK_MODE:
         t = threading.Thread(
@@ -351,9 +332,6 @@ def safe_delete(url, headers, cookies, name, delay=0.500, retries=2):
                 return None
 
 
-# ---------------------------------------------------------------------------
-# Per-object-type delete functions
-# ---------------------------------------------------------------------------
 
 def delete_address_groups(skip_confirm=False):
     base_url, tenant_uuid, bearer_token, csrf_token, cookies_str = load_config()
@@ -634,6 +612,65 @@ def delete_firewall_policies(skip_confirm=False):
     print(f"\n  Done. Temp file removed.")
 
 
+def delete_custom_applications(skip_confirm=False):
+    base_url, tenant_uuid, bearer_token, csrf_token, cookies_str = load_config()
+    headers   = build_headers(bearer_token, csrf_token)
+    cookies   = parse_cookies_str(cookies_str)
+    summ_url  = f"{base_url}/portalapi/v1/tenants/{tenant_uuid}/elements/application/summarizeWithFilter"
+    temp_file = os.path.join(SCRIPT_DIR, "../temp/temp-custom-application.txt")
+
+    print("\n  Fetching custom application objects from Concerto...")
+    objects = {}
+    window  = 0
+    while True:
+        url  = f"{summ_url}?windowSize=100&nextWindowNumber={window}&category=CUSTOM_APPLICATION&ecpScope=SASE&applicationFilter=INTERNET_APPLICATION"
+        resp = requests.get(url, headers=headers, cookies=cookies, verify=False)
+        if resp.status_code == 401:
+            got_401()
+            return
+        if not resp.ok:
+            print(f"  [ERROR] GET failed: {resp.status_code}")
+            break
+        data = resp.json().get("data", [])
+        if not data:
+            break
+        count_before = len(objects)
+        for item in data:
+            entity = item.get("entity", item)
+            name   = entity.get("name")
+            uuid   = entity.get("uuid")
+            if name and uuid:
+                objects[name] = uuid
+        if len(objects) == count_before:
+            break
+        print(f"  Window {window}: {len(objects)} object(s) collected so far")
+        window += 1
+
+    if not objects:
+        print("  No custom application objects found.")
+        return
+
+    save_objects_to_file(objects, temp_file)
+
+    if not skip_confirm and not confirm_delete(temp_file, "Custom Application"):
+        print("  Cancelled. No objects were deleted.")
+        return
+
+    objects = read_objects_from_file(temp_file)
+    print(f"\n  Deleting {len(objects)} custom application object(s)...")
+    for name, uuid in objects.items():
+        encoded = urllib.parse.quote(name, safe="")
+        url = (
+            f"{base_url}/portalapi/v1/tenants/{tenant_uuid}/elements/application/"
+            f"ConfigurationLifecycleGraph%252FPROFILE_ELEMENTS%252FElements%252FApplication"
+            f"%252FCustom%2520Application%252F%252F{encoded}-1"
+        )
+        safe_delete(url, headers, cookies, name)
+
+    os.remove(temp_file)
+    print(f"\n  Done. Temp file removed.")
+
+
 def delete_all_objects():
     extra = []
     if QUICK_MODE:
@@ -644,9 +681,9 @@ def delete_all_objects():
     print_box([
         "WARNING: THIS WILL DELETE ALL OBJECTS FROM CONCERTO!",
         "",
-        "  Sequence: Firewall Policies → URLF Profiles →",
-        "            URL Categories → Custom Services →",
-        "            Address Groups",
+        "  Sequence: Firewall Policies → Custom Applications →",
+        "            URLF Profiles → URL Categories →",
+        "            Custom Services → Address Groups",
         *extra,
         "",
         "This action is IRREVERSIBLE.",
@@ -669,27 +706,32 @@ def delete_all_objects():
     print("\n  Starting full deletion sequence...\n")
 
     print("━" * 54)
-    print("  [1/5] Firewall Policies")
+    print("  [1/6] Firewall Policies")
     print("━" * 54)
     delete_firewall_policies(skip_confirm=True)
 
     print("\n" + "━" * 54)
-    print("  [2/5] URLF Profiles")
+    print("  [2/6] Custom Applications")
+    print("━" * 54)
+    delete_custom_applications(skip_confirm=True)
+
+    print("\n" + "━" * 54)
+    print("  [3/6] URLF Profiles")
     print("━" * 54)
     delete_urlf_profiles(skip_confirm=True)
 
     print("\n" + "━" * 54)
-    print("  [3/5] Custom URL Categories")
+    print("  [4/6] Custom URL Categories")
     print("━" * 54)
     delete_url_categories(skip_confirm=True)
 
     print("\n" + "━" * 54)
-    print("  [4/5] Custom Services")
+    print("  [5/6] Custom Services")
     print("━" * 54)
     delete_custom_services(skip_confirm=True)
 
     print("\n" + "━" * 54)
-    print("  [5/5] Address Groups")
+    print("  [6/6] Address Groups")
     print("━" * 54)
     delete_address_groups(skip_confirm=True)
 
@@ -713,8 +755,9 @@ def print_menu():
     print("║   2  -  Delete all custom service objects            ║")
     print("║   3  -  Delete all custom URL category objects       ║")
     print("║   4  -  Delete all URLF profile objects              ║")
-    print("║   5  -  Delete all firewall policy objects           ║")
-    print("║   6  -  Remove ALL of the above (5 → 4 → 3 → 2 → 1)  ║")
+    print("║   5  -  Delete all custom application objects        ║")
+    print("║   6  -  Delete all firewall policy objects           ║")
+    print("║   7  -  Remove ALL of the above (6→5→4→3→2→1)        ║")
     print("║   R  -  Refresh token (use if you get 401 errors)    ║")
     print("║   0  -  Exit                                         ║")
     print("╚══════════════════════════════════════════════════════╝")
@@ -741,8 +784,10 @@ def main():
         elif choice == "4":
             delete_urlf_profiles()
         elif choice == "5":
-            delete_firewall_policies()
+            delete_custom_applications()
         elif choice == "6":
+            delete_firewall_policies()
+        elif choice == "7":
             delete_all_objects()
         elif choice == "r":
             print("\n  Refreshing token...")

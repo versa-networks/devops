@@ -1,9 +1,87 @@
 #!/usr/bin/env python3
 import os
 import sys
+import tarfile
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
+MAIN_DIR = os.path.normpath(os.path.join(script_dir, '..'))
+LOG_DIR = os.path.join(MAIN_DIR, 'log')
+LOG_PATH = os.path.join(LOG_DIR, 'pan-xml-to-flat.log')
+SET_SOURCE_PATH = os.path.join(MAIN_DIR, 'source-pan-rules.txt')
+
+XML_CANDIDATES = [
+    os.path.join(MAIN_DIR, 'sp-config.xml'),
+    os.path.join(MAIN_DIR, 'sp', 'vsys1', 'sp-config.xml'),
+    os.path.join(MAIN_DIR, 'sp', 'shared', 'sp-config.xml'),
+    os.path.join(MAIN_DIR, 'temp', 'sp-config.xml'),
+]
+
+
+def log(msg):
+    os.makedirs(LOG_DIR, exist_ok=True)
+    line = '[' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '] ' + msg
+    print(line)
+    with open(LOG_PATH, 'a', encoding='utf-8') as f:
+        f.write(line + '\n')
+
+
+def find_source_xml():
+    found = []
+    for cand in XML_CANDIDATES:
+        if os.path.isfile(cand):
+            found.append(cand)
+    if os.path.isdir(MAIN_DIR):
+        for fname in sorted(os.listdir(MAIN_DIR)):
+            if fname.endswith('.tgz') and 'device_state' in fname:
+                found.append(os.path.join(MAIN_DIR, fname))
+    return found
+
+
+def load_xml_text(path):
+    if path.endswith('.tgz'):
+        try:
+            with tarfile.open(path, 'r:gz') as tar:
+                wanted = None
+                for member in tar.getmembers():
+                    if member.name.endswith('sp/vsys1/sp-config.xml'):
+                        wanted = member
+                        break
+                if wanted is None:
+                    for member in tar.getmembers():
+                        if member.name.endswith('sp-config.xml'):
+                            wanted = member
+                            break
+                if wanted is None:
+                    log('ERROR: no sp-config.xml found inside archive: ' + path)
+                    return None
+                extracted = tar.extractfile(wanted)
+                if extracted is None:
+                    return None
+                log('Extracted from archive: ' + wanted.name)
+                return extracted.read().decode('utf-8', errors='replace')
+        except Exception as exc:
+            log('ERROR: failed to read archive ' + path + ' : ' + str(exc))
+            return None
+    with open(path, 'r', encoding='utf-8', errors='replace') as f:
+        return f.read()
+
+
+def load_panorama(path):
+    xml_text = load_xml_text(path)
+    if not xml_text:
+        return None
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError as exc:
+        log('ERROR: XML parse failed for ' + path + ' : ' + str(exc))
+        return None
+    panorama = root.find('panorama')
+    if panorama is None:
+        log('SKIP: no <panorama> element in ' + path)
+        return None
+    return panorama
 
 
 def qn(name):
@@ -399,28 +477,55 @@ def convert_security_rules(panorama, rulebase_tag, lines):
 
 
 def main():
-    if len(sys.argv) >= 2:
-        xml_path = os.path.join(script_dir, sys.argv[1])
-    else:
-        xml_path = os.path.join(script_dir, '../temp/sp-config.xml')
+    log('=' * 70)
+    log('pan-xml-to-flat START')
+    log('MAIN DIR : ' + MAIN_DIR)
 
     if len(sys.argv) >= 3:
         out_path = os.path.join(script_dir, sys.argv[2])
     else:
-        out_path = os.path.join(script_dir, '../source-pan-rules.txt')
+        out_path = SET_SOURCE_PATH
 
-    if not os.path.isfile(xml_path):
-        print(f'ERROR: XML file not found: {xml_path}')
+    if len(sys.argv) >= 2:
+        candidates = [os.path.join(script_dir, sys.argv[1])]
+        log('Using XML source given on the command line: ' + candidates[0])
+    else:
+        if os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
+            log('source-pan-rules.txt already present and non-empty; using set-command source as-is.')
+            return
+        if os.path.isfile(out_path):
+            log('source-pan-rules.txt exists but is EMPTY; will try to regenerate from XML.')
+
+        log('Searching for an XML source. Locations checked:')
+        for cand in XML_CANDIDATES:
+            log('  - ' + cand + ('  [FOUND]' if os.path.isfile(cand) else ''))
+        log('  - ' + os.path.join(MAIN_DIR, '*device_state*.tgz'))
+        candidates = find_source_xml()
+
+    if not candidates:
+        log('No XML source found in any of the above locations.')
+        log('Provide source-pan-rules.txt (set format) OR place sp-config.xml / device_state_*.tgz '
+            'in the working directory, then rerun.')
         sys.exit(1)
 
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-    all_lines = []
+    panorama = None
+    xml_path = None
+    for cand in candidates:
+        if not os.path.isfile(cand):
+            log('SKIP: not found: ' + cand)
+            continue
+        log('Trying XML source: ' + cand)
+        panorama = load_panorama(cand)
+        if panorama is not None:
+            xml_path = cand
+            break
 
-    panorama = root.find('panorama')
     if panorama is None:
-        print('ERROR: No <panorama> element found in XML')
+        log('ERROR: no usable XML source with a <panorama> element was found.')
         sys.exit(1)
+
+    log('Using XML source: ' + xml_path)
+    all_lines = []
 
     converters = [
         ('address',           convert_address),
@@ -450,8 +555,9 @@ def main():
         for line in all_lines:
             f.write(line + '\n')
 
-    print(f'\nTotal output lines: {len(all_lines)}')
-    print(f'Output: {out_path}')
+    log('Total output lines: ' + str(len(all_lines)))
+    log('Output: ' + out_path)
+    log('pan-xml-to-flat END (SUCCESS)')
 
 
 main()

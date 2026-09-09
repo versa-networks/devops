@@ -66,9 +66,7 @@ _box_print() {
   echo "$border"
 }
 
-if [[ -f "${MAIN_DIR}/sp-config.xml" ]]; then
-  run_py "${MAIN_DIR}/scripts/pan-xml-to-flat.py" "../sp-config.xml"
-fi
+run_py "${SCRIPTS_DIR}/pan-xml-to-flat.py"
 
 run_py "${SCRIPTS_DIR}/fix-policy-address.py"
 run_py "${SCRIPTS_DIR}/step-0.py"
@@ -87,6 +85,7 @@ else
   _box_print "SKIPPED: step-7.py and step-8.py" "File '${LDAP_SOURCE_FILE}' does not exist or is empty — LDAP processing steps will be skipped."
 fi
 run_py "${SCRIPTS_DIR}/preconvert-cleanup.py"
+run_py "${SCRIPTS_DIR}/preconvert-application.py"
 
 
 messages=()
@@ -109,6 +108,16 @@ fi
 # 4
 if [[ -s "${MAIN_DIR}/zone-conversion.txt" ]]; then
   messages+=("Please make sure you have edited the file "../zone-conversion.txt" to correctly reflect the zones on Versa before polciies conversion." "" "")
+fi
+
+# 4b
+if [[ -s "${MAIN_DIR}/created-ip-address-object.txt" ]]; then
+  messages+=("Literal IP addresses were found inside policy source/destination fields. An address object was created for each one and appended to \"source-pan-rules.txt\", and the policy lines now reference the object name. No action is required. See \"created-ip-address-object.txt\" for the list." "" "")
+fi
+
+# 4c
+if [[ -s "${MAIN_DIR}/unmapped-application.txt" ]]; then
+  messages+=("There are PAN predefined applications with no Versa equivalent. Please open \"unmapped-application.txt\", then fill in the blank for each one in \"predef-application-conversion.txt\". Custom applications are excluded from that file on purpose." "" "")
 fi
 
 # 5
@@ -140,6 +149,16 @@ run_py "${SCRIPTS_DIR}/convert-security-urlf-profile.py"
 run_py "${SCRIPTS_DIR}/convert-policy.py"
 run_py "${SCRIPTS_DIR}/post-conversion.py"
 run_py "${SCRIPTS_DIR}/fix-indentation.py"
+
+if [[ -s "${MAIN_DIR}/missing-custom-application.txt" ]]; then
+  echo
+  _box_print "Custom applications were NOT written into the template" "A Versa service template has no section for custom applications. The applications listed in \"missing-custom-application.txt\" are defined as custom applications in the PAN configuration and were left out of the affected policies. Create them on Director and add the references manually."
+fi
+
+if [[ -s "${MAIN_DIR}/undefined-application.txt" ]]; then
+  echo
+  _box_print "Applications with no Versa equivalent were dropped" "See \"undefined-application.txt\". Fill in the blanks in \"predef-application-conversion.txt\" and re-run scripts/convert-policy.py."
+fi
 
 if [[ -d "${MAIN_DIR}/final-step" ]]; then
   rm -rf "${MAIN_DIR}/final-step"

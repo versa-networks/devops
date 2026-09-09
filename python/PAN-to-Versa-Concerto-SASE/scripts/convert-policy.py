@@ -68,6 +68,7 @@ LDAP_GROUPS_UUID = os.path.join(TEMP_DIR, "ldap-groups-uuid.txt")
 LDAP_USERS_FILE = os.path.join(TEMP_DIR, "concerto-ldap-users.txt")
 ADDR_GROUP_CACHE = os.path.join(TEMP_DIR, "adddress-group.txt")
 CUST_SVC_CACHE = os.path.join(TEMP_DIR, "cust-service.txt")
+CUST_APP_MAP = os.path.join(TEMP_DIR, "custom-application-uuid.txt")
 CUSTOM_URL_CAT_CACHE = os.path.join(TEMP_DIR, "custom-url-category.txt")
 URLF_PROFILE_CACHE = os.path.join(TEMP_DIR, "urlf-profile.txt")
 LDAP_PROFILE_CACHE = os.path.join(TEMP_DIR, "ldap-profile.txt")
@@ -75,6 +76,9 @@ SCIM_PROFILE_CACHE = os.path.join(TEMP_DIR, "scim-profile.txt")
 UNRESOLVED_OBJ = os.path.join(BASE_DIR, "unresolved-objects-configuration.txt")
 UNRESOLVED_URL = os.path.join(BASE_DIR, "unresolved-url-configuration.txt")
 UNDEFINED_SVC = os.path.join(BASE_DIR, "undefined-service.txt")
+UNDEFINED_APP = os.path.join(BASE_DIR, "undefined-application.txt")
+MISSING_CUSTOM_APP = os.path.join(BASE_DIR, "missing-custom-application.txt")
+FINAL_CUSTOM_APP = os.path.join(FINAL_DATA_DIR, "final-custom-application.txt")
 UNKNOWN_URLF = os.path.join(BASE_DIR, "unresolved-urlf-profile.txt")
 UNRESOLVED_SCIM_USERS = os.path.join(BASE_DIR, "unresolved-scim-users.txt")
 UNRESOLVED_SCIM_GROUPS = os.path.join(BASE_DIR, "unresolved-scim-groups.txt")
@@ -459,6 +463,24 @@ def fetch_custom_services(session, headers, base_url, general):
     log("Fetched " + str(len(result)) + " custom services")
     return result
 
+def fetch_custom_applications(session, headers, base_url, general):
+    tenant = general["tenant-uuid"]
+    url_tpl = "/portalapi/v1/tenants/" + tenant + "/elements/application/summarizeWithFilter?windowSize={window_size}&nextWindowNumber={window_number}&category=CUSTOM_APPLICATION&ecpScope=SASE&applicationFilter=INTERNET_APPLICATION"
+    result = {}
+    try:
+        data = paginated_get(session, headers, base_url, url_tpl)
+    except Exception as exc:
+        log("fetch_custom_applications error: " + str(exc))
+        data = []
+    for item in data:
+        entity = item.get("entity", item)
+        name = entity.get("name", "")
+        uuid = entity.get("uuid", "")
+        if name and uuid:
+            result[name] = uuid
+    log("Fetched " + str(len(result)) + " custom applications")
+    return result
+
 def fetch_custom_url_categories(session, headers, base_url, general):
     if os.path.exists(CUSTOM_URL_CAT_CACHE):
         return load_arrow_cache(CUSTOM_URL_CAT_CACHE)
@@ -726,10 +748,34 @@ def process_addresses(remainders, full_lines, addr_groups, session, headers, bas
         dest_addrs = []
     return source_addrs, dest_addrs, addr_groups
 
-def process_applications(remainders, full_lines):
+def sanitize_app_name(name):
+    return re.sub(r'[^A-Za-z0-9]', "_", name)
+
+def load_source_custom_app_names(filepath):
+    names = set()
+    if not os.path.isfile(filepath):
+        log("ERROR: custom application source file not found: " + filepath)
+        log("ERROR: every application will be treated as PAN predefined. "
+            "Run scripts/preconvert-application.py first.")
+        return names
+    pattern = re.compile(r'^\s*set\s+shared\s+application\s+(?:"([^"]+)"|(\S+))\s')
+    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+        for raw in f:
+            m = pattern.match(raw)
+            if m:
+                names.add(m.group(1) if m.group(1) is not None else m.group(2))
+    return names
+
+def process_applications(remainders, full_lines, cust_app_cache, session, headers, base_url, general):
     app_conv = load_conversion_file(PREDEF_APP_CONV)
+    source_custom_apps = load_source_custom_app_names(FINAL_CUSTOM_APP)
+    log("Custom applications defined in source configuration: " + str(len(source_custom_apps)))
     all_caps_apps = []
     mixed_apps = []
+    custom_apps = []
+    seen_custom = set()
+    seen_missing = set()
+    seen_undefined = set()
     for i, rem in enumerate(remainders):
         vals = extract_values_from_remainder(rem, "application")
         if vals is not None:
@@ -738,16 +784,41 @@ def process_applications(remainders, full_lines):
             for v in vals:
                 if v.lower() in ("any", "all"):
                     continue
-                if v in app_conv:
-                    converted = app_conv[v]
-                    app_name = converted if converted else v
+                if not cust_app_cache:
+                    cust_app_cache.update(fetch_custom_applications(session, headers, base_url, general))
+                    for k, u in load_arrow_cache(CUST_APP_MAP).items():
+                        cust_app_cache.setdefault(sanitize_app_name(k), u)
+                san = sanitize_app_name(v)
+
+                if v in source_custom_apps:
+                    if san in cust_app_cache:
+                        if san not in seen_custom:
+                            seen_custom.add(san)
+                            custom_apps.append({"name": san, "uuid": cust_app_cache[san]})
+                    else:
+                        if v not in seen_missing:
+                            seen_missing.add(v)
+                            append_line(MISSING_CUSTOM_APP, v + " >> no UUID on Concerto")
+                        append_line(MISSING_CUSTOM_APP, "    " + full_lines[i])
+                        log("MISSING custom application on Concerto: " + v)
+                    continue
+
+                converted = app_conv.get(v, "")
+                if converted:
+                    app_name = converted
                 else:
                     app_name = v
+                    if v not in seen_undefined:
+                        seen_undefined.add(v)
+                        append_line(UNDEFINED_APP, v + " >> no Versa equivalent, sent as-is")
+                    append_line(UNDEFINED_APP, "    " + full_lines[i])
+                    log("UNDEFINED application: " + v)
+
                 if app_name == app_name.upper():
                     all_caps_apps.append(app_name)
                 else:
                     mixed_apps.append(app_name)
-    return all_caps_apps, mixed_apps
+    return all_caps_apps, mixed_apps, custom_apps, cust_app_cache
 
 def process_services(remainders, full_lines, cust_svc_cache, session, headers, base_url, general):
     predef_conv = load_conversion_file(PREDEF_SVC_CONV)
@@ -1256,6 +1327,10 @@ def main():
     log("=" * 60)
     log("Starting policy conversion script")
     log("=" * 60)
+    for stale in (UNDEFINED_APP, MISSING_CUSTOM_APP):
+        if os.path.isfile(stale):
+            os.remove(stale)
+            log("Removed stale report: " + stale)
     if not os.path.exists(CLEANED_RULES):
         if os.path.exists(STEP6_RULES):
             shutil.copy2(STEP6_RULES, CLEANED_RULES)
@@ -1283,6 +1358,7 @@ def main():
     addr_groups = {}
     cust_svc_cache = {}
     custom_url_cache = {}
+    cust_app_cache = {}
     has_ldap = "ldap-profile" in general and general["ldap-profile"]
     has_scim = "scim-profile" in general and general["scim-profile"]
     for policy_name in policy_order:
@@ -1334,7 +1410,8 @@ def main():
             )
         log("Source addresses: " + str(len(source_addrs)))
         log("Dest addresses: " + str(len(dest_addrs)))
-        all_caps_apps, mixed_apps = process_applications(remainders, full_lines)
+        all_caps_apps, mixed_apps, custom_apps, cust_app_cache = process_applications(
+            remainders, full_lines, cust_app_cache, session, headers, base_url, general)
         log("Applications all-caps: " + str(all_caps_apps))
         log("Applications mixed: " + str(mixed_apps))
         predef_svcs, custom_svcs, cust_svc_cache = process_services(
@@ -1359,10 +1436,15 @@ def main():
         else:
             log("No user section")
         match_value = {}
-        if all_caps_apps or mixed_apps:
+        if all_caps_apps or mixed_apps or custom_apps:
             app_entry = {}
+            inner_app = {}
             if all_caps_apps:
-                app_entry["application"] = {"predefined": all_caps_apps}
+                inner_app["predefined"] = all_caps_apps
+            if custom_apps:
+                inner_app["ecpUserDefinedCombo"] = custom_apps
+            if inner_app:
+                app_entry["application"] = inner_app
             if mixed_apps:
                 app_entry["applicationGroup"] = {"predefined": mixed_apps}
             match_value["application"] = app_entry

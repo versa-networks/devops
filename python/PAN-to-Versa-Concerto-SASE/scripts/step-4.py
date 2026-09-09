@@ -68,7 +68,7 @@ def ts() -> str:
 def log(msg: str = ""):
     print(f"[{ts()}] {msg}")
 
-def timed_input_fallback(prompt: str, timeout_sec: int = 30, default: str = "") -> str:
+def prompt_with_timeout(prompt: str, timeout_sec: int = 30, default: str = "") -> str:
     sys.stdout.write(prompt)
     sys.stdout.flush()
     try:
@@ -80,7 +80,7 @@ def timed_input_fallback(prompt: str, timeout_sec: int = 30, default: str = "") 
         return default
     except Exception:
         try:
-            line = input("")
+            line = input()
             return line.strip()
         except Exception:
             return default
@@ -137,7 +137,7 @@ def truncate_with_increment_suffix(name: str, max_len: int, counter: int, used: 
         used.add(name)
         return name, counter
     while True:
-        suffix = f"_{counter}"  # "_x" where x is incrementing number
+        suffix = f"_{counter}"
         keep_len = max_len - len(suffix)
         if keep_len < 1:
             keep_len = 1
@@ -232,7 +232,7 @@ def process_tag_in_line(line: str) -> Tuple[str, Optional[str]]:
         return "ok", line
     ti = tag_idxs[0]
     before = line[:ti]
-    after = line[ti + 3 :]  # after 'tag'
+    after = line[ti + 3 :]
     after_stripped = after.lstrip(" \t")
     ws_prefix_len = len(after) - len(after_stripped)
     ws_prefix = after[:ws_prefix_len]
@@ -369,7 +369,7 @@ def main():
             log("Step-2: Default source file not found:")
             log(f"        {src_pan_rules_default}")
             for attempt in range(1, 4):
-                user_path = prompt_with_timeout("Enter the FULL path to the source pan-rules file to copy:", "", 30)
+                user_path = prompt_with_timeout("Enter the FULL path to the source pan-rules file to copy: ", "")
                 if not user_path:
                     log("No input provided. Try again.")
                     continue
@@ -384,33 +384,30 @@ def main():
                 raise FileNotFoundError("No valid source file provided for step-4_cleaned-pan-rules.txt")
 
         log("")
-        prompt_msg = (
-            "Step-3: Service object name length policy\n"
-            "Maximum allowed service object name length is 31 characters.\n"
-            "Any service object name longer than this will be truncated and suffixed with _<x> (incrementing).\n"
-            "If you want a SHORTER maximum length, enter it now; press Enter to accept default 31.\n"
-            "Enter max service name length (<=31) [default 31]:"
-        )
-        max_len_in = prompt_with_timeout(prompt_msg, "31", 15).strip()
-        try:
-            max_service_len = int(max_len_in)
-            if max_service_len <= 0:
-                max_service_len = 31
-            if max_service_len > 31:
-                log(f"Input length {max_service_len} > 31; forcing to 31.")
-                max_service_len = 31
-        except ValueError:
-            log("Invalid number. Using default 31.")
+        log("Step-3: Service object name length policy")
+        log("Maximum allowed service object name length is 31 characters.")
+        log("Any service object name longer than this will be truncated and suffixed with _<x> (incrementing).")
+        log("If you want a SHORTER maximum length, enter it now; press Enter to accept default 31.")
+        max_len_in = prompt_with_timeout("Enter max service name length (<=31) [default 31]: ", timeout_sec=15, default="").strip()
+        if max_len_in == "":
             max_service_len = 31
+        else:
+            try:
+                max_service_len = int(max_len_in)
+                if max_service_len <= 0:
+                    max_service_len = 31
+                if max_service_len > 31:
+                    log(f"Input length {max_service_len} > 31; forcing to 31.")
+                    max_service_len = 31
+            except ValueError:
+                log("Invalid number. Using default 31.")
+                max_service_len = 31
         log(f"Using max_service_len = {max_service_len}")
 
         log("")
-        prompt_msg = (
-            "Step-4: Allowed object-name characters are: alphanumeric, underscore '_', hyphen '-'.\n"
-            "Any unacceptable characters in object names will be replaced with '_'.\n"
-            "Press Enter to continue (or wait 30 seconds)..."
-        )
-        prompt_with_timeout(prompt_msg, "", 30)
+        log("Step-4: Allowed object-name characters are: alphanumeric, underscore '_', hyphen '-'.")
+        log("Any unacceptable characters in object names will be replaced with '_'.")
+        prompt_with_timeout("Press Enter to continue (or wait 30 seconds)... ", timeout_sec=30, default="")
         log("Continuing...")
 
         extracted_service = step4_dir / "step-4_extracted-service.txt"
@@ -423,7 +420,7 @@ def main():
         pan_lines = dst_pan_rules.read_text(encoding="utf-8", errors="replace").splitlines(True)
 
         override_pat = re.compile(r"^set shared service\b.*\boverride\s+(no|yes)\s*$")
-        service_extract_prefix = "set shared service "  # NOTE: must match space after service
+        service_extract_prefix = "set shared service "
 
         keep_pan: List[str] = []
         svc_lines: List[str] = []
@@ -469,7 +466,7 @@ def main():
             ln = raw_ln.rstrip("\n")
             ln = strip_invisible(ln)
 
-            span = parse_name_token_span(ln, "set shared service")  # name after keyword
+            span = parse_name_token_span(ln, "set shared service")
             if not span:
                 unsupported_service_lines.append(ln + "\n")
                 continue
@@ -562,9 +559,9 @@ def main():
 
         extracted_sg = step4_dir / "step-4_extracted-service-group.txt"
         cleaned_sg_step4 = step4_dir / "step-4_cleaned-service-group.txt"
-        cleaned_sg_step2 = step2_dir / "step-4_cleaned-service-group.txt"  # per Step-16 instruction
+        cleaned_sg_step2 = step2_dir / "step-4_cleaned-service-group.txt"
         corrected_sg_name = step4_dir / "step-4_corrected-service-group-name.txt"
-        corrected_sg = step4_dir / "step-4_corrected-service-group.txt"  # to satisfy Step-20 reference
+        corrected_sg = step4_dir / "step-4_corrected-service-group.txt"
         temp_sg = step4_dir / "step-4_temp-service-group.txt"
 
         log("")
@@ -634,7 +631,7 @@ def main():
 
         cleaned_sg_step4.write_text("".join(cleaned_sg_out), encoding="utf-8")
         corrected_sg_name.write_text("".join(corrected_sg_lines), encoding="utf-8")
-        corrected_sg.write_text("".join(corrected_sg_lines), encoding="utf-8")  # Step-20 refers to this name
+        corrected_sg.write_text("".join(corrected_sg_lines), encoding="utf-8")
 
         log(f"Wrote: {cleaned_sg_step4}")
         log(f"Wrote: {corrected_sg_name}")

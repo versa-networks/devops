@@ -37,6 +37,26 @@ FINAL_CUSTOM_URLF_PROFILE = os.path.join(FINAL_DATA_DIR, "final-custom-urlf-prof
 UNRESOLVED_CUSTOM_URL_CFG = os.path.join(MAIN_DIR, "unresolved-custom-url-configuration.txt")
 
 UNSUPPORTED_APPS_FILE = os.path.join(MAIN_DIR, "unsupported-predef-application.txt")
+UNDEFINED_APP_FILE = os.path.join(MAIN_DIR, "undefined-application.txt")
+MISSING_CUSTOM_APP_FILE = os.path.join(MAIN_DIR, "missing-custom-application.txt")
+FINAL_CUSTOM_APP_FILE = os.path.join(FINAL_DATA_DIR, "final-custom-application.txt")
+
+CUSTOM_APP_DEF_RE = re.compile(r'^\s*set\s+shared\s+application\s+(?:"([^"]+)"|(\S+))\s')
+
+
+def load_source_custom_app_names(filepath: str, logger: logging.Logger) -> set:
+    names = set()
+    if not os.path.isfile(filepath):
+        logger.error("Custom application source file not found: %s", filepath)
+        logger.error("Every application will be treated as PAN predefined. "
+                     "Run scripts/preconvert-application.py first.")
+        return names
+    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+        for raw in f:
+            m = CUSTOM_APP_DEF_RE.match(raw)
+            if m:
+                names.add(m.group(1) if m.group(1) is not None else m.group(2))
+    return names
 
 
 class StreamToLogger:
@@ -911,7 +931,9 @@ def is_all_caps_word(s: str) -> bool:
     return has_alpha
 
 
-def process_applications(block: str, policy_lines: List[str], logger: logging.Logger, app_map: Dict[str, str]) -> Tuple[str, List[str]]:
+def process_applications(block: str, policy_lines: List[str], logger: logging.Logger, app_map: Dict[str, str],
+                         source_custom_apps: Optional[set] = None) -> Tuple[str, List[str]]:
+    source_custom_apps = source_custom_apps or set()
     idx = find_first_line_with_keyword(policy_lines, " application ")
     if idx is None or (not os.path.exists(PREDEF_APP_CONV_FILE)) or (os.path.getsize(PREDEF_APP_CONV_FILE) == 0) or (not app_map):
         block = delete_block_including(block, "/*begin sub-section access-policies-match-applications*/", "/*end sub-section access-policies-match-applications*/")
@@ -934,16 +956,24 @@ def process_applications(block: str, policy_lines: List[str], logger: logging.Lo
         if not t_clean or t_clean == "any":
             continue
 
-        if t_clean in app_map:
-            converted = app_map[t_clean].strip()
-            if not converted:
-                predef_apps.append(t_clean)
+        if t_clean in source_custom_apps:
+            logger.error("Custom application cannot be represented in a Versa template: %s", t_clean)
+            with open(MISSING_CUSTOM_APP_FILE, "a", encoding="utf-8") as f:
+                f.write(t_clean + " >> custom application, not emitted into the template\n")
+                f.write("    " + (ln if ln.endswith("\n") else ln + "\n"))
+            continue
+
+        converted = app_map.get(t_clean, "").strip()
+        if converted:
+            if is_all_caps_word(converted):
+                predef_apps.append(converted)
             else:
-                if is_all_caps_word(converted):
-                    predef_apps.append(converted)
-                else:
-                    predef_group_apps.append(converted)
+                predef_group_apps.append(converted)
         else:
+            logger.warning("UNDEFINED application (no Versa equivalent): %s", t_clean)
+            with open(UNDEFINED_APP_FILE, "a", encoding="utf-8") as f:
+                f.write(t_clean + " >> no Versa equivalent, not emitted into the template\n")
+                f.write("    " + (ln if ln.endswith("\n") else ln + "\n"))
             with open(UNSUPPORTED_APPS_FILE, "a", encoding="utf-8") as f:
                 f.write(ln if ln.endswith("\n") else ln + "\n")
 
@@ -1045,6 +1075,7 @@ def process_single_policy_into_cfg_section(
     ldap_groups: set,
     ldap_users: set,
     custom_url_categories: set,
+    source_custom_apps: set,
 ) -> str:
     block = section_text
 
@@ -1161,7 +1192,7 @@ def process_single_policy_into_cfg_section(
     block, policy_lines = process_services(block, policy_lines, svc_map)
 
 
-    block, policy_lines = process_applications(block, policy_lines, logger, app_map)
+    block, policy_lines = process_applications(block, policy_lines, logger, app_map, source_custom_apps)
 
 
     block, policy_lines = process_url_category(block, policy_lines, logger, policy_name, custom_url_categories)
@@ -1228,6 +1259,12 @@ def main():
         ldap_groups = load_set(LDAP_GROUPS_FILE, logger) if ldap_profile_name else set()
         ldap_users = load_set(LDAP_USERS_FILE, logger) if ldap_profile_name else set()
         custom_url_categories = load_custom_url_categories(FINAL_CUSTOM_URLF_PROFILE, logger)
+        source_custom_apps = load_source_custom_app_names(FINAL_CUSTOM_APP_FILE, logger)
+        logger.info("Custom applications defined in source configuration: %d", len(source_custom_apps))
+        for stale in (UNDEFINED_APP_FILE, MISSING_CUSTOM_APP_FILE, UNSUPPORTED_APPS_FILE):
+            if os.path.isfile(stale):
+                os.remove(stale)
+                logger.info("Removed stale report: %s", stale)
 
         cfg_text = read_text(SVT_TEMPLATE)
         cfg_text = cfg_text.replace("@template-name", template_name)
@@ -1259,6 +1296,7 @@ def main():
                 ldap_groups,
                 ldap_users,
                 custom_url_categories,
+                source_custom_apps,
             )
             cfg_text = cfg_text[:s_start] + processed + cfg_text[s_end:]
 

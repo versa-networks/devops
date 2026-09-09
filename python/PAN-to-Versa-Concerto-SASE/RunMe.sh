@@ -15,6 +15,7 @@ NC='\033[0m'
 
 PRE_SCRIPTS=(
     "get-token.py"
+    "convert-xml-to-set.py"
     "step-0.py"
     "step-1.py"
     "step-2.py"
@@ -25,6 +26,7 @@ PRE_SCRIPTS=(
     "step-7.py"
     "step-8.py"
     "preconvert-cleanup.py"
+    "preconvert-application.py"
 )
 
 POST_SCRIPTS=(
@@ -34,6 +36,7 @@ POST_SCRIPTS=(
     "convert-url-category.py"
     "get-url-category-uuid.py"
     "convert-security-urlf-profile.py"
+    "convert-custom-application.py"
     "convert-policy.py"
 )
 
@@ -85,14 +88,7 @@ box_print() {
 
 run_py() {
     local name="$1"
-    local xml_arg="${2:-}"
-    local full_path
-    if [[ "$name" == /* ]]; then
-        full_path="$name"
-        name="$(basename "$name")"
-    else
-        full_path="$PY_DIR/$name"
-    fi
+    local full_path="$PY_DIR/$name"
     STEP=$((STEP + 1))
 
     echo -e "${BOLD}[${STEP}/${TOTAL}]${NC} Running ${YELLOW}${name}${NC} ..."
@@ -104,11 +100,7 @@ run_py() {
         return 1
     fi
 
-    if [[ -n "$xml_arg" ]]; then
-        python3 "$full_path" "$xml_arg"
-    else
-        python3 "$full_path"
-    fi
+    python3 "$full_path"
     local exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
@@ -127,14 +119,7 @@ run_py() {
 
 print_banner
 
-MAIN_DIR="$SCRIPT_DIR"
-
 run_py "get-token.py"
-
-if [[ -f "${MAIN_DIR}/sp-config.xml" ]]; then
-    echo -e "${BOLD}sp-config.xml found — running pan-xml-to-flat.py${NC}"
-    run_py "${MAIN_DIR}/scripts/pan-xml-to-flat.py" "../sp-config.xml"
-fi
 
 SCIM_SCRIPT="$PY_DIR/get-concerto-scim.py"
 GENERAL_FILE="$TEMP_DIR/general.txt"
@@ -253,6 +238,26 @@ if [[ -s "$SCRIPT_DIR/zone-conversion.txt" ]]; then
     )
 fi
 
+if [[ -s "$SCRIPT_DIR/unmapped-application.txt" ]]; then
+    messages+=(
+        "There are PAN predefined applications with no Versa equivalent."
+        "Please open 'unmapped-application.txt', then fill in the blank for each one in"
+        "'predef-application-conversion.txt'. Custom applications are excluded from that file"
+        "on purpose - they are pushed as custom application objects instead."
+        ""
+    )
+fi
+
+if [[ -s "$SCRIPT_DIR/created-ip-address-object.txt" ]]; then
+    messages+=(
+        "Literal IP addresses were found inside policy source/destination fields."
+        "An address object was created for each one and appended to 'final-data/final-address.txt',"
+        "and the policy lines now reference the object name. No action is required."
+        "See 'created-ip-address-object.txt' for the list."
+        ""
+    )
+fi
+
 if [[ -s "$SCRIPT_DIR/unresolved-objects-configuration.txt" ]]; then
     messages+=(
         "There are unresolved objects being referenced."
@@ -273,7 +278,8 @@ messages+=(
     "  4 - scripts/convert-url-category.py"
     "  5 - scripts/get-url-category-uuid.py"
     "  6 - scripts/convert-security-urlf-profile.py"
-    "  7 - scripts/convert-policy.py"
+    "  7 - scripts/convert-custom-application.py"
+    "  8 - scripts/convert-policy.py"
 )
 
 box_print "Post-step checks (manual intervention may be required)" "${messages[@]}"
@@ -290,8 +296,10 @@ FINAL_RULES="$SCRIPT_DIR/final-data/cleaned-pan-rules.txt"
 NEED_COPY=false
 
 if [[ -f "$GENERAL" ]]; then
-    HAS_LDAP=$(grep -c "^ldap-profile >>" "$GENERAL" 2>/dev/null || echo 0)
-    HAS_SCIM=$(grep -c "^scim-profile >>" "$GENERAL" 2>/dev/null || echo 0)
+    HAS_LDAP=$(grep -c "^ldap-profile >>" "$GENERAL" 2>/dev/null)
+    HAS_SCIM=$(grep -c "^scim-profile >>" "$GENERAL" 2>/dev/null)
+    HAS_LDAP=${HAS_LDAP:-0}
+    HAS_SCIM=${HAS_SCIM:-0}
     if [[ "$HAS_LDAP" -eq 0 || "$HAS_SCIM" -eq 0 ]]; then
         NEED_COPY=true
     fi
@@ -370,6 +378,18 @@ if [[ -f "$POLICY_RESULTS_FILE" ]]; then
     echo ""
 else
     echo -e "${YELLOW}${BOLD}Policy results file not found: ${POLICY_RESULTS_FILE}${NC}"
+    echo ""
+fi
+
+if [[ -s "$SCRIPT_DIR/missing-custom-application.txt" ]]; then
+    echo -e "${RED}${BOLD}Custom applications referenced by a policy have no UUID on Concerto.${NC}"
+    echo -e "${RED}They failed to push. See 'missing-custom-application.txt' and re-run scripts/convert-custom-application.py${NC}"
+    echo ""
+fi
+
+if [[ -s "$SCRIPT_DIR/undefined-application.txt" ]]; then
+    echo -e "${YELLOW}${BOLD}Some applications were sent to Versa using their PAN name.${NC}"
+    echo -e "${YELLOW}See 'undefined-application.txt', then fill in 'predef-application-conversion.txt' and re-run scripts/convert-policy.py${NC}"
     echo ""
 fi
 

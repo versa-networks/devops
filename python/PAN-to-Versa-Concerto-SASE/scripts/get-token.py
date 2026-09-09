@@ -249,6 +249,7 @@ targets = {
     "Address Group":          "address-group-parent-ref-uuid",
     "Predefined Application": "predef-application-parent-ref-uuid",
     "Application Group":      "application-group-parent-ref-uuid",
+    "Custom Application":     "custom-application-parent-ref-uuid",
     "Services":               "services-parent-ref-uuid",
 }
 

@@ -23,6 +23,19 @@ ZONE_OUT = MAIN_DIR / "zone-conversion.txt"
 APP_OUT = STEP0_DIR / "predef-application-conversion.txt"
 PROFILES_OUT = MAIN_DIR / "used-policy-security-profiles.txt"
 
+CUSTOM_APP_DEF_RE = re.compile(r'^\s*set\s+shared\s+application\s+(?:"([^"]+)"|(\S+))\s')
+
+def collect_custom_app_names(path: Path) -> set:
+    names = set()
+    if not path.exists():
+        return names
+    with path.open("r", encoding="utf-8", errors="replace") as f:
+        for raw in f:
+            m = CUSTOM_APP_DEF_RE.match(raw)
+            if m:
+                names.add(m.group(1) if m.group(1) is not None else m.group(2))
+    return names
+
 def setup_logging() -> logging.Logger:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -164,12 +177,32 @@ def extract_policy_remainder(line: str):
 def tokenize_list_tail(tail: str):
 
     out = []
-    for tok in tail.split():
-        if tok == "[" or tok == "]":
+    cur = ""
+    quote = None
+    for ch in tail:
+        if quote is not None:
+            if ch == quote:
+                quote = None
+                if cur:
+                    out.append(cur)
+                cur = ""
+            else:
+                cur += ch
             continue
-        t = tok.strip().strip("[]")
-        if t:
-            out.append(t)
+        if ch in ('"', "'"):
+            if cur:
+                out.append(cur)
+                cur = ""
+            quote = ch
+            continue
+        if ch.isspace() or ch in ("[", "]"):
+            if cur:
+                out.append(cur)
+                cur = ""
+            continue
+        cur += ch
+    if cur:
+        out.append(cur)
     return out
 
 def warn_if_undesirable(logger: logging.Logger, token: str, context: str, lineno: int) -> None:
@@ -332,9 +365,17 @@ def extract_outputs(logger: logging.Logger) -> None:
         for z in zones_seen.keys():
             outz.write("{} >>\n".format(z))
 
+    custom_apps = collect_custom_app_names(CLEANED_FILE)
+    logger.info("Custom applications defined in source configuration: %d", len(custom_apps))
+
+    skipped_custom = 0
     logger.info("Writing: %s", APP_OUT)
     with APP_OUT.open("w", encoding="utf-8") as outa:
         for a in apps_seen.keys():
+            if a in custom_apps:
+                skipped_custom += 1
+                logger.info("Skipped custom application (defined in source config, not PAN predefined): %s", a)
+                continue
             outa.write("{} >>\n".format(a))
 
     logger.info("Writing: %s", PROFILES_OUT)
@@ -349,7 +390,8 @@ def extract_outputs(logger: logging.Logger) -> None:
     logger.info("  Unique zones written:        %d", len(zones_seen))
     logger.info("  Zone duplicates skipped:     %d", zone_dupes)
     logger.info("  Application lines matched:   %d", app_lines)
-    logger.info("  Unique apps written:         %d", len(apps_seen))
+    logger.info("  Custom apps skipped:         %d", skipped_custom)
+    logger.info("  Unique apps written:         %d", len(apps_seen) - skipped_custom)
     logger.info("  App duplicates skipped:      %d", app_dupes)
     logger.info("  Security profile lines:      %d", prof_lines)
 
