@@ -1,2 +1,0 @@
-concerto-fqdn >> 10.78.150.1
-concerto-port >> 443
